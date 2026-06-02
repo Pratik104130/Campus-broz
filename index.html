@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CampusVibes – College Social</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-bg">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <div class="auth-card">
+    <div class="logo-mark">
+      <span class="logo-icon">🎓</span>
+      <h1 class="logo-text">Campus<span>Broz</span></h1>
+    </div>
+    <p class="auth-tagline">Your campus. D.Y.Patil </p>
+
+    <div id="auth-tabs" class="tab-group">
+      <button class="tab active" data-tab="login">Login</button>
+      <button class="tab" data-tab="signup">Sign Up</button>
+    </div>
+
+    <!-- Login -->
+    <div id="login-form" class="auth-form active">
+      <div class="field">
+        <input type="email" id="login-email" placeholder="College Email" />
+      </div>
+      <div class="field">
+        <input type="password" id="login-password" placeholder="Password" />
+      </div>
+      <button class="btn-primary" id="login-btn">Login</button>
+      <div class="divider"><span>or</span></div>
+      <button class="btn-google" id="google-login-btn">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20"/>
+        Continue with Google
+      </button>
+    </div>
+
+    <!-- Signup -->
+    <div id="signup-form" class="auth-form">
+      <div class="field">
+        <input type="text" id="signup-name" placeholder="Display Name" />
+      </div>
+      <div class="field">
+        <input type="text" id="signup-username" placeholder="Username (e.g. @coolkid)" />
+      </div>
+      <div class="field">
+        <input type="text" id="signup-college" placeholder="Your College / University" />
+      </div>
+      <div class="field">
+        <input type="email" id="signup-email" placeholder="Email" />
+      </div>
+      <div class="field">
+        <input type="password" id="signup-password" placeholder="Password (min 6 chars)" />
+      </div>
+      <button class="btn-primary" id="signup-btn">Create Account</button>
+      <div class="divider"><span>or</span></div>
+      <button class="btn-google" id="google-signup-btn">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20"/>
+        Continue with Google
+      </button>
+    </div>
+
+    <div id="auth-error" class="auth-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app-screen" class="screen">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-icon">🎓</span>
+      <span class="sidebar-title">CampusBroz</span>
+      <button class="notif-bell-btn" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications">
+        <i data-lucide="bell"></i>
+        <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+      </button>
+    </div>
+
+    <!-- Search Bar in Sidebar -->
+    <div class="sidebar-search">
+      <div class="search-input-wrap" id="sidebar-search-wrap">
+        <i data-lucide="search" class="search-icon-svg"></i>
+        <input type="text" id="sidebar-search-input" placeholder="Search everything…" autocomplete="off"/>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-view="feed">
+        <i data-lucide="home"></i><span>Feed</span>
+      </a>
+      <a class="nav-item" data-view="confessions">
+        <i data-lucide="ghost"></i><span>Confessions</span>
+      </a>
+      <a class="nav-item" data-view="memes">
+        <i data-lucide="laugh"></i><span>Memes</span>
+      </a>
+      <a class="nav-item" data-view="polls">
+        <i data-lucide="bar-chart-2"></i><span>Polls</span>
+      </a>
+      <a class="nav-item" data-view="clubs">
+        <i data-lucide="users"></i><span>Clubs</span>
+      </a>
+      <a class="nav-item" data-view="chats">
+        <i data-lucide="message-circle"></i><span>Chats</span><span class="badge" id="chat-badge" style="display:none">0</span>
+      </a>
+      <a class="nav-item" data-view="friends">
+        <i data-lucide="user-plus"></i><span>Friends</span><span class="badge" id="friend-req-badge" style="display:none">0</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a class="nav-item" data-view="profile">
+        <i data-lucide="user-circle-2"></i><span>Profile</span>
+      </a>
+      <a class="nav-item logout-btn" id="logout-btn">
+        <i data-lucide="log-out"></i><span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Nav -->
+  <nav class="mobile-nav">
+    <a class="mnav-item active" data-view="feed"><i data-lucide="home"></i><span>Feed</span></a>
+    <a class="mnav-item" data-view="confessions"><i data-lucide="ghost"></i><span>Confess</span></a>
+    <a class="mnav-item" data-view="memes"><i data-lucide="laugh"></i><span>Memes</span></a>
+    <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
+    <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
+    <a class="mnav-item" data-view="chats">
+      <i data-lucide="message-circle"></i><span>Chat</span>
+      <span class="notif-badge-mobile" id="chat-badge-mobile" style="display:none">0</span>
+    </a>
+    <a class="mnav-item" data-view="friends">
+      <i data-lucide="user-plus"></i><span>Friends</span>
+      <span class="notif-badge-mobile" id="friend-req-badge-mobile" style="display:none">0</span>
+    </a>
+    <a class="mnav-item" data-view="profile"><i data-lucide="user-circle-2"></i><span>Profile</span></a>
+    <button class="mnav-item notif-bell-mobile" id="notif-bell-mobile" onclick="toggleNotifPanel()">
+      <i data-lucide="bell"></i><span>Alerts</span>
+      <span class="notif-badge-mobile" id="notif-badge-mobile" style="display:none">0</span>
+    </button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="main-content">
+
+    <!-- ── SEARCH VIEW ── -->
+    <section id="view-search" class="view">
+      <div class="view-header">
+        <button id="search-back-btn" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 14px;cursor:pointer;color:var(--text);font-size:14px;display:inline-flex;align-items:center;gap:6px;flex-shrink:0"><i data-lucide="arrow-left" style="width:15px;height:15px"></i> Back</button>
+        <h2 style="flex:1">🔍 Search</h2>
+      </div>
+      <!-- Mobile search bar -->
+      <div class="search-bar-mobile">
+        <div class="search-input-wrap">
+          <i data-lucide="search" class="search-icon-svg"></i>
+          <input type="text" id="mobile-search-input" placeholder="Search everything…" autocomplete="off"/>
+        </div>
+      </div>
+      <!-- Filter tabs -->
+      <div class="search-filter-tabs" id="search-filter-tabs">
+        <button class="search-tab active" data-filter="all">All</button>
+        <button class="search-tab" data-filter="users">👤 Users</button>
+        <button class="search-tab" data-filter="clubs">🏛️ Clubs</button>
+        <button class="search-tab" data-filter="posts">📝 Posts</button>
+        <button class="search-tab" data-filter="memes">😂 Memes</button>
+        <button class="search-tab" data-filter="hashtags"># Tags</button>
+      </div>
+      <div id="search-results" class="search-results">
+        <div class="search-empty-state">
+          <span style="font-size:48px">🔍</span>
+          <p>Search for users, clubs, posts, memes, or hashtags</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FEED ── -->
+    <section id="view-feed" class="view active">
+      <div class="view-header">
+        <h2>🔥 Campus Broz</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-fab btn-fab-search" id="feed-search-btn" title="Search"><i data-lucide="search"></i></button>
+          <button class="btn-fab" id="new-post-btn"><i data-lucide="plus"></i></button>
+        </div>
+      </div>
+
+      <div class="story-bar" id="story-bar">
+        <div class="story add-story" id="add-story-btn">
+          <div class="story-avatar plus">+</div>
+          <span>Add Story</span>
+        </div>
+      </div>
+
+      <div class="post-list" id="feed-list">
+        <div class="loading-spinner">Loading posts…</div>
+      </div>
+    </section>
+
+    <!-- ── CONFESSIONS ── -->
+    <section id="view-confessions" class="view">
+      <div class="view-header">
+        <h2>👻 Confessions</h2>
+        <button class="btn-fab" id="new-confession-btn"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="confession-hero">
+        <p>100% anonymous. No tracking. Just vibes.</p>
+      </div>
+      <div class="post-list" id="confession-list">
+        <div class="loading-spinner">Loading confessions…</div>
+      </div>
+    </section>
+
+    <!-- ── MEMES ── -->
+    <section id="view-memes" class="view">
+      <div class="view-header">
+        <h2>😂 Meme Wall</h2>
+        <button class="btn-fab" id="new-meme-btn"><i data-lucide="image"></i></button>
+      </div>
+      <div class="meme-grid" id="meme-grid">
+        <div class="loading-spinner">Loading memes…</div>
+      </div>
+    </section>
+
+    <!-- ── POLLS ── -->
+    <section id="view-polls" class="view">
+      <div class="view-header">
+        <h2>📊 Polls</h2>
+        <button class="btn-fab" id="new-poll-btn"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="post-list" id="poll-list">
+        <div class="loading-spinner">Loading polls…</div>
+      </div>
+    </section>
+
+    <!-- ── FRIENDS ── -->
+    <section id="view-friends" class="view">
+      <div class="view-header">
+        <h2>🤝 Friends</h2>
+      </div>
+      <div id="friend-requests-section" style="display:none">
+        <div class="friends-section">
+          <div class="friends-section-title">
+            Friend Requests
+            <span id="req-count-badge" class="req-count"></span>
+          </div>
+          <div id="friend-requests-list"></div>
+        </div>
+      </div>
+      <div class="friends-section">
+        <div class="friends-section-title">Your Friends</div>
+        <div id="friends-list"><div class="loading-spinner">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- ── CLUBS ── -->
+    <section id="view-clubs" class="view">
+      <div class="view-header">
+        <h2>🏛️ Clubs</h2>
+        <button class="btn-fab" id="new-club-btn"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="club-grid" id="club-grid">
+        <div class="loading-spinner">Loading clubs…</div>
+      </div>
+    </section>
+
+    <!-- ── CHATS ── -->
+    <section id="view-chats" class="view" style="max-width:900px">
+      <div class="view-header">
+        <h2>💬 Chats</h2>
+      </div>
+      <div class="chat-layout">
+        <div class="chat-list" id="chat-list">
+          <div class="loading-spinner">Loading…</div>
+        </div>
+        <div class="chat-window" id="chat-window">
+          <div class="chat-empty">
+            <i data-lucide="message-circle"></i>
+            <p>Select a conversation</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PROFILE ── -->
+    <section id="view-profile" class="view">
+      <div class="profile-banner"></div>
+      <div class="profile-card">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profile-avatar-display">😎</div>
+          <button class="avatar-edit-btn" id="avatar-edit-btn"><i data-lucide="camera"></i></button>
+        </div>
+        <h2 id="profile-name">Loading…</h2>
+        <p id="profile-username" class="muted">@username</p>
+        <p id="profile-college" class="muted">🎓 College</p>
+        <div class="profile-stats">
+          <div><span id="stat-posts">0</span><small>Posts</small></div>
+          <div><span id="stat-friends">0</span><small>Friends</small></div>
+          <div><span id="stat-clubs">0</span><small>Clubs</small></div>
+        </div>
+        <button class="btn-edit-profile" id="edit-profile-btn"><i data-lucide="pencil"></i> Edit Profile</button>
+        <div class="profile-bio-wrap">
+          <textarea id="profile-bio" placeholder="Write a bio…" rows="3"></textarea>
+          <button class="btn-sm" id="save-bio-btn">Save Bio</button>
+        </div>
+        <div class="profile-badges" id="profile-badges"></div>
+        <div class="post-list" id="my-posts-list"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- New Post Modal -->
+<div class="modal-overlay" id="modal-post">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📝Add New Post</h3>
+      <button class="modal-close" data-modal="modal-post">✕</button>
+    </div>
+    <textarea id="post-text" placeholder="What's on your mind? Use #hashtags!" rows="6"></textarea>
+    <div class="modal-media-preview" id="post-media-preview"></div>
+    <div class="modal-actions">
+      <label class="btn-icon" title="Add Image/Video">
+        <i data-lucide="image"></i>
+        <input type="file" id="post-media-input" accept="image/*,video/*" hidden/>
+      </label>
+      <button class="btn-primary" id="submit-post-btn">Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Confession Modal -->
+<div class="modal-overlay" id="modal-confession">
+  <div class="modal glass-dark">
+    <div class="modal-header">
+      <h3>👻 Anonymous Confession</h3>
+      <button class="modal-close" data-modal="modal-confession">✕</button>
+    </div>
+    <p class="modal-note">Your identity is completely hidden.</p>
+    <textarea id="confession-text" placeholder="Spill it… no one will know." rows="5"></textarea>
+    <div class="field">
+      <select id="confession-category">
+        <option value="general">General</option>
+        <option value="crush">Crush 💘</option>
+        <option value="academics">Academics 📚</option>
+        <option value="hostel">Hostel 🏠</option>
+        <option value="drama">Drama 🎭</option>
+        <option value="funny">Funny 😂</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-confession-btn">Post Anonymously</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Meme Modal -->
+<div class="modal-overlay" id="modal-meme">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>😂 Upload Meme</h3>
+      <button class="modal-close" data-modal="modal-meme">✕</button>
+    </div>
+    <div class="meme-upload-zone" id="meme-upload-zone">
+      <i data-lucide="image-plus"></i>
+      <p>Click or drag to upload meme</p>
+      <input type="file" id="meme-file-input" accept="image/*" hidden/>
+    </div>
+    <div id="meme-preview-wrap"></div>
+    <input type="text" id="meme-caption" placeholder="Caption (optional)" style="margin-top:12px"/>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-meme-btn">Upload Meme</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Poll Modal -->
+<div class="modal-overlay" id="modal-poll">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📈 Add Poll</h3>
+      <button class="modal-close" data-modal="modal-poll">✕</button>
+    </div>
+    <input type="text" id="poll-question" placeholder="Ask a question…"/>
+    <div id="poll-options-wrap">
+      <input type="text" class="poll-option-input" placeholder="Option 1"/>
+      <input type="text" class="poll-option-input" placeholder="Option 2"/>
+    </div>
+    <button class="btn-sm" id="add-poll-option-btn">+ Add Option</button>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-poll-btn">Launch Poll</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Club Modal -->
+<div class="modal-overlay" id="modal-club">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🏛️ Create Club</h3>
+      <button class="modal-close" data-modal="modal-club">✕</button>
+    </div>
+    <input type="text" id="club-name" placeholder="Club Name"/>
+    <textarea id="club-desc" placeholder="What's this club about?" rows="3"></textarea>
+    <div class="field">
+      <select id="club-category">
+        <option value="tech">Tech 💻</option>
+        <option value="arts">Arts 🎨</option>
+        <option value="sports">Sports ⚽</option>
+        <option value="music">Music 🎵</option>
+        <option value="debate">Debate 🗣️</option>
+        <option value="social">Social 🎉</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-club-btn">Create Club</button>
+    </div>
+  </div>
+</div>
+
+<!-- Club Members Modal -->
+<div class="modal-overlay" id="modal-club-members">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="club-members-title">🏛️ Club Members</h3>
+      <button class="modal-close" data-modal="modal-club-members">✕</button>
+    </div>
+    <div id="club-members-list" class="club-members-list">
+      <div class="loading-spinner">Loading members…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Avatar Picker Modal -->
+<div class="modal-overlay" id="modal-avatar">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🎭 Pick Avatar</h3>
+      <button class="modal-close" data-modal="modal-avatar">✕</button>
+    </div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+  </div>
+</div>
+
+<!-- Story Viewer Modal -->
+<div class="modal-overlay" id="modal-story-view">
+  <div class="modal modal-story">
+    <button class="modal-close story-close-btn" data-modal="modal-story-view">✕</button>
+    <div id="story-view-content"></div>
+    <div class="story-viewer-info" id="story-viewer-info"></div>
+  </div>
+</div>
+
+<!-- Chat Window Modal (mobile) -->
+<div class="modal-overlay" id="modal-chat-window">
+  <div class="modal modal-fullscreen">
+    <div class="modal-header">
+      <button class="modal-close" data-modal="modal-chat-window">←</button>
+      <h3 id="chat-window-title">Chat</h3>
+    </div>
+    <div class="chat-messages" id="modal-chat-messages"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="modal-chat-input" placeholder="Type a message…"/>
+      <label class="btn-icon">
+        <i data-lucide="image"></i>
+        <input type="file" id="modal-chat-media" accept="image/*,video/*" hidden/>
+      </label>
+      <button class="btn-send" id="modal-chat-send"><i data-lucide="send"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Progress Bar -->
+<div id="upload-progress-bar">
+  <div id="upb-label">Uploading…</div>
+  <div id="upb-track"><div id="upb-fill"></div></div>
+  <div id="upb-pct">0%</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner-ring"></div>
+</div>
+
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Profile</h3>
+      <button class="modal-close" data-modal="modal-edit-profile">X</button>
+    </div>
+    <div class="edit-profile-pic-section">
+      <div class="edit-profile-pic-preview" id="edit-pic-preview">😎</div>
+      <div class="edit-profile-pic-btns">
+        <label class="btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+          <i data-lucide="image"></i> Upload Photo
+          <input type="file" id="edit-profile-pic-input" accept="image/*" hidden/>
+        </label>
+        <button class="btn-sm" id="edit-pick-avatar-btn" style="margin-top:6px"><i data-lucide="smile"></i> Pick Emoji Avatar</button>
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>Display Name</label>
+      <input type="text" id="edit-profile-name" placeholder="Your name"/>
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="edit-profile-username" placeholder="username (no @)"/>
+    </div>
+    <div class="field">
+      <label>Bio</label>
+      <textarea id="edit-profile-bio" rows="3" placeholder="Write something about yourself..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="save-profile-btn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div id="notif-panel" class="notif-panel">
+  <div class="notif-panel-header">
+    <div class="notif-panel-title"><span class="notif-panel-icon">🔔</span><span>Notifications</span></div>
+    <div class="notif-panel-actions">
+      <button class="notif-mark-all-btn" onclick="markAllNotifsRead()">✓ Mark all read</button>
+      <button class="notif-close-btn" onclick="document.getElementById('notif-panel').classList.remove('open')">✕</button>
+    </div>
+  </div>
+  <div id="notif-list" class="notif-list"></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
