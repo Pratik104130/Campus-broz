@@ -26,6 +26,19 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+console.log('[SW] Loaded');
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[SW] Background message received:', payload);
+  
+  self.registration.showNotification(
+    payload.notification?.title || 'Test',
+    {
+      body: payload.notification?.body || 'Test body'
+    }
+  );
+});
+
 // ── Background message handler ───────────────────────
 // Fires when app is in background / closed
 messaging.onBackgroundMessage(payload => {
