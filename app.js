@@ -52,6 +52,8 @@ let datingProfiles = [];
 let datingIdx = 0;
 let searchDebounce = null;
 let currentSearchFilter = 'all';
+let currentNotesFilter  = 'all';
+let notesSearchDebounce = null;
 let friendsList    = [];   // confirmed friend uids
 let pendingRequests = [];  // incoming request uids (other person sent to me)
 let outgoingRequests = []; // uids I sent requests to
@@ -290,6 +292,8 @@ function initApp() {
   setupGlobalVideoControl();
   setupNotifications();
   loadFriends();
+  setupNotes();
+  initFCM();
   lucide.createIcons();
 }
 
@@ -3329,3 +3333,378 @@ document.addEventListener('click', e => {
     panel.classList.remove('open');
   }
 });
+
+// ══════════════════════════════════════
+// NOTES HUB
+// ══════════════════════════════════════
+
+const NOTE_TYPE_LABELS = {
+  study_notes: '📒 Study Notes',
+  pyq:         '📝 PYQ',
+  assignments: '📋 Assignment',
+  pdf:         '📄 PDF'
+};
+
+const NOTE_TYPE_COLORS = {
+  study_notes: '#4f8ef7',
+  pyq:         '#f7a94f',
+  assignments: '#7ed957',
+  pdf:         '#e05cf7'
+};
+
+function setupNotes() {
+  // Filter tabs
+  document.querySelectorAll('.notes-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.notes-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentNotesFilter = tab.dataset.filter;
+      loadNotes();
+    });
+  });
+
+  // Search
+  const searchInput = document.getElementById('notes-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(notesSearchDebounce);
+      notesSearchDebounce = setTimeout(() => loadNotes(searchInput.value.trim()), 300);
+    });
+  }
+
+  // Open modal
+  document.getElementById('new-note-btn')?.addEventListener('click', () => {
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-subject').value = '';
+    document.getElementById('note-desc').value = '';
+    document.getElementById('note-link').value = '';
+    document.getElementById('note-type').value = 'study_notes';
+    document.getElementById('note-file-preview').style.display = 'none';
+    document.getElementById('note-file-preview').innerHTML = '';
+    _selectedNoteFile = null;
+    openModal('modal-note');
+    lucide.createIcons();
+  });
+
+  // Upload zone click
+  const zone = document.getElementById('note-upload-zone');
+  const fileInput = document.getElementById('note-file-input');
+  zone?.addEventListener('click', () => fileInput?.click());
+  zone?.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone?.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone?.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleNoteFileSelect(f);
+  });
+  fileInput?.addEventListener('change', () => {
+    if (fileInput.files[0]) handleNoteFileSelect(fileInput.files[0]);
+  });
+
+  // Submit
+  document.getElementById('submit-note-btn')?.addEventListener('click', submitNote);
+
+  // Load on view switch (handled by nav)
+  loadNotes();
+}
+
+let _selectedNoteFile = null;
+
+function handleNoteFileSelect(file) {
+  if (file.size > 20 * 1024 * 1024) { toast('File too large (max 20 MB)', 'error'); return; }
+  _selectedNoteFile = file;
+  const preview = document.getElementById('note-file-preview');
+  preview.style.display = 'flex';
+  const isImg = file.type.startsWith('image/');
+  const ext = file.name.split('.').pop().toUpperCase();
+  preview.innerHTML = isImg
+    ? `<img src="${URL.createObjectURL(file)}" style="max-height:80px;border-radius:8px;margin-right:10px"/>
+       <span>${escHtml(file.name)}</span>
+       <button onclick="_selectedNoteFile=null;this.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px">✕</button>`
+    : `<div class="note-file-icon">${ext}</div>
+       <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(file.name)}</span>
+       <button onclick="_selectedNoteFile=null;this.parentElement.style.display='none'" style="margin-left:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px">✕</button>`;
+  lucide.createIcons();
+}
+
+async function submitNote() {
+  const title   = document.getElementById('note-title').value.trim();
+  const subject = document.getElementById('note-subject').value.trim();
+  const type    = document.getElementById('note-type').value;
+  const desc    = document.getElementById('note-desc').value.trim();
+  const link    = document.getElementById('note-link').value.trim();
+
+  if (!title) { toast('Please add a title', 'error'); return; }
+  if (!_selectedNoteFile && !link) { toast('Upload a file or paste a link', 'error'); return; }
+
+  showLoading();
+  try {
+    let fileUrl = null, fileName = null, fileType = null;
+
+    if (_selectedNoteFile) {
+      fileUrl  = await uploadToCloudinary(_selectedNoteFile, 'raw', '📚 Uploading note…');
+      fileName = _selectedNoteFile.name;
+      fileType = _selectedNoteFile.type;
+    }
+
+    await db.collection('notes').add({
+      title, subject, type, desc,
+      fileUrl:  fileUrl  || link,
+      fileName: fileName || null,
+      fileType: fileType || null,
+      isLink:   !_selectedNoteFile,
+      uploaderUid:    currentUser.uid,
+      uploaderName:   currentUserData?.name    || 'Anonymous',
+      uploaderAvatar: currentUserData?.avatar  || '😎',
+      college: currentUserData?.college || '',
+      likes: 0,
+      downloads: 0,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    closeModal('modal-note');
+    toast('Note shared! 📚', 'success');
+    _selectedNoteFile = null;
+    loadNotes();
+  } catch(e) {
+    toast('Upload failed: ' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+function loadNotes(searchQuery) {
+  const grid = document.getElementById('notes-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="loading-spinner">Loading notes…</div>';
+
+  let query = db.collection('notes').orderBy('ts', 'desc').limit(60);
+  if (currentNotesFilter !== 'all') {
+    query = db.collection('notes').where('type', '==', currentNotesFilter).orderBy('ts', 'desc').limit(60);
+  }
+
+  query.get().then(snap => {
+    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      docs = docs.filter(n =>
+        (n.title   || '').toLowerCase().includes(q) ||
+        (n.subject || '').toLowerCase().includes(q) ||
+        (n.uploaderName || '').toLowerCase().includes(q) ||
+        (n.desc    || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (!docs.length) {
+      grid.innerHTML = `<div class="notes-empty">
+        <span style="font-size:48px">📭</span>
+        <p>No notes yet. Be the first to share!</p>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = '';
+    docs.forEach(note => grid.appendChild(buildNoteCard(note)));
+    lucide.createIcons();
+  }).catch(err => {
+    grid.innerHTML = `<div class="notes-empty"><p>Error: ${escHtml(err.message)}</p></div>`;
+  });
+}
+
+function buildNoteCard(note) {
+  const card = document.createElement('div');
+  card.className = 'note-card';
+  const typeColor = NOTE_TYPE_COLORS[note.type] || '#4f8ef7';
+  const typeLabel = NOTE_TYPE_LABELS[note.type] || note.type;
+  const ext = note.fileName ? note.fileName.split('.').pop().toUpperCase() : (note.isLink ? 'LINK' : 'FILE');
+  const isImg = note.fileType && note.fileType.startsWith('image/');
+  const isPdf = note.fileType === 'application/pdf' || (note.fileName || '').endsWith('.pdf');
+
+  card.innerHTML = `
+    <div class="note-card-header">
+      <span class="note-type-badge" style="background:${typeColor}20;color:${typeColor}">${typeLabel}</span>
+      <span class="note-ext-tag">${ext}</span>
+    </div>
+    ${isImg ? `<img src="${escHtml(note.fileUrl)}" class="note-thumb" loading="lazy"/>` : ''}
+    <div class="note-card-body">
+      <div class="note-title">${escHtml(note.title)}</div>
+      ${note.subject ? `<div class="note-subject">📖 ${escHtml(note.subject)}</div>` : ''}
+      ${note.desc    ? `<div class="note-desc-text">${escHtml(note.desc)}</div>` : ''}
+    </div>
+    <div class="note-card-footer">
+      <div class="note-uploader">
+        <span class="note-avatar">${escHtml(note.uploaderAvatar || '😎')}</span>
+        <span>${escHtml(note.uploaderName || 'Anonymous')}</span>
+      </div>
+      <div class="note-actions">
+        <button class="note-like-btn" data-id="${note.id}" title="Helpful">
+          <i data-lucide="thumbs-up"></i> <span>${note.likes || 0}</span>
+        </button>
+        <a class="note-download-btn" href="${escHtml(note.fileUrl)}" target="_blank" rel="noopener"
+           title="${note.isLink ? 'Open link' : 'Download'}" data-id="${note.id}">
+          <i data-lucide="${note.isLink ? 'external-link' : 'download'}"></i>
+        </a>
+      </div>
+    </div>`;
+
+  // Like
+  card.querySelector('.note-like-btn').addEventListener('click', async (e) => {
+    const btn   = e.currentTarget;
+    const likeRef = db.collection('noteLikes').doc(`${note.id}_${currentUser.uid}`);
+    const snap  = await likeRef.get();
+    if (snap.exists) {
+      await likeRef.delete();
+      await db.collection('notes').doc(note.id).update({ likes: firebase.firestore.FieldValue.increment(-1) });
+      btn.classList.remove('liked');
+      btn.querySelector('span').textContent = Math.max(0, (note.likes || 0) - 1);
+      note.likes = Math.max(0, (note.likes || 0) - 1);
+    } else {
+      await likeRef.set({ uid: currentUser.uid, noteId: note.id, ts: firebase.firestore.FieldValue.serverTimestamp() });
+      await db.collection('notes').doc(note.id).update({ likes: firebase.firestore.FieldValue.increment(1) });
+      btn.classList.add('liked');
+      btn.querySelector('span').textContent = (note.likes || 0) + 1;
+      note.likes = (note.likes || 0) + 1;
+    }
+  });
+
+  // Check liked state
+  db.collection('noteLikes').doc(`${note.id}_${currentUser.uid}`).get().then(s => {
+    if (s.exists) card.querySelector('.note-like-btn')?.classList.add('liked');
+  }).catch(() => {});
+
+  // Track download
+  card.querySelector('.note-download-btn')?.addEventListener('click', () => {
+    db.collection('notes').doc(note.id).update({ downloads: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
+  });
+
+  return card;
+}
+
+// ══════════════════════════════════════
+// FCM PUSH NOTIFICATIONS
+// ══════════════════════════════════════
+
+// VAPID key — replace with your actual FCM VAPID public key from Firebase Console
+// Project Settings → Cloud Messaging → Web Push certificates
+const FCM_VAPID_KEY = 'BDCzLnVOJxMpv9RibP-NYCfdB9p2UTRvdfix1YQwsEUwdq_6ckY2siFtDhLVI3tSnO-LU_LEDMsF-aRGsVDS2fo';
+
+let _fcmMessaging = null;
+
+async function initFCM() {
+  // Only show banner if not previously dismissed and notifications not already granted
+  if (localStorage.getItem('fcm_dismissed') === '1') return;
+  if (Notification.permission === 'granted') {
+    await registerFCMToken();
+    return;
+  }
+  if (Notification.permission === 'denied') return;
+
+  // Show the soft-ask banner after a short delay
+  setTimeout(() => {
+    const banner = document.getElementById('fcm-banner');
+    if (banner) banner.style.display = 'flex';
+  }, 3000);
+
+  document.getElementById('fcm-allow-btn')?.addEventListener('click', async () => {
+    document.getElementById('fcm-banner').style.display = 'none';
+    await requestFCMPermission();
+  });
+
+  document.getElementById('fcm-dismiss-btn')?.addEventListener('click', () => {
+    document.getElementById('fcm-banner').style.display = 'none';
+    localStorage.setItem('fcm_dismissed', '1');
+  });
+}
+
+async function requestFCMPermission() {
+  try {
+    
+    if (!("Notification" in window)) {
+      toast("Notifications not supported on this browser", "info");
+      return;
+    }
+    
+    const permission = await Notification.requestPermission();
+    
+    if (permission !== "granted") {
+      toast("Notifications blocked. Enable from browser settings.", "info");
+      return;
+    }
+    
+    await registerFCMToken();
+    toast("🔔 Notifications enabled!", "success");
+    
+  } catch (e) {
+    console.warn("FCM permission error:", e);
+  }
+}
+
+async function registerFCMToken() {
+  try {
+    // Ensure service worker is registered (firebase-messaging-sw.js must exist at root)
+    if (!('serviceWorker' in navigator)) {
+      console.warn('Service workers not supported');
+      return;
+    }
+
+    // Register the FCM service worker
+    let swReg;
+    try {
+      swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    } catch(e) {
+      // If SW not deployed yet, skip silently — won't break the app
+      console.warn('FCM SW not found. Create firebase-messaging-sw.js at your root.', e.message);
+      return;
+    }
+
+    if (!firebase.messaging) {
+      console.warn('Firebase messaging not loaded');
+      return;
+    }
+
+    _fcmMessaging = firebase.messaging();
+
+    const token = await _fcmMessaging.getToken({
+      vapidKey: FCM_VAPID_KEY,
+      serviceWorkerRegistration: swReg
+    });
+
+    if (!token) { console.warn('No FCM token returned'); return; }
+
+    // Save token to Firestore for server-side sends
+    await db.collection('users').doc(currentUser.uid).update({
+      fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+      notifEnabled: true
+    });
+
+    console.log('FCM token registered:', token.substring(0, 20) + '…');
+
+    // Foreground message handler
+    _fcmMessaging.onMessage(payload => {
+      const n = payload.notification || {};
+      showFCMForegroundNotif(n.title || 'CampusBroz', n.body || '', payload.data || {});
+    });
+
+  } catch(e) {
+    console.warn('FCM token registration failed:', e.message);
+  }
+}
+
+function showFCMForegroundNotif(title, body, data) {
+  // Reuse existing in-app toast for foreground notifications
+  toast(`🔔 ${title}: ${body}`, 'info');
+
+  // Also try native Notification if tab is not focused
+  if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
+    try {
+      new Notification(title, {
+        body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: 'campusbroz-notif'
+      });
+    } catch(e) {}
+  }
+}
+

@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
   <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
@@ -118,6 +119,9 @@
       <a class="nav-item" data-view="clubs">
         <i data-lucide="users"></i><span>Clubs</span>
       </a>
+      <a class="nav-item" data-view="notes">
+        <i data-lucide="book-open"></i><span>Notes</span>
+      </a>
       <a class="nav-item" data-view="chats">
         <i data-lucide="message-circle"></i><span>Chats</span><span class="badge" id="chat-badge" style="display:none">0</span>
       </a>
@@ -143,6 +147,7 @@
     <a class="mnav-item" data-view="memes"><i data-lucide="laugh"></i><span>Memes</span></a>
     <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
+    <a class="mnav-item" data-view="notes"><i data-lucide="book-open"></i><span>Notes</span></a>
     <a class="mnav-item" data-view="chats">
       <i data-lucide="message-circle"></i><span>Chat</span>
       <span class="notif-badge-mobile" id="chat-badge-mobile" style="display:none">0</span>
@@ -277,6 +282,33 @@
       </div>
       <div class="club-grid" id="club-grid">
         <div class="loading-spinner">Loading clubs…</div>
+      </div>
+    </section>
+
+    <!-- ── NOTES ── -->
+    <section id="view-notes" class="view">
+      <div class="view-header">
+        <h2>📚 Notes Hub</h2>
+        <button class="btn-fab" id="new-note-btn"><i data-lucide="plus"></i></button>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="notes-filter-tabs" id="notes-filter-tabs">
+        <button class="notes-tab active" data-filter="all">All</button>
+        <button class="notes-tab" data-filter="study_notes">📒 Study Notes</button>
+        <button class="notes-tab" data-filter="pyq">📝 PYQs</button>
+        <button class="notes-tab" data-filter="assignments">📋 Assignments</button>
+        <button class="notes-tab" data-filter="pdf">📄 PDFs</button>
+      </div>
+
+      <!-- Search inside notes -->
+      <div class="notes-search-wrap">
+        <i data-lucide="search" class="notes-search-icon"></i>
+        <input type="text" id="notes-search-input" placeholder="Search notes, subject, uploader…" autocomplete="off"/>
+      </div>
+
+      <div class="notes-grid" id="notes-grid">
+        <div class="loading-spinner">Loading notes…</div>
       </div>
     </section>
 
@@ -551,6 +583,82 @@
   </div>
   <div id="notif-list" class="notif-list"></div>
 </div>
+<!-- New Note Modal -->
+<div class="modal-overlay" id="modal-note">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📚 Share Note / Resource</h3>
+      <button class="modal-close" data-modal="modal-note">✕</button>
+    </div>
+
+    <div class="field">
+      <label>Title *</label>
+      <input type="text" id="note-title" placeholder="e.g. Operating Systems Unit 3 Notes"/>
+    </div>
+
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" id="note-subject" placeholder="e.g. Computer Science, Physics…"/>
+    </div>
+
+    <div class="field">
+      <label>Type *</label>
+      <select id="note-type">
+        <option value="study_notes">📒 Study Notes</option>
+        <option value="pyq">📝 Previous Year Questions</option>
+        <option value="assignments">📋 Assignment</option>
+        <option value="pdf">📄 PDF / Material</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea id="note-desc" rows="2" placeholder="Brief description (optional)"></textarea>
+    </div>
+
+    <!-- File upload zone -->
+    <div class="note-upload-zone" id="note-upload-zone">
+      <i data-lucide="upload-cloud"></i>
+      <p>Click or drag — PDF, Image, DOC</p>
+      <small>Max 20 MB</small>
+      <input type="file" id="note-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*" hidden/>
+    </div>
+    <div id="note-file-preview" class="note-file-preview" style="display:none"></div>
+
+    <!-- OR link -->
+    <div class="divider"><span>or paste a link</span></div>
+    <div class="field">
+      <input type="url" id="note-link" placeholder="Google Drive / OneDrive / any link"/>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-note-btn">📤 Share Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Note Detail Modal -->
+<div class="modal-overlay" id="modal-note-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="note-detail-title">Note</h3>
+      <button class="modal-close" data-modal="modal-note-detail">✕</button>
+    </div>
+    <div id="note-detail-body"></div>
+  </div>
+</div>
+
+<!-- FCM Push Permission Banner -->
+<div id="fcm-banner" class="fcm-banner" style="display:none">
+  <div class="fcm-banner-icon">🔔</div>
+  <div class="fcm-banner-text">
+    <strong>Stay in the loop!</strong>
+    <span>Enable notifications for likes, messages & new notes.</span>
+  </div>
+  <button class="btn-primary fcm-allow-btn" id="fcm-allow-btn">Allow</button>
+  <button class="fcm-dismiss-btn" id="fcm-dismiss-btn">✕</button>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
