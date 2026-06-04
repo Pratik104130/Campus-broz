@@ -3517,6 +3517,12 @@ function loadNotes(searchQuery) {
   });
 }
 
+document.getElementById("testNotif").onclick = () => {
+  new Notification("Test Notification", {
+    body: "Local notification works!"
+  });
+};
+
 function buildNoteCard(note) {
   const card = document.createElement('div');
   card.className = 'note-card';
