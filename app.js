@@ -3597,19 +3597,31 @@ const FCM_VAPID_KEY = 'BDCzLnVOJxMpv9RibP-NYCfdB9p2UTRvdfix1YQwsEUwdq_6ckY2siFtD
 let _fcmMessaging = null;
 
 async function initFCM() {
-  // Only show banner if not previously dismissed and notifications not already granted
+  
+  if (typeof Notification === "undefined") {
+    console.log("Notifications not supported");
+    return;
+  }
+  
+  alert("Notification permission: " + Notification.permission);
+  
   if (localStorage.getItem('fcm_dismissed') === '1') return;
+  
   if (Notification.permission === 'granted') {
     await registerFCMToken();
     return;
   }
-  if (Notification.permission === 'denied') return;
-
-  // Show the soft-ask banner after a short delay
+  
+  if (Notification.permission === 'denied') {
+    toast('Please enable notifications in browser settings', 'info');
+    return;
+  }
+  
   setTimeout(() => {
     const banner = document.getElementById('fcm-banner');
     if (banner) banner.style.display = 'flex';
   }, 3000);
+}
 
   document.getElementById('fcm-allow-btn')?.addEventListener('click', async () => {
     document.getElementById('fcm-banner').style.display = 'none';
