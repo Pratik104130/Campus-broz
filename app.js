@@ -515,6 +515,10 @@ async function performSearch(q) {
   }
 }
 
+
+
+
+
 function renderSearchResults(results, q) {
   const container = $('search-results');
   const filter = currentSearchFilter;
@@ -529,6 +533,7 @@ function renderSearchResults(results, q) {
       </div>`;
     return;
   }
+  
 
   let html = '';
 
@@ -3641,6 +3646,14 @@ async function requestFCMPermission() {
 }
 
 async function registerFCMToken() {
+  const token = await _fcmMessaging.getToken({
+  vapidKey: FCM_VAPID_KEY,
+  serviceWorkerRegistration: swReg
+});
+
+console.log("FCM Token:", token);
+alert(token || "No token");
+
   try {
     // Ensure service worker is registered (firebase-messaging-sw.js must exist at root)
     if (!('serviceWorker' in navigator)) {
