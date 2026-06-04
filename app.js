@@ -3597,31 +3597,31 @@ const FCM_VAPID_KEY = 'BDCzLnVOJxMpv9RibP-NYCfdB9p2UTRvdfix1YQwsEUwdq_6ckY2siFtD
 let _fcmMessaging = null;
 
 async function initFCM() {
-  
+  alert("initFCM started");
+
   if (typeof Notification === "undefined") {
     console.log("Notifications not supported");
     return;
   }
-  
+
   alert("Notification permission: " + Notification.permission);
-  
+
   if (localStorage.getItem('fcm_dismissed') === '1') return;
-  
+
   if (Notification.permission === 'granted') {
     await registerFCMToken();
     return;
   }
-  
+
   if (Notification.permission === 'denied') {
     toast('Please enable notifications in browser settings', 'info');
     return;
   }
-  
+
   setTimeout(() => {
     const banner = document.getElementById('fcm-banner');
     if (banner) banner.style.display = 'flex';
   }, 3000);
-}
 
   document.getElementById('fcm-allow-btn')?.addEventListener('click', async () => {
     document.getElementById('fcm-banner').style.display = 'none';
@@ -3636,55 +3636,36 @@ async function initFCM() {
 
 async function requestFCMPermission() {
   try {
-    
-    if (!("Notification" in window)) {
-      toast("Notifications not supported on this browser", "info");
+    if (typeof Notification === "undefined") {
+      toast("Notifications not supported", "info");
       return;
     }
-    
+
     const permission = await Notification.requestPermission();
-    
+
     if (permission !== "granted") {
-      toast("Notifications blocked. Enable from browser settings.", "info");
+      toast("Notifications blocked", "info");
       return;
     }
-    
+
     await registerFCMToken();
-    toast("🔔 Notifications enabled!", "success");
-    
+
   } catch (e) {
-    console.warn("FCM permission error:", e);
+    console.error("FCM permission error:", e);
   }
 }
 
 async function registerFCMToken() {
-  const token = await _fcmMessaging.getToken({
-  vapidKey: FCM_VAPID_KEY,
-  serviceWorkerRegistration: swReg
-});
-
-console.log("FCM Token:", token);
-alert(token || "No token");
-
   try {
-    // Ensure service worker is registered (firebase-messaging-sw.js must exist at root)
     if (!('serviceWorker' in navigator)) {
       console.warn('Service workers not supported');
       return;
     }
 
-    // Register the FCM service worker
-    let swReg;
-    try {
-      swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    } catch(e) {
-      // If SW not deployed yet, skip silently — won't break the app
-      console.warn('FCM SW not found. Create firebase-messaging-sw.js at your root.', e.message);
-      return;
-    }
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
     if (!firebase.messaging) {
-      console.warn('Firebase messaging not loaded');
+      console.warn('Firebase Messaging SDK not loaded');
       return;
     }
 
@@ -3695,41 +3676,51 @@ alert(token || "No token");
       serviceWorkerRegistration: swReg
     });
 
-    if (!token) { console.warn('No FCM token returned'); return; }
+    if (!token) {
+      alert("No FCM token returned");
+      return;
+    }
 
-    // Save token to Firestore for server-side sends
-    await db.collection('users').doc(currentUser.uid).update({
-      fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
-      notifEnabled: true
-    });
+    alert("FCM Token:\n" + token);
+    console.log("FCM Token:", token);
 
-    console.log('FCM token registered:', token.substring(0, 20) + '…');
+    if (currentUser) {
+      await db.collection('users').doc(currentUser.uid).update({
+        fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+        notifEnabled: true
+      });
+    }
 
-    // Foreground message handler
     _fcmMessaging.onMessage(payload => {
       const n = payload.notification || {};
-      showFCMForegroundNotif(n.title || 'CampusBroz', n.body || '', payload.data || {});
+      showFCMForegroundNotif(
+        n.title || 'CampusBroz',
+        n.body || '',
+        payload.data || {}
+      );
     });
 
-  } catch(e) {
-    console.warn('FCM token registration failed:', e.message);
+  } catch (e) {
+    console.error("FCM token registration failed:", e);
+    alert("FCM Error: " + e.message);
   }
 }
 
-function showFCMForegroundNotif(title, body, data) {
-  // Reuse existing in-app toast for foreground notifications
+function showFCMForegroundNotif(title, body) {
   toast(`🔔 ${title}: ${body}`, 'info');
 
-  // Also try native Notification if tab is not focused
-  if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
-    try {
-      new Notification(title, {
-        body,
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: 'campusbroz-notif'
-      });
-    } catch(e) {}
+  if (
+    typeof Notification !== "undefined" &&
+    document.visibilityState !== 'visible' &&
+    Notification.permission === 'granted'
+  ) {
+    new Notification(title, {
+      body,
+      icon: '/icon-192.png'
+    });
   }
 }
 
+window.addEventListener('load', () => {
+  initFCM();
+});
