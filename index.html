@@ -5,6 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CampusVibes – College Social</title>
   <link rel="stylesheet" href="style.css"/>
+  <style>
+    /* ── Forgot Password ── */
+    .forgot-pw-wrap { text-align: right; margin: -4px 0 10px; }
+    .forgot-pw-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--accent, #6c63ff); font-size: 13px;
+      padding: 0; text-decoration: underline; opacity: 0.85;
+    }
+    .forgot-pw-btn:hover { opacity: 1; }
+
+    /* ── Custom Confirm Dialog ── */
+    .cv-confirm-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.18s;
+    }
+    .cv-confirm-overlay.show { opacity: 1; }
+    .cv-confirm-box {
+      background: var(--surface, #1e1e2e); border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 16px; padding: 24px 22px 18px; max-width: 320px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      transform: translateY(10px); transition: transform 0.18s;
+    }
+    .cv-confirm-overlay.show .cv-confirm-box { transform: translateY(0); }
+    .cv-confirm-msg { font-size: 15px; font-weight: 600; color: var(--text, #fff); margin-bottom: 18px; line-height: 1.4; }
+    .cv-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .cv-confirm-cancel {
+      background: var(--surface2, rgba(255,255,255,0.07)); border: 1px solid var(--border, rgba(255,255,255,0.1));
+      color: var(--muted, #aaa); padding: 8px 18px; border-radius: 10px; cursor: pointer; font-size: 14px;
+      transition: background 0.15s;
+    }
+    .cv-confirm-cancel:hover { background: var(--surface3, rgba(255,255,255,0.12)); }
+    .cv-confirm-ok {
+      background: var(--danger, #ef4444); border: none; color: #fff;
+      padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .cv-confirm-ok:hover { opacity: 0.88; }
+
+    /* ── Note Delete Button ── */
+    .note-delete-btn {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      color: var(--muted, #aaa); padding: 2px 5px; border-radius: 6px;
+      display: flex; align-items: center; font-size: 14px; transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .note-delete-btn:hover { color: var(--danger, #ef4444); }
+    .note-delete-btn i { width: 15px; height: 15px; }
+    .note-card-header { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+
+    /* ── Notification toast improvements ── */
+    .notif-toast {
+      position: fixed; top: 16px; right: 16px; z-index: 9990;
+      background: var(--surface, #1e1e2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.12));
+      border-radius: 14px; padding: 12px 14px; display: flex; align-items: center;
+      gap: 12px; min-width: 280px; max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateX(120%); transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+      cursor: pointer;
+    }
+    .notif-toast.show { transform: translateX(0); }
+
+    /* ── Notification item friend actions ── */
+    .notif-friend-actions {
+      display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+    }
+    .notif-friend-actions .friend-btn.accept {
+      background: var(--accent, #6c63ff); color: #fff; border: none;
+      padding: 5px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
+    }
+    .notif-friend-actions .friend-btn.reject {
+      background: transparent; color: var(--muted, #aaa);
+      border: 1px solid var(--border, rgba(255,255,255,0.15));
+      padding: 5px 14px; border-radius: 8px; cursor: pointer; font-size: 12px;
+    }
+    /* ── Active chat highlight ── */
+    .chat-list-item.active-chat {
+      background: var(--accent, #6c63ff) !important;
+      color: #fff;
+    }
+    .chat-list-item.active-chat strong,
+    .chat-list-item.active-chat small,
+    .chat-list-item.active-chat .chat-time { color: rgba(255,255,255,0.9) !important; }
+  </style>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -44,10 +130,13 @@
       <div class="field">
         <input type="password" id="login-password" placeholder="Password" />
       </div>
+      <div class="forgot-pw-wrap">
+        <button type="button" class="forgot-pw-btn" id="forgot-pw-btn">Forgot password?</button>
+      </div>
       <button class="btn-primary" id="login-btn">Login</button>
       <div class="divider"><span>or</span></div>
-      <button class="btn-google" id="google-login-btn">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20"/>
+      <button class="btn-google" id="google-login-btn" type="button">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20" alt="Google"/>
         Continue with Google
       </button>
     </div>
@@ -71,8 +160,8 @@
       </div>
       <button class="btn-primary" id="signup-btn">Create Account</button>
       <div class="divider"><span>or</span></div>
-      <button class="btn-google" id="google-signup-btn">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20"/>
+      <button class="btn-google" id="google-signup-btn" type="button">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20" alt="Google"/>
         Continue with Google
       </button>
     </div>
@@ -645,6 +734,24 @@
       <button class="modal-close" data-modal="modal-note-detail">✕</button>
     </div>
     <div id="note-detail-body"></div>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal-overlay" id="modal-forgot-pw">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3>🔑 Reset Password</h3>
+      <button class="modal-close" data-modal="modal-forgot-pw">✕</button>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Enter your email and we'll send a reset link.</p>
+    <div class="field">
+      <input type="email" id="forgot-pw-email" placeholder="Your college email" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="forgot-pw-submit-btn">Send Reset Link</button>
+    </div>
+    <div id="forgot-pw-msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
   </div>
 </div>
 

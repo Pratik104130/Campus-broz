@@ -57,6 +57,7 @@ let notesSearchDebounce = null;
 let friendsList    = [];   // confirmed friend uids
 let pendingRequests = [];  // incoming request uids (other person sent to me)
 let outgoingRequests = []; // uids I sent requests to
+let _friendsViewDebounce = null;
 
 // ── DOM HELPERS ──────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -84,6 +85,27 @@ function toast(msg, type = 'info') {
   t.textContent = msg;
   t.className = 'toast show ' + type;
   setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Confirm dialog (replaces alert/confirm popups) ───────────────────
+function showConfirmDialog(message, onConfirm, onCancel) {
+  document.querySelector('.cv-confirm-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'cv-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="cv-confirm-box">
+      <div class="cv-confirm-msg">${escHtml(message)}</div>
+      <div class="cv-confirm-actions">
+        <button class="cv-confirm-cancel">Cancel</button>
+        <button class="cv-confirm-ok">Confirm</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+  const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
+  overlay.querySelector('.cv-confirm-ok').addEventListener('click', () => { close(); onConfirm && onConfirm(); });
+  overlay.querySelector('.cv-confirm-cancel').addEventListener('click', () => { close(); onCancel && onCancel(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) { close(); onCancel && onCancel(); } });
 }
 function showLoading() { show('loading-overlay'); }
 function hideLoading() { hide('loading-overlay'); }
@@ -220,31 +242,84 @@ $('login-btn').addEventListener('click', async () => {
 });
 
 const googleProvider = new firebase.auth.GoogleAuthProvider();
-['google-login-btn','google-signup-btn'].forEach(id => {
-  $(id)?.addEventListener('click', async () => {
-    showLoading();
-    try {
-      const cred = await auth.signInWithPopup(googleProvider);
-      const u = cred.user;
-      const snap = await db.collection('users').doc(u.uid).get();
-      if (!snap.exists) {
-        await db.collection('users').doc(u.uid).set({
-          uid: u.uid, name: u.displayName || 'Student',
-          username: u.email.split('@')[0], college: 'My College',
-          email: u.email, avatar: '😎', bio: '',
-          posts: 0, friends: 0, clubs: [],
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
-    } catch (e) {
-      $('auth-error').textContent = e.message;
-      hideLoading();
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
+
+async function ensureGoogleUserDoc(u) {
+  try {
+    const snap = await db.collection('users').doc(u.uid).get();
+    if (!snap.exists) {
+      await db.collection('users').doc(u.uid).set({
+        uid: u.uid,
+        name: u.displayName || 'Student',
+        username: (u.email || '').split('@')[0].replace(/[^a-z0-9_]/gi, ''),
+        college: 'My College',
+        email: u.email || '',
+        avatar: '😎', bio: '',
+        posts: 0, friends: 0, clubs: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
     }
-  });
+  } catch(e) { console.warn('ensureGoogleUserDoc:', e); }
+}
+
+// ── GOOGLE SIGN-IN (popup — works for local files & hosted apps) ──────
+async function handleGoogleAuth() {
+  const errEl = $('auth-error');
+  if (errEl) errEl.textContent = '';
+  showLoading();
+  try {
+    const cred = await auth.signInWithPopup(googleProvider);
+    // ensureGoogleUserDoc is also called in onAuthStateChanged — but call
+    // here too so the doc exists before the UI switches
+    if (cred && cred.user) await ensureGoogleUserDoc(cred.user);
+    // onAuthStateChanged will fire and open the app automatically
+  } catch(e) {
+    hideLoading();
+    const msg = e.code === 'auth/popup-blocked'
+      ? 'Popup was blocked. Please allow popups for this site and try again.'
+      : e.code === 'auth/popup-closed-by-user'
+      ? 'Sign-in window was closed. Please try again.'
+      : e.code === 'auth/cancelled-popup-request'
+      ? 'Another sign-in is in progress. Please wait.'
+      : e.code === 'auth/unauthorized-domain'
+      ? 'This domain is not authorized. Add it in Firebase Console → Authentication → Settings → Authorized domains.'
+      : e.code === 'auth/operation-not-allowed'
+      ? 'Google sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in providers.'
+      : (e.message || 'Google sign-in failed. Please try again.');
+    if (errEl) errEl.textContent = msg;
+  }
+}
+
+['google-login-btn','google-signup-btn'].forEach(id => {
+  $(id)?.addEventListener('click', handleGoogleAuth);
+});
+
+// ── FORGOT PASSWORD ───────────────────────────────────────────────────
+$('forgot-pw-btn')?.addEventListener('click', () => {
+  const email = $('login-email')?.value?.trim() || '';
+  if (email) {
+    const inp = document.getElementById('forgot-pw-email');
+    if (inp) inp.value = email;
+  }
+  openModal('modal-forgot-pw');
+});
+
+$('forgot-pw-submit-btn')?.addEventListener('click', async () => {
+  const email = $('forgot-pw-email')?.value?.trim();
+  const msg = $('forgot-pw-msg');
+  if (!email) { if(msg) msg.style.color = 'var(--danger)', msg.textContent = 'Please enter your email.'; return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    if (msg) { msg.style.color = 'var(--success, #22c55e)'; msg.textContent = '✅ Reset link sent! Check your inbox.'; }
+    setTimeout(() => closeModal('modal-forgot-pw'), 2500);
+  } catch(e) {
+    if (msg) { msg.style.color = 'var(--danger)'; msg.textContent = e.message || 'Failed to send reset email.'; }
+  }
 });
 
 $('logout-btn').addEventListener('click', () => {
-  if (confirm('Logout?')) auth.signOut();
+  showConfirmDialog('Logout of CampusBroz?', () => auth.signOut());
 });
 
 auth.onAuthStateChanged(async user => {
@@ -252,16 +327,20 @@ auth.onAuthStateChanged(async user => {
   if (user) {
     currentUser = user;
     try {
+      // For Google users, ensure doc exists before loading
+      const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
+      if (isGoogle) await ensureGoogleUserDoc(user);
+
       const snap = await db.collection('users').doc(user.uid).get();
-      currentUserData = snap.data() || {
+      currentUserData = snap.exists ? snap.data() : {
         uid: user.uid, name: user.displayName || 'Student',
-        username: user.email?.split('@')[0] || 'user',
+        username: (user.email?.split('@')[0] || 'user').replace(/[^a-z0-9_]/gi, ''),
         college: 'My College', avatar: '😎', bio: ''
       };
     } catch (e) {
       currentUserData = {
         uid: user.uid, name: user.displayName || 'Student',
-        username: user.email?.split('@')[0] || 'user',
+        username: (user.email?.split('@')[0] || 'user').replace(/[^a-z0-9_]/gi, ''),
         college: 'My College', avatar: '😎', bio: ''
       };
       toast('Connection issue — some features may be limited.', 'error');
@@ -812,7 +891,7 @@ function buildPostCard(id, d, showDelete = null) {
   if (isOwner) {
     card.querySelector('.post-delete-btn')?.addEventListener('click', async e => {
       e.stopPropagation();
-      if (!confirm('Delete this post?')) return;
+      showConfirmDialog('Delete this post?', async () => {
       try {
         await db.collection('posts').doc(id).delete();
         await db.collection('users').doc(currentUser.uid).update({
@@ -823,6 +902,7 @@ function buildPostCard(id, d, showDelete = null) {
         toast('Post deleted', 'success');
         updateProfileStats();
       } catch(e) { toast(e.message, 'error'); }
+      });
     });
   }
 
@@ -881,7 +961,7 @@ function buildPostCard(id, d, showDelete = null) {
 
       vid.play().catch(function(){});
 
-      vid.addEventListener('play',    function() { playBtn.innerHTML = '⏸'; });
+      vid.addEventListener('play',    function() { playBtn.innerHTML = '❚❚'; });
       vid.addEventListener('pause',   function() { playBtn.innerHTML = '▶'; });
       vid.addEventListener('ended',   function() { playBtn.innerHTML = '▶'; wrap.classList.remove('playing'); });
       vid.addEventListener('timeupdate', function() {
@@ -896,7 +976,7 @@ function buildPostCard(id, d, showDelete = null) {
       centerTap.addEventListener('click', function(e) {
         e.stopPropagation();
         if (vid.paused) { vid.play().catch(function(){}); centerIcon.textContent = '▶'; }
-        else            { vid.pause();                    centerIcon.textContent = '⏸'; }
+        else            { vid.pause();                    centerIcon.textContent = '||'; }
         centerIcon.style.opacity = '1';
         clearTimeout(fadeTimer);
         fadeTimer = setTimeout(function() { centerIcon.style.opacity = '0'; }, 700);
@@ -982,7 +1062,7 @@ function buildPostCard(id, d, showDelete = null) {
       });
       // Send notification to post owner (not self)
       if (!liked2 && d.uid && d.uid !== currentUser.uid) {
-        sendNotification(d.uid, 'like', 'liked your post ❤️', null, id);
+        sendNotification(d.uid, 'like', 'liked your post 🔥', null, id);
       }
     } catch(e) { toast('Like failed', 'error'); }
   });
@@ -1044,12 +1124,12 @@ function loadComments(postId) {
             <strong>${escHtml(c.name || 'Student')}</strong>
             ${escHtml(c.text)}
           </div>
-          ${isCommentOwner ? `<button class="comment-delete-btn" title="Delete comment" style="margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;opacity:0.6" data-comment-id="${doc.id}" data-post-id="${postId}">🗑</button>` : ''}
+          ${isCommentOwner ? `<button class="comment-delete-btn" title="Delete comment" style="margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;opacity:0.6" data-comment-id="${doc.id}" data-post-id="${postId}">✖</button>` : ''}
         `;
         if (isCommentOwner) {
           commentEl.querySelector('.comment-delete-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (!confirm('Delete this comment?')) return;
+            showConfirmDialog('Delete this comment?', async () => {
             try {
               await db.collection('posts').doc(postId).collection('comments').doc(doc.id).delete();
               await db.collection('posts').doc(postId).update({ comments: firebase.firestore.FieldValue.increment(-1) });
@@ -1063,6 +1143,7 @@ function loadComments(postId) {
               }
               toast('Comment deleted', 'success');
             } catch(err) { toast(err.message, 'error'); }
+            });
           });
         }
         cl.appendChild(commentEl);
@@ -1112,11 +1193,12 @@ function loadStories() {
         if (isOwn) {
           s.querySelector('.story-delete-btn').addEventListener('click', async e => {
             e.stopPropagation();
-            if (!confirm('Delete this story?')) return;
+            showConfirmDialog('Delete this story?', async () => {
             try {
               await db.collection('stories').doc(sid).delete();
               toast('Story deleted', 'success');
             } catch(err) { toast(err.message, 'error'); }
+            });
           });
         }
         s.addEventListener('click', ev => {
@@ -1321,9 +1403,10 @@ function loadMemes() {
         if (isOwner) {
           card.querySelector('.meme-delete-btn')?.addEventListener('click', async e => {
             e.stopPropagation();
-            if (!confirm('Delete this meme?')) return;
-            await db.collection('memes').doc(doc.id).delete();
-            toast('Meme deleted', 'success');
+            showConfirmDialog('Delete this meme?', async () => {
+              await db.collection('memes').doc(doc.id).delete();
+              toast('Meme deleted', 'success');
+            });
           });
         }
         grid.appendChild(card);
@@ -1430,10 +1513,11 @@ function buildPollCard(id, d) {
   if (isOwner) {
     card.querySelector('.post-delete-btn')?.addEventListener('click', async e => {
       e.stopPropagation();
-      if (!confirm('Delete this poll?')) return;
-      await db.collection('polls').doc(id).delete();
-      card.remove();
-      toast('Poll deleted', 'success');
+      showConfirmDialog('Delete this poll?', async () => {
+        await db.collection('polls').doc(id).delete();
+        card.remove();
+        toast('Poll deleted', 'success');
+      });
     });
   }
   return card;
@@ -1871,9 +1955,10 @@ function buildClubMsgBubble(m, key, clubId) {
     bubble.addEventListener('touchstart', () => { pressTimer = setTimeout(showDel, 800); }, { passive: true });
     bubble.addEventListener('touchend',   () => clearTimeout(pressTimer));
     delBtn.addEventListener('click', async () => {
-      if (!confirm('Delete message?')) return;
-      await rtdb.ref(`clubChats/${clubId}/messages/${key}`).remove().catch(() => {});
-      wrap.remove();
+      showConfirmDialog('Delete message?', async () => {
+        await rtdb.ref(`clubChats/${clubId}/messages/${key}`).remove().catch(() => {});
+        wrap.remove();
+      });
     });
   }
   return wrap;
@@ -2338,8 +2423,30 @@ function loadChatList() {
 }
 
 function startChat(uid, name, avatar) {
+  // 1. Switch to chats view (loads chat list via switchView → loadChatList)
   switchView('chats');
-  setTimeout(() => openChat(getChatId(currentUser.uid, uid), uid, {name, avatar}), 300);
+  // 2. After list renders, open the specific chat and highlight it
+  setTimeout(() => {
+    const chatId = getChatId(currentUser.uid, uid);
+    openChat(chatId, uid, { name, avatar });
+    // Highlight the active item in the chat list
+    setTimeout(() => {
+      document.querySelectorAll('.chat-list-item').forEach(el => {
+        el.classList.remove('active-chat');
+      });
+      // Find the item whose click would open this chat
+      const chatList = document.getElementById('chat-list');
+      if (chatList) {
+        chatList.querySelectorAll('.chat-list-item').forEach(el => {
+          const strongEl = el.querySelector('strong');
+          if (strongEl && strongEl.textContent === name) {
+            el.classList.add('active-chat');
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      }
+    }, 400);
+  }, 300);
 }
 
 async function openChat(chatId, otherUid, otherInfo) {
@@ -2596,12 +2703,13 @@ function buildMsgBubble(m) {
     bubble.addEventListener('touchcancel', cancelPress);
 
     delBtn.addEventListener('click', async () => {
-      if (!confirm('Delete this message?')) return;
+      showConfirmDialog('Delete this message?', async () => {
       try {
         await rtdb.ref(`chats/${currentChatId}/messages/${m.key}`).remove();
         wrap.classList.add('msg-deleting');
         setTimeout(() => wrap.remove(), 300);
       } catch(e) { toast('Could not delete message', 'error'); }
+      });
     });
   }
 
@@ -2699,7 +2807,7 @@ function loadProfile() {
     logoutBtn.className = 'btn-logout-profile';
     logoutBtn.innerHTML = '<i data-lucide="log-out"></i> Logout';
     logoutBtn.style.cssText = 'margin-top:16px;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px 18px;border-radius:10px;cursor:pointer;font-size:14px;width:100%;justify-content:center;';
-    logoutBtn.addEventListener('click', () => { if (confirm('Logout?')) auth.signOut(); });
+    logoutBtn.addEventListener('click', () => { showConfirmDialog('Logout of CampusBroz?', () => auth.signOut()); });
     $('view-profile').querySelector('.profile-card').appendChild(logoutBtn);
     lucide.createIcons();
   }
@@ -2897,89 +3005,93 @@ function loadFriends() {
       updateBadge('friend-req-badge',        pendingRequests.length);
       updateBadge('friend-req-badge-mobile', pendingRequests.length);
 
-      // If Friends view is currently open, re-render it
+      // Debounce: snapshot fires multiple times during accept/reject — only render once
+      clearTimeout(_friendsViewDebounce);
       const view = document.getElementById('view-friends');
       if (view && view.classList.contains('active')) {
-        loadFriendsView();
+        _friendsViewDebounce = setTimeout(() => loadFriendsView(), 300);
       }
     }, err => console.warn('friends listener:', err));
 }
 
+let _friendsViewLoading = false;
+
 async function loadFriendsView() {
-  const reqSection = document.getElementById('friend-requests-section');
-  const reqList    = document.getElementById('friend-requests-list');
-  const fList      = document.getElementById('friends-list');
-  if (!fList) return;
+  if (_friendsViewLoading) return;
+  _friendsViewLoading = true;
+  try {
+    const reqSection = document.getElementById('friend-requests-section');
+    const reqList    = document.getElementById('friend-requests-list');
+    const fList      = document.getElementById('friends-list');
+    if (!fList) return;
 
-  // ── Pending incoming requests ─────────────────
-  if (pendingRequests.length > 0) {
-    if (reqSection) reqSection.style.display = '';
-    const badge = document.getElementById('req-count-badge');
-    if (badge) badge.textContent = pendingRequests.length;
+    // ── Pending incoming requests ─────────────────
+    if (pendingRequests.length > 0) {
+      if (reqSection) reqSection.style.display = '';
+      const badge = document.getElementById('req-count-badge');
+      if (badge) badge.textContent = pendingRequests.length;
 
-    if (reqList) {
-      reqList.innerHTML = '<div class="loading-spinner" style="padding:12px">Loading requests…</div>';
-      try {
-        const users = await fetchUsersByUids(pendingRequests);
+      if (reqList) {
+        reqList.innerHTML = '<div class="loading-spinner" style="padding:12px">Loading requests…</div>';
+        const users = await fetchUsersByUids(pendingRequests).catch(() => []);
         reqList.innerHTML = '';
 
-        if (users.length === 0) {
-          // Docs not saved yet — show basic rows with uid only
-          pendingRequests.forEach(uid => {
-            const row = document.createElement('div');
-            row.className = 'friend-req-row';
-            row.innerHTML = `
-              <div class="friend-avatar"><span class="friend-avatar-emoji">😎</span></div>
-              <div class="friend-info"><strong>New Friend Request</strong><small>${uid.slice(0,8)}…</small></div>
-              <div class="friend-req-btns">
-                <button class="friend-btn accept" onclick="acceptFriendRequest('${uid}');this.closest('.friend-req-row').remove()">Accept</button>
-                <button class="friend-btn reject" onclick="rejectFriendRequest('${uid}');this.closest('.friend-req-row').remove()">Decline</button>
-              </div>`;
-            reqList.appendChild(row);
-          });
-          return;
-        }
+        const reqUids = users.length > 0
+          ? users.map(u => u.uid)
+          : pendingRequests;
 
-        users.forEach(u => {
+        // Deduplicate by uid
+        const seen = new Set();
+        (users.length > 0 ? users : pendingRequests.map(uid => ({ uid, name: null }))).forEach(item => {
+          const uid = item.uid || item;
+          if (seen.has(uid)) return;
+          seen.add(uid);
+
           const row = document.createElement('div');
           row.className = 'friend-req-row';
-          const avatarHtml = u.profilePic
-            ? `<img src="${escHtml(u.profilePic)}" class="friend-avatar-img"/>`
-            : `<span class="friend-avatar-emoji">${u.avatar || '😎'}</span>`;
+          row.dataset.uid = uid;
+          const avatarHtml = item.profilePic
+            ? `<img src="${escHtml(item.profilePic)}" class="friend-avatar-img"/>`
+            : `<span class="friend-avatar-emoji">${item.avatar || '😎'}</span>`;
           row.innerHTML = `
             <div class="friend-avatar">${avatarHtml}</div>
             <div class="friend-info">
-              <strong>${escHtml(u.name || 'Student')}</strong>
-              <small>@${escHtml(u.username || 'user')} · 🎓 ${escHtml(u.college || '')}</small>
+              <strong>${escHtml(item.name || 'New Request')}</strong>
+              <small>${item.username ? '@' + escHtml(item.username) : uid.slice(0,8) + '…'}${item.college ? ' · 🎓 ' + escHtml(item.college) : ''}</small>
             </div>
             <div class="friend-req-btns">
-              <button class="friend-btn accept" onclick="acceptFriendRequest('${u.uid}');this.closest('.friend-req-row').remove()">Accept</button>
-              <button class="friend-btn reject" onclick="rejectFriendRequest('${u.uid}');this.closest('.friend-req-row').remove()">Decline</button>
+              <button class="friend-btn accept">✓ Accept</button>
+              <button class="friend-btn reject">✕ Decline</button>
             </div>`;
+
+          row.querySelector('.friend-btn.accept').addEventListener('click', async () => {
+            row.remove();
+            await acceptFriendRequest(uid);
+          });
+          row.querySelector('.friend-btn.reject').addEventListener('click', async () => {
+            row.remove();
+            await rejectFriendRequest(uid);
+          });
           reqList.appendChild(row);
         });
-      } catch(e) {
-        reqList.innerHTML = `<p style="color:var(--danger);padding:12px">${escHtml(e.message)}</p>`;
       }
+    } else {
+      if (reqSection) reqSection.style.display = 'none';
     }
-  } else {
-    if (reqSection) reqSection.style.display = 'none';
-  }
 
-  // ── Confirmed friends ─────────────────────────
-  if (friendsList.length === 0) {
-    fList.innerHTML = `
-      <div class="friends-empty">
-        <span style="font-size:40px">🤝</span>
-        <p>No friends yet</p>
-        <small>Search for classmates and send a request!</small>
-      </div>`;
-    return;
-  }
+    // ── Confirmed friends ─────────────────────────
+    if (friendsList.length === 0) {
+      fList.innerHTML = `
+        <div class="friends-empty">
+          <span style="font-size:40px">🤝</span>
+          <p>No friends yet</p>
+          <small>Search for classmates and send a request!</small>
+        </div>`;
+      return;
+    }
 
-  fList.innerHTML = '<div class="loading-spinner" style="padding:12px">Loading friends…</div>';
-  try {
-    const users = await fetchUsersByUids(friendsList);
+    fList.innerHTML = '<div class="loading-spinner" style="padding:12px">Loading friends…</div>';
+    const users = await fetchUsersByUids(friendsList).catch(() => []);
     fList.innerHTML = '';
 
     if (users.length === 0) {
@@ -2992,7 +3104,12 @@ async function loadFriendsView() {
       return;
     }
 
+    // Deduplicate confirmed friends by uid
+    const seenFriends = new Set();
     users.forEach(u => {
+      if (seenFriends.has(u.uid)) return;
+      seenFriends.add(u.uid);
+
       const row = document.createElement('div');
       row.className = 'friend-row';
       const avatarHtml = u.profilePic
@@ -3005,15 +3122,22 @@ async function loadFriendsView() {
           <small>@${escHtml(u.username || 'user')} · 🎓 ${escHtml(u.college || '')}</small>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="friend-btn msg"
-            onclick="startChat('${u.uid}','${escHtml(u.name||'User')}','${escHtml(u.avatar||'😎')}');switchView('chats')"
-            title="Message">💬</button>
-          <button class="friend-btn unfriend small" onclick="unfriend('${u.uid}')">Remove</button>
+          <button class="friend-btn msg" title="Open chat">💬 Chat</button>
+          <button class="friend-btn unfriend small">Remove</button>
         </div>`;
+
+      // Chat button: startChat already calls switchView('chats')
+      row.querySelector('.friend-btn.msg').addEventListener('click', () => {
+        startChat(u.uid, u.name || 'User', u.avatar || '😎');
+      });
+      row.querySelector('.friend-btn.unfriend').addEventListener('click', () => unfriend(u.uid));
       fList.appendChild(row);
     });
   } catch(e) {
-    fList.innerHTML = `<p style="color:var(--danger);padding:12px">${escHtml(e.message)}</p>`;
+    const fList = document.getElementById('friends-list');
+    if (fList) fList.innerHTML = `<p style="color:var(--danger);padding:12px">${escHtml(e.message)}</p>`;
+  } finally {
+    _friendsViewLoading = false;
   }
 }
 
@@ -3091,7 +3215,8 @@ async function rejectFriendRequest(fromUid) {
 }
 
 async function unfriend(uid) {
-  if (!currentUser || !confirm('Unfriend this person?')) return;
+  if (!currentUser) return;
+  showConfirmDialog('Unfriend this person?', async () => {
   try {
     await Promise.all([
       db.collection('friends').doc(currentUser.uid).set(
@@ -3110,6 +3235,7 @@ async function unfriend(uid) {
     const view = document.getElementById('view-friends');
     if (view && view.classList.contains('active')) loadFriendsView();
   } catch(e) { toast(e.message, 'error'); }
+  });
 }
 
 function getFriendStatus(uid) {
@@ -3163,19 +3289,34 @@ function setupNotifications() {
   if (_notifListener)     _notifListener();
   if (_chatBadgeListener) _chatBadgeListener();
 
-  // ── Bell badge: unread notifications ──
+  // ── Auto-delete notifications older than 3 days (no composite index needed) ──
+  const threeDaysAgoMs = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  db.collection('notifications')
+    .where('toUid', '==', currentUser.uid)
+    .limit(60)
+    .get().then(snap => {
+      const batch = db.batch();
+      let count = 0;
+      snap.forEach(doc => {
+        const tsMs = doc.data().ts?.toMillis?.() || 0;
+        if (tsMs > 0 && tsMs < threeDaysAgoMs) { batch.delete(doc.ref); count++; }
+      });
+      if (count > 0) batch.commit().catch(() => {});
+    }).catch(() => {});
+
+  // ── Bell badge: unread notifications (single where = no index needed) ──
   _notifListener = db.collection('notifications')
     .where('toUid', '==', currentUser.uid)
-    .where('read',  '==', false)
-    .orderBy('ts', 'desc')
-    .limit(30)
+    .limit(50)
     .onSnapshot(snap => {
+      const unreadDocs = snap.docs.filter(d => !d.data().read);
       _prevNotifCount = _notifCount;
-      _notifCount = snap.size;
+      _notifCount = unreadDocs.length;
       updateNotifBadge(_notifCount);
       snap.docChanges().forEach(change => {
         if (change.type !== 'added') return;
         const d   = change.doc.data();
+        if (d.read) return; // skip already-read
         const tsMs = d.ts?.toMillis?.() || 0;
         if (Date.now() - tsMs < 7000) {
           showNotifToast(d, change.doc.id);
@@ -3220,12 +3361,15 @@ function updateNotifBadge(count) {
 }
 
 function markAllNotifsRead() {
+  // Single where only — no composite index needed. Filter client-side.
   db.collection('notifications')
-    .where('toUid','==',currentUser.uid).where('read','==',false)
+    .where('toUid','==',currentUser.uid)
+    .limit(50)
     .get().then(snap => {
       const batch = db.batch();
-      snap.forEach(doc => batch.update(doc.ref, { read: true }));
-      return batch.commit();
+      let count = 0;
+      snap.forEach(doc => { if (!doc.data().read) { batch.update(doc.ref, { read: true }); count++; } });
+      return count > 0 ? batch.commit() : Promise.resolve();
     }).then(() => {
       document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
       document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
@@ -3240,7 +3384,7 @@ function showNotifToast(d, docId) {
   const avatarHtml = d.fromProfilePic
     ? `<img src="${escHtml(d.fromProfilePic)}" class="notif-toast-avatar-img"/>`
     : `<span class="notif-toast-avatar-emoji">${d.fromAvatar||'😎'}</span>`;
-  const icon = {like:'❤️',comment:'💬',friend_request:'🤝',friend_accept:'✅',message:'💬',match:'💖',club_join:'🏛️'}[d.type]||'🔔';
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️'}[d.type]||'🔔';
   t.innerHTML = `
     <div class="notif-toast-avatar">${avatarHtml}</div>
     <div class="notif-toast-body">
@@ -3272,20 +3416,27 @@ function loadNotifPanel() {
   const list = document.getElementById('notif-list');
   if (!list) return;
   list.innerHTML = '<div class="notif-loading"><div class="notif-skeleton"></div><div class="notif-skeleton"></div><div class="notif-skeleton"></div></div>';
+  // No orderBy — avoids composite index requirement. Sort client-side.
   db.collection('notifications')
     .where('toUid','==',currentUser.uid)
-    .orderBy('ts','desc').limit(40)
+    .limit(40)
     .get().then(snap => {
       if (snap.empty) {
         list.innerHTML = `<div class="notif-empty"><span style="font-size:40px">🔔</span><p>No notifications yet</p><small>Likes, comments & friend requests appear here</small></div>`;
         return;
       }
+      // Sort newest-first client-side
+      const sorted = snap.docs.slice().sort((a, b) => {
+        const aT = a.data().ts?.toMillis?.() || 0;
+        const bT = b.data().ts?.toMillis?.() || 0;
+        return bT - aT;
+      });
       const batch = db.batch(); let hasUnread = false;
-      snap.forEach(doc => { if(!doc.data().read){ batch.update(doc.ref,{read:true}); hasUnread=true; } });
+      sorted.forEach(doc => { if(!doc.data().read){ batch.update(doc.ref,{read:true}); hasUnread=true; } });
       if (hasUnread) batch.commit().catch(()=>{});
       list.innerHTML = '';
-      const unread = snap.docs.filter(d=>!d.data().read);
-      const read   = snap.docs.filter(d=> d.data().read);
+      const unread = sorted.filter(d=>!d.data().read);
+      const read   = sorted.filter(d=> d.data().read);
       if (unread.length) { const lbl=document.createElement('div'); lbl.className='notif-section-label'; lbl.textContent='New'; list.appendChild(lbl); unread.forEach(doc=>list.appendChild(buildNotifItem(doc))); }
       if (read.length)   { const lbl=document.createElement('div'); lbl.className='notif-section-label read-label'; lbl.textContent='Earlier'; list.appendChild(lbl); read.forEach(doc=>list.appendChild(buildNotifItem(doc))); }
     }).catch(err => { list.innerHTML = `<div style="padding:16px;color:var(--muted)">${escHtml(err.message)}</div>`; });
@@ -3295,7 +3446,7 @@ function buildNotifItem(doc) {
   const d = doc.data();
   const item = document.createElement('div');
   item.className = 'notif-item' + (d.read ? '' : ' unread');
-  const icon = {like:'❤️',comment:'💬',friend_request:'🤝',friend_accept:'✅',message:'💬',match:'💖',club_join:'🏛️'}[d.type]||'🔔';
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️'}[d.type]||'🔔';
   const avatarHtml = d.fromProfilePic
     ? `<img src="${escHtml(d.fromProfilePic)}" class="notif-item-avatar-img"/>`
     : `<span class="notif-item-avatar-emoji">${d.fromAvatar||'😎'}</span>`;
@@ -3525,12 +3676,13 @@ function buildNoteCard(note) {
   const typeLabel = NOTE_TYPE_LABELS[note.type] || note.type;
   const ext = note.fileName ? note.fileName.split('.').pop().toUpperCase() : (note.isLink ? 'LINK' : 'FILE');
   const isImg = note.fileType && note.fileType.startsWith('image/');
-  const isPdf = note.fileType === 'application/pdf' || (note.fileName || '').endsWith('.pdf');
+  const isOwner = note.uploaderUid === currentUser.uid;
 
   card.innerHTML = `
     <div class="note-card-header">
       <span class="note-type-badge" style="background:${typeColor}20;color:${typeColor}">${typeLabel}</span>
       <span class="note-ext-tag">${ext}</span>
+      ${isOwner ? `<button class="note-delete-btn" title="Delete note"><i data-lucide="trash-2"></i></button>` : ''}
     </div>
     ${isImg ? `<img src="${escHtml(note.fileUrl)}" class="note-thumb" loading="lazy"/>` : ''}
     <div class="note-card-body">
@@ -3553,6 +3705,20 @@ function buildNoteCard(note) {
         </a>
       </div>
     </div>`;
+
+  // Owner delete
+  if (isOwner) {
+    card.querySelector('.note-delete-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showConfirmDialog('Delete this note?', async () => {
+        try {
+          await db.collection('notes').doc(note.id).delete();
+          card.remove();
+          toast('Note deleted', 'success');
+        } catch(err) { toast(err.message, 'error'); }
+      });
+    });
+  }
 
   // Like
   card.querySelector('.note-like-btn').addEventListener('click', async (e) => {
