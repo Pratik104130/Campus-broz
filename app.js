@@ -3517,11 +3517,6 @@ function loadNotes(searchQuery) {
   });
 }
 
-document.getElementById("testNotif").onclick = () => {
-  new Notification("Test Notification", {
-    body: "Local notification works!"
-  });
-};
 
 function buildNoteCard(note) {
   const card = document.createElement('div');
@@ -3596,21 +3591,19 @@ function buildNoteCard(note) {
 // FCM PUSH NOTIFICATIONS
 // ══════════════════════════════════════
 
-// VAPID key — replace with your actual FCM VAPID public key from Firebase Console
-// Project Settings → Cloud Messaging → Web Push certificates
 const FCM_VAPID_KEY = 'BDCzLnVOJxMpv9RibP-NYCfdB9p2UTRvdfix1YQwsEUwdq_6ckY2siFtDhLVI3tSnO-LU_LEDMsF-aRGsVDS2fo';
 
-let _fcmMessaging = null;
+let _fcmMessaging   = null;
+let _fcmInitialized = false; // prevent double-init
 
 async function initFCM() {
-  alert("initFCM started");
+  if (_fcmInitialized) return; // guard against double-call
+  _fcmInitialized = true;
 
-  if (typeof Notification === "undefined") {
-    console.log("Notifications not supported");
+  if (typeof Notification === 'undefined') {
+    console.log('[FCM] Notifications not supported');
     return;
   }
-
-  alert("Notification permission: " + Notification.permission);
 
   if (localStorage.getItem('fcm_dismissed') === '1') return;
 
@@ -3620,7 +3613,7 @@ async function initFCM() {
   }
 
   if (Notification.permission === 'denied') {
-    toast('Please enable notifications in browser settings', 'info');
+    console.log('[FCM] Notifications blocked by user');
     return;
   }
 
@@ -3632,50 +3625,43 @@ async function initFCM() {
   document.getElementById('fcm-allow-btn')?.addEventListener('click', async () => {
     document.getElementById('fcm-banner').style.display = 'none';
     await requestFCMPermission();
-  });
+  }, { once: true });
 
   document.getElementById('fcm-dismiss-btn')?.addEventListener('click', () => {
     document.getElementById('fcm-banner').style.display = 'none';
     localStorage.setItem('fcm_dismissed', '1');
-  });
+  }, { once: true });
 }
 
 async function requestFCMPermission() {
   try {
-    if (typeof Notification === "undefined") {
-      toast("Notifications not supported", "info");
-      return;
-    }
-
     const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      toast("Notifications blocked", "info");
+    if (permission !== 'granted') {
+      toast('Notifications blocked — enable in browser settings', 'info');
       return;
     }
-
     await registerFCMToken();
-
   } catch (e) {
-    console.error("FCM permission error:", e);
+    console.error('[FCM] Permission request error:', e);
   }
 }
 
 async function registerFCMToken() {
   try {
     if (!('serviceWorker' in navigator)) {
-      console.warn('Service workers not supported');
+      console.warn('[FCM] Service workers not supported');
       return;
     }
 
     const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready; // wait until SW is fully active
 
     if (!firebase.messaging) {
-      console.warn('Firebase Messaging SDK not loaded');
+      console.warn('[FCM] Firebase Messaging SDK not loaded');
       return;
     }
 
-    _fcmMessaging = firebase.messaging();
+    if (!_fcmMessaging) _fcmMessaging = firebase.messaging();
 
     const token = await _fcmMessaging.getToken({
       vapidKey: FCM_VAPID_KEY,
@@ -3683,32 +3669,28 @@ async function registerFCMToken() {
     });
 
     if (!token) {
-      alert("No FCM token returned");
+      console.warn('[FCM] No token returned — check VAPID key and SW path');
       return;
     }
 
-    alert("FCM Token:\n" + token);
-    console.log("FCM Token:", token);
+    console.log('[FCM] Token:', token);
 
     if (currentUser) {
       await db.collection('users').doc(currentUser.uid).update({
-        fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+        fcmTokens:    firebase.firestore.FieldValue.arrayUnion(token),
         notifEnabled: true
       });
     }
 
     _fcmMessaging.onMessage(payload => {
       const n = payload.notification || {};
-      showFCMForegroundNotif(
-        n.title || 'CampusBroz',
-        n.body || '',
-        payload.data || {}
-      );
+      showFCMForegroundNotif(n.title || 'CampusBroz', n.body || '', payload.data || {});
     });
 
+    toast('🔔 Notifications enabled!', 'success');
+
   } catch (e) {
-    console.error("FCM token registration failed:", e);
-    alert("FCM Error: " + e.message);
+    console.error('[FCM] Token registration failed:', e);
   }
 }
 
@@ -3716,17 +3698,12 @@ function showFCMForegroundNotif(title, body) {
   toast(`🔔 ${title}: ${body}`, 'info');
 
   if (
-    typeof Notification !== "undefined" &&
-    document.visibilityState !== 'visible' &&
-    Notification.permission === 'granted'
+    typeof Notification !== 'undefined' &&
+    Notification.permission === 'granted' &&
+    document.visibilityState !== 'visible'
   ) {
-    new Notification(title, {
-      body,
-      icon: '/icon-192.png'
-    });
+    new Notification(title, { body, icon: '/icon-192.png' });
   }
 }
-
-window.addEventListener('load', () => {
-  initFCM();
-});
+// NOTE: initFCM() is called from initApp() after auth resolves.
+// Do NOT call it again on window.load — that caused a double-init bug.
