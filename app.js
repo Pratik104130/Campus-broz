@@ -131,6 +131,16 @@ function escHtml(str) {
     .replace(/'/g,'&#39;');
 }
 
+// ── AVATAR HELPER ────────────────────────────────
+// Returns HTML for a user avatar: photo img if available, else emoji
+function renderAvatarHtml(avatarEmoji, profilePicUrl, size) {
+  size = size || 36;
+  if (profilePicUrl) {
+    return `<img src="${escHtml(profilePicUrl)}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block;" loading="lazy" onerror="this.outerHTML='<span style=\\'font-size:${Math.round(size*0.55)}px\\'>${escHtml(avatarEmoji || '😎')}</span>'"/>`;
+  }
+  return escHtml(avatarEmoji || '😎');
+}
+
 // Extract hashtags from text
 function extractHashtags(text) {
   if (!text) return [];
@@ -283,7 +293,7 @@ async function handleGoogleAuth() {
       : e.code === 'auth/cancelled-popup-request'
       ? 'Another sign-in is in progress. Please wait.'
       : e.code === 'auth/unauthorized-domain'
-      ? 'This domain is not authorized. Add it in Firebase Console → Authentication → Settings → Authorized domains.'
+      ? `This domain is not authorized for Google Sign-In. To fix: open Firebase Console → Authentication → Settings → Authorized domains → Add "${window.location.hostname}"`
       : e.code === 'auth/operation-not-allowed'
       ? 'Google sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in providers.'
       : (e.message || 'Google sign-in failed. Please try again.');
@@ -311,7 +321,7 @@ $('forgot-pw-submit-btn')?.addEventListener('click', async () => {
   if (!email) { if(msg) msg.style.color = 'var(--danger)', msg.textContent = 'Please enter your email.'; return; }
   try {
     await auth.sendPasswordResetEmail(email);
-    if (msg) { msg.style.color = 'var(--success, #22c55e)'; msg.textContent = '✅ Reset link sent! Check your inbox.'; }
+    if (msg) { msg.style.color = 'var(--success, #22c55e)'; msg.textContent = '✅ Reset link sent! Check your inbox check spam folder.'; }
     setTimeout(() => closeModal('modal-forgot-pw'), 2500);
   } catch(e) {
     if (msg) { msg.style.color = 'var(--danger)'; msg.textContent = e.message || 'Failed to send reset email.'; }
@@ -760,6 +770,7 @@ $('submit-post-btn').addEventListener('click', async () => {
       uid:      currentUser.uid,
       name:     currentUserData.name     || currentUser.displayName || 'Student',
       avatar:   currentUserData.avatar   || '😎',
+      profilePic: currentUserData.profilePic || '',
       username: currentUserData.username || (currentUser.email ? currentUser.email.split('@')[0] : 'user'),
       college:  currentUserData.college  || '',
       text:     text     || '',
@@ -846,7 +857,7 @@ function buildPostCard(id, d, showDelete = null) {
 
   card.innerHTML = `
     <div class="post-header">
-      <div class="post-avatar">${d.avatar || '😎'}</div>
+      <div class="post-avatar">${renderAvatarHtml(d.avatar, d.profilePic, 36)}</div>
       <div class="post-meta">
         <strong>${d.name || 'Student'}</strong>
         <small>@${d.username || 'user'} · ${timeAgo(d.createdAt)}</small>
@@ -1085,6 +1096,7 @@ function buildPostCard(id, d, showDelete = null) {
         uid: currentUser.uid,
         name: currentUserData.name,
         avatar: currentUserData.avatar,
+        profilePic: currentUserData.profilePic || '',
         text: txt,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -1119,7 +1131,7 @@ function loadComments(postId) {
         const commentEl = document.createElement('div');
         commentEl.className = 'comment-item';
         commentEl.innerHTML = `
-          <div class="c-avatar">${c.avatar || '😎'}</div>
+          <div class="c-avatar">${renderAvatarHtml(c.avatar, c.profilePic, 28)}</div>
           <div class="comment-body">
             <strong>${escHtml(c.name || 'Student')}</strong>
             ${escHtml(c.text)}
@@ -1232,6 +1244,7 @@ $('add-story-btn').addEventListener('click', () => {
         uid:      currentUser.uid,
         name:     currentUserData.name   || currentUser.displayName || 'Student',
         avatar:   currentUserData.avatar || '😎',
+        profilePic: currentUserData.profilePic || '',
         mediaUrl: url,
         isVideo:  !!isVideo,
         expiresAt: firebase.firestore.Timestamp.fromDate(exp),
@@ -1250,7 +1263,7 @@ function viewStory(d) {
       `<video id="story-vid" src="${d.mediaUrl}" autoplay muted playsinline
         style="width:100%;max-height:75vh;object-fit:contain;display:block;background:#000"></video>`;
     $('story-viewer-info').innerHTML = `
-      <span style="font-size:26px">${d.avatar||'😎'}</span>
+      <span style="width:26px;height:26px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--grad-main)">${renderAvatarHtml(d.avatar, d.profilePic, 26)}</span>
       <span>${escHtml(d.name||'User')}</span>
       <button id="story-sound-btn" onclick="(function(){var v=document.getElementById('story-vid');v.muted=!v.muted;document.getElementById('story-sound-btn').textContent=v.muted?'🔇':'🔊';})()"
         style="margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font-size:16px">🔇</button>`;
@@ -1258,7 +1271,7 @@ function viewStory(d) {
     $('story-view-content').innerHTML =
       `<img src="${d.mediaUrl}" style="width:100%;max-height:75vh;object-fit:contain;display:block"/>`;
     $('story-viewer-info').innerHTML = `
-      <span style="font-size:26px">${d.avatar||'😎'}</span>
+      <span style="width:26px;height:26px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--grad-main)">${renderAvatarHtml(d.avatar, d.profilePic, 26)}</span>
       <span>${escHtml(d.name||'User')}</span>
       <span style="margin-left:auto;font-size:12px;opacity:.7">24h</span>`;
   }
@@ -1936,7 +1949,7 @@ function buildClubMsgBubble(m, key, clubId) {
   const wrap = document.createElement('div');
   wrap.className = `chat-msg ${mine ? 'mine' : ''}`;
   wrap.innerHTML = `
-    ${!mine ? `<div class="msg-avatar">${m.avatar || '😎'}</div>` : ''}
+    ${!mine ? `<div class="msg-avatar">${renderAvatarHtml(m.avatar, m.profilePic, 32)}</div>` : ''}
     <div class="msg-inner">
       ${!mine ? `<div style="font-size:11px;color:var(--muted);margin-bottom:2px">${escHtml(m.name||'Student')}</div>` : ''}
       <div class="msg-bubble">${escHtml(m.text || '')}</div>
@@ -2070,7 +2083,9 @@ function renderClubChat(body, clubId, clubData, isMember) {
     inp.value = '';
     rtdb.ref(`clubChats/${clubId}/messages`).push({
       uid: currentUser.uid, name: currentUserData.name || 'Student',
-      avatar: currentUserData.avatar || '😎', text: txt, ts: Date.now()
+      avatar: currentUserData.avatar || '😎',
+      profilePic: currentUserData.profilePic || '',
+      text: txt, ts: Date.now()
     }).catch(() => {});
   };
   document.getElementById('club-dash-send').addEventListener('click', doSend);
@@ -2559,6 +2574,7 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
     uid:      currentUser.uid,
     name:     currentUserData.name   || currentUser.displayName || 'Student',
     avatar:   currentUserData.avatar || '😎',
+    profilePic: currentUserData.profilePic || '',
     text:     text     || '',
     mediaUrl: mediaUrl,
     isVideo:  isVideo,
@@ -2665,7 +2681,7 @@ function buildMsgBubble(m) {
     : '';
 
   wrap.innerHTML = `
-    ${!mine ? `<div class="msg-avatar">${m.avatar || '😎'}</div>` : ''}
+    ${!mine ? `<div class="msg-avatar">${renderAvatarHtml(m.avatar, m.profilePic, 32)}</div>` : ''}
     <div class="msg-inner">
       <div class="msg-bubble">${content}${media}</div>
       <div class="msg-time">${new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${tickHtml}</div>
@@ -3612,6 +3628,7 @@ async function submitNote() {
       uploaderUid:    currentUser.uid,
       uploaderName:   currentUserData?.name    || 'Anonymous',
       uploaderAvatar: currentUserData?.avatar  || '😎',
+      uploaderPic:    currentUserData?.profilePic || '',
       college: currentUserData?.college || '',
       likes: 0,
       downloads: 0,
@@ -3692,7 +3709,7 @@ function buildNoteCard(note) {
     </div>
     <div class="note-card-footer">
       <div class="note-uploader">
-        <span class="note-avatar">${escHtml(note.uploaderAvatar || '😎')}</span>
+        <span class="note-avatar" style="width:20px;height:20px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center">${renderAvatarHtml(note.uploaderAvatar, note.uploaderPic, 20)}</span>
         <span>${escHtml(note.uploaderName || 'Anonymous')}</span>
       </div>
       <div class="note-actions">
