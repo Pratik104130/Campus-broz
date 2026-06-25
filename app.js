@@ -36,6 +36,14 @@ db.enablePersistence({ synchronizeTabs: true })
 const CLOUD_NAME = 'dqnulhh54';
 const UPLOAD_PRESET = 'Friendsc';
 
+// ── ADMIN CONFIG ──────────────────────────────────
+// Emails listed here get admin powers (must match admin.html's list too,
+// and must match the list baked into Firestore rules — see rules file).
+const ADMIN_EMAILS = ['admin@broz.com'];
+function isCurrentUserAdmin() {
+  return !!(currentUser && currentUser.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase()));
+}
+
 // ── AVATARS ──────────────────────────────────────
 const AVATARS = ['😎','🤓','🎓','😜','🦊','🐼','🦋','🐸','🌸','🎭','🦁','🐯',
                  '🐵','🦄','🐺','🦀','🎃','👻','🤖','👽','💀','🧠','🔥','⚡',
@@ -332,11 +340,156 @@ $('logout-btn').addEventListener('click', () => {
   showConfirmDialog('Logout of CampusBroz?', () => auth.signOut());
 });
 
+// ── BAN SCREEN ────────────────────────────────────
+function showBannedScreen(reason) {
+  document.querySelector('.cv-banned-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'cv-banned-overlay';
+  overlay.innerHTML = `
+    <div class="cv-banned-box">
+      <div class="cv-banned-icon">🚫</div>
+      <h2>You are banned</h2>
+      <p>${escHtml(reason || 'Your account has been banned by an admin and can no longer access CampusBroz.')}</p>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+}
+
+// ── BAN LISTENER (real-time — kicks user out the moment they're banned) ──
+let _banListenerUnsub = null;
+function startBanListener(uid) {
+  stopBanListener();
+  _banListenerUnsub = db.collection('users').doc(uid).onSnapshot(snap => {
+    const d = snap.data();
+    if (d && d.banned === true) {
+      stopBanListener();
+      stopPresence();
+      const reason = d.banReason || '';
+      auth.signOut().finally(() => showBannedScreen(reason));
+    }
+  });
+}
+function stopBanListener() {
+  if (_banListenerUnsub) { _banListenerUnsub(); _banListenerUnsub = null; }
+}
+
+// ── PRESENCE (RTDB — online/offline + last seen) ─────────────────────
+let _presenceRef = null;
+function startPresence(uid, profile) {
+  stopPresence();
+  _presenceRef = rtdb.ref('presence/' + uid);
+  const connectedRef = rtdb.ref('.info/connected');
+  connectedRef.on('value', snap => {
+    if (!snap.val()) return;
+    _presenceRef.onDisconnect().set({
+      online: false,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP,
+      name: profile?.name || 'Student',
+      avatar: profile?.avatar || '😎',
+      profilePic: profile?.profilePic || ''
+    }).then(() => {
+      _presenceRef.set({
+        online: true,
+        lastSeen: firebase.database.ServerValue.TIMESTAMP,
+        name: profile?.name || 'Student',
+        avatar: profile?.avatar || '😎',
+        profilePic: profile?.profilePic || ''
+      });
+    });
+  });
+}
+function stopPresence() {
+  if (_presenceRef) { _presenceRef.set({ online: false, lastSeen: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{}); _presenceRef = null; }
+  rtdb.ref('.info/connected').off();
+}
+
+// ── PINNED FEED MESSAGE ───────────────────────────────────────────────
+function loadPinnedMessage() {
+  db.collection('config').doc('pinnedMessage').onSnapshot(snap => {
+    const list = $('feed-list');
+    if (!list) return;
+    const existing = document.getElementById('pinned-feed-banner');
+    if (existing) existing.remove();
+    const d = snap.exists ? snap.data() : null;
+    if (!d || !d.text) return;
+    const banner = document.createElement('div');
+    banner.id = 'pinned-feed-banner';
+    banner.className = 'pinned-feed-banner';
+    banner.innerHTML = `
+      <i data-lucide="pin"></i>
+      <span class="pinned-feed-text">${highlightHashtags(d.text)}</span>`;
+    list.prepend(banner);
+    lucide.createIcons();
+  }, () => {});
+}
+
+// ── CLUB CREATION GATING (admin-only) ─────────────────────────────────
+function applyAdminUiGates() {
+  const btn = $('new-club-btn');
+  if (!btn) return;
+  if (isCurrentUserAdmin()) {
+    btn.style.display = '';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// ── BROADCAST NOTIFICATIONS (admin → all users, single shared doc) ────
+function setupBroadcastListener() {
+  db.collection('config').doc('broadcast').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const d = snap.data();
+    if (!d || !d.text || !d.ts) return;
+    const seenKey = 'cv_broadcast_seen';
+    const lastSeenMs = parseInt(localStorage.getItem(seenKey) || '0', 10);
+    const broadcastMs = d.ts.toMillis ? d.ts.toMillis() : 0;
+    if (broadcastMs <= lastSeenMs) return; // already shown this one
+    localStorage.setItem(seenKey, String(broadcastMs));
+    showBroadcastToast(d.text);
+  }, () => {});
+}
+
+function showBroadcastToast(text) {
+  document.querySelector('.cv-broadcast-toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'cv-broadcast-toast';
+  t.innerHTML = `
+    <div class="cv-broadcast-icon">📢</div>
+    <div class="cv-broadcast-body">
+      <div class="cv-broadcast-title">Announcement</div>
+      <div class="cv-broadcast-text">${escHtml(text)}</div>
+    </div>
+    <button class="cv-broadcast-close">×</button>`;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  t.querySelector('.cv-broadcast-close').addEventListener('click', () => {
+    t.classList.remove('show'); setTimeout(() => t.remove(), 300);
+  });
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 8000);
+  playNotifSound();
+}
+
 auth.onAuthStateChanged(async user => {
   hideLoading();
   if (user) {
+    // ── Admin accounts never see the student app — send them to admin.html ──
+    if (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+      showLoading();
+      toast('Admin account detected — redirecting to the admin panel…', 'info');
+      setTimeout(() => { window.location.href = 'admin.html'; }, 600);
+      return;
+    }
     currentUser = user;
     try {
+      // Check ban status BEFORE loading the app
+      const preSnap = await db.collection('users').doc(user.uid).get();
+      if (preSnap.exists && preSnap.data().banned === true) {
+        const reason = preSnap.data().banReason || '';
+        await auth.signOut();
+        showBannedScreen(reason);
+        return;
+      }
+
       // For Google users, ensure doc exists before loading
       const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
       if (isGoogle) await ensureGoogleUserDoc(user);
@@ -359,7 +512,14 @@ auth.onAuthStateChanged(async user => {
     $('app-screen').classList.add('active');
     lucide.createIcons();
     initApp();
+    startBanListener(user.uid);
+    startPresence(user.uid, currentUserData);
+    applyAdminUiGates();
+    loadPinnedMessage();
+    setupBroadcastListener();
   } else {
+    stopBanListener();
+    stopPresence();
     currentUser = null;
     currentUserData = null;
     $('app-screen').classList.remove('active');
@@ -1165,57 +1325,91 @@ function loadComments(postId) {
 
 // ══════════════════════════════════════
 // STORIES  (supports images + videos, auto-delete 24h)
+// Grouped Instagram-style: one bubble per user, tap plays
+// through all of that user's active stories in sequence.
 // ══════════════════════════════════════
+let _storyGroups = []; // [{uid, name, avatar, profilePic, stories:[{id,...}]}], newest-active-user first
+
 function loadStories() {
   const bar = $('story-bar');
   db.collection('stories')
     .where('expiresAt', '>', firebase.firestore.Timestamp.now())
-    .orderBy('expiresAt').limit(20).onSnapshot(snap => {
+    .orderBy('expiresAt').limit(60).onSnapshot(snap => {
       bar.querySelectorAll('.story:not(.add-story)').forEach(n => n.remove());
+
+      // Group all active stories by uid, preserving chronological order within each group
+      const groupsByUid = new Map();
       snap.forEach(doc => {
-        const d   = doc.data();
-        const sid = doc.id;
-        const isOwn = d.uid === currentUser.uid;
+        const d = doc.data();
+        const entry = { id: doc.id, ...d };
+        if (!groupsByUid.has(d.uid)) groupsByUid.set(d.uid, []);
+        groupsByUid.get(d.uid).push(entry);
+      });
+      // Sort each user's own stories oldest→newest so playback is chronological
+      groupsByUid.forEach(arr => arr.sort((a, b) => {
+        const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return at - bt;
+      }));
+
+      _storyGroups = Array.from(groupsByUid.entries()).map(([uid, stories]) => {
+        const latest = stories[stories.length - 1];
+        return { uid, name: latest.name, avatar: latest.avatar, profilePic: latest.profilePic, stories };
+      });
+      // Own stories bubble first, then by most-recently-posted
+      _storyGroups.sort((a, b) => {
+        if (a.uid === currentUser.uid) return -1;
+        if (b.uid === currentUser.uid) return 1;
+        const at = a.stories[a.stories.length-1].createdAt?.toMillis?.() || 0;
+        const bt = b.stories[b.stories.length-1].createdAt?.toMillis?.() || 0;
+        return bt - at;
+      });
+
+      _storyGroups.forEach(group => {
+        const isOwn = group.uid === currentUser.uid;
+        const hasVideo = group.stories.some(s => s.isVideo);
+        const latest = group.stories[group.stories.length - 1];
         const s = document.createElement('div');
         s.className = 'story';
-        const isVid = d.isVideo;
-        // Single ring colour: gradient for own, accent for others
         let thumb = '';
-        if (d.mediaUrl && d.mediaUrl.includes('/upload/')) {
-          if (isVid) {
-            const t = d.mediaUrl.replace('/upload/', '/upload/so_0,w_80,h_80,c_fill,f_jpg/').replace(/\.\w+$/, '.jpg');
+        if (latest.mediaUrl && latest.mediaUrl.includes('/upload/')) {
+          if (latest.isVideo) {
+            const t = latest.mediaUrl.replace('/upload/', '/upload/so_0,w_80,h_80,c_fill,f_jpg/').replace(/\.\w+$/, '.jpg');
             thumb = `<img src="${t}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0" onerror="this.remove()"/>`;
           } else {
-            const t = d.mediaUrl.replace('/upload/', '/upload/w_80,h_80,c_fill/');
+            const t = latest.mediaUrl.replace('/upload/', '/upload/w_80,h_80,c_fill/');
             thumb = `<img src="${t}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0" onerror="this.remove()"/>`;
           }
         }
-        const ringClass = isOwn ? 'story-ring-own' : (isVid ? 'story-ring-vid' : 'story-ring-img');
+        const ringClass = isOwn ? 'story-ring-own' : (hasVideo ? 'story-ring-vid' : 'story-ring-img');
+        const segCount = group.stories.length;
         s.innerHTML = `
           <div class="story-ring-wrap ${ringClass}">
             <div class="story-avatar-inner" style="position:relative;overflow:hidden;">
               ${thumb}
-              ${isVid ? '<span class="story-vid-badge">▶</span>' : ''}
-              <span style="font-size:20px;position:relative;z-index:1">${d.avatar||'😎'}</span>
+              ${hasVideo ? '<span class="story-vid-badge">▶</span>' : ''}
+              <span style="font-size:20px;position:relative;z-index:1">${latest.avatar||'😎'}</span>
             </div>
-            ${isOwn ? `<button class="story-delete-btn" data-id="${sid}" title="Delete story">×</button>` : ''}
+            ${segCount > 1 ? `<span class="story-count-badge">${segCount}</span>` : ''}
+            ${isOwn ? `<button class="story-delete-btn" data-uid="${group.uid}" title="Delete latest story">×</button>` : ''}
           </div>
-          <span>${escHtml(d.name?.split(' ')[0] || 'User')}</span>`;
-        // Delete button
+          <span>${escHtml(group.name?.split(' ')[0] || 'User')}</span>`;
         if (isOwn) {
           s.querySelector('.story-delete-btn').addEventListener('click', async e => {
             e.stopPropagation();
-            showConfirmDialog('Delete this story?', async () => {
-            try {
-              await db.collection('stories').doc(sid).delete();
-              toast('Story deleted', 'success');
-            } catch(err) { toast(err.message, 'error'); }
+            showConfirmDialog('Delete all your active stories?', async () => {
+              try {
+                const batch = db.batch();
+                group.stories.forEach(st => batch.delete(db.collection('stories').doc(st.id)));
+                await batch.commit();
+                toast('Stories deleted', 'success');
+              } catch(err) { toast(err.message, 'error'); }
             });
           });
         }
         s.addEventListener('click', ev => {
           if (ev.target.classList.contains('story-delete-btn')) return;
-          viewStory(d, sid);
+          openStoryGroup(group.uid);
         });
         bar.appendChild(s);
       });
@@ -1256,27 +1450,126 @@ $('add-story-btn').addEventListener('click', () => {
   input.click();
 });
 
-function viewStory(d) {
-  const isVid = d.isVideo;
-  if (isVid) {
-    $('story-view-content').innerHTML =
-      `<video id="story-vid" src="${d.mediaUrl}" autoplay muted playsinline
-        style="width:100%;max-height:75vh;object-fit:contain;display:block;background:#000"></video>`;
-    $('story-viewer-info').innerHTML = `
-      <span style="width:26px;height:26px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--grad-main)">${renderAvatarHtml(d.avatar, d.profilePic, 26)}</span>
-      <span>${escHtml(d.name||'User')}</span>
-      <button id="story-sound-btn" onclick="(function(){var v=document.getElementById('story-vid');v.muted=!v.muted;document.getElementById('story-sound-btn').textContent=v.muted?'🔇':'🔊';})()"
-        style="margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font-size:16px">🔇</button>`;
-  } else {
-    $('story-view-content').innerHTML =
-      `<img src="${d.mediaUrl}" style="width:100%;max-height:75vh;object-fit:contain;display:block"/>`;
-    $('story-viewer-info').innerHTML = `
-      <span style="width:26px;height:26px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--grad-main)">${renderAvatarHtml(d.avatar, d.profilePic, 26)}</span>
-      <span>${escHtml(d.name||'User')}</span>
-      <span style="margin-left:auto;font-size:12px;opacity:.7">24h</span>`;
-  }
+// ── SEQUENTIAL STORY VIEWER (Instagram-style) ──────────────────────────
+let _storyPlayer = { groupIdx: 0, segIdx: 0, timer: null, videoEl: null };
+
+function openStoryGroup(uid) {
+  const groupIdx = _storyGroups.findIndex(g => g.uid === uid);
+  if (groupIdx === -1) return;
+  _storyPlayer.groupIdx = groupIdx;
+  _storyPlayer.segIdx = 0;
   openModal('modal-story-view');
+  renderStorySegment();
 }
+
+function clearStoryTimer() {
+  if (_storyPlayer.timer) { clearTimeout(_storyPlayer.timer); _storyPlayer.timer = null; }
+  if (_storyPlayer.videoEl) { _storyPlayer.videoEl.onended = null; _storyPlayer.videoEl = null; }
+}
+
+function renderStorySegment() {
+  clearStoryTimer();
+  const group = _storyGroups[_storyPlayer.groupIdx];
+  if (!group) { closeModal('modal-story-view'); return; }
+  const d = group.stories[_storyPlayer.segIdx];
+  if (!d) { closeModal('modal-story-view'); return; }
+
+  // Build segmented progress bar (one segment per story in this user's group)
+  const segHtml = group.stories.map((_, i) => `
+    <div class="story-seg-track">
+      <div class="story-seg-fill" data-seg="${i}" style="width:${i < _storyPlayer.segIdx ? '100%' : '0%'}"></div>
+    </div>`).join('');
+
+  const isVid = d.isVideo;
+  $('story-view-content').innerHTML = `
+    <div class="story-seg-bar">${segHtml}</div>
+    ${isVid
+      ? `<video id="story-vid" src="${d.mediaUrl}" autoplay muted playsinline
+          style="width:100%;max-height:75vh;object-fit:contain;display:block;background:#000"></video>`
+      : `<img src="${d.mediaUrl}" style="width:100%;max-height:75vh;object-fit:contain;display:block"/>`}
+    <div class="story-tap-zones">
+      <div class="story-tap-prev"></div>
+      <div class="story-tap-next"></div>
+    </div>`;
+
+  $('story-viewer-info').innerHTML = `
+    <span style="width:26px;height:26px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--grad-main)">${renderAvatarHtml(d.avatar, d.profilePic, 26)}</span>
+    <span>${escHtml(d.name||'User')}</span>
+    <span style="margin-left:6px;font-size:11px;opacity:.65">${timeAgo(d.createdAt)}</span>
+    ${isVid ? `<button id="story-sound-btn" style="margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font-size:16px">🔇</button>`
+            : `<span style="margin-left:auto;font-size:12px;opacity:.7">24h</span>`}`;
+
+  // Tap zones: prev / next segment (across groups at the edges)
+  $('story-view-content').querySelector('.story-tap-prev').addEventListener('click', () => stepStory(-1));
+  $('story-view-content').querySelector('.story-tap-next').addEventListener('click', () => stepStory(1));
+
+  if (isVid) {
+    const vid = $('story-vid');
+    _storyPlayer.videoEl = vid;
+    $('story-sound-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      vid.muted = !vid.muted;
+      $('story-sound-btn').textContent = vid.muted ? '🔇' : '🔊';
+    });
+    animateSegFill(_storyPlayer.segIdx, 0); // duration driven by video end, fallback handled below
+    vid.onended = () => stepStory(1);
+    // Safety fallback in case video metadata is slow / video fails silently
+    _storyPlayer.timer = setTimeout(() => stepStory(1), 20000);
+  } else {
+    animateSegFill(_storyPlayer.segIdx, 5000);
+    _storyPlayer.timer = setTimeout(() => stepStory(1), 5000);
+  }
+}
+
+function animateSegFill(idx, durationMs) {
+  const fill = document.querySelector(`.story-seg-fill[data-seg="${idx}"]`);
+  if (!fill) return;
+  fill.style.width = '0%';
+  if (durationMs > 0) {
+    requestAnimationFrame(() => {
+      fill.style.transition = `width ${durationMs}ms linear`;
+      fill.style.width = '100%';
+    });
+  } else {
+    // video-driven: just snap to filling immediately, real end comes from onended
+    fill.style.transition = 'width 300ms linear';
+    fill.style.width = '100%';
+  }
+}
+
+function stepStory(dir) {
+  clearStoryTimer();
+  const group = _storyGroups[_storyPlayer.groupIdx];
+  if (!group) { closeModal('modal-story-view'); return; }
+  let nextSeg = _storyPlayer.segIdx + dir;
+  if (nextSeg >= group.stories.length) {
+    // advance to next user's group
+    const nextGroupIdx = _storyPlayer.groupIdx + 1;
+    if (nextGroupIdx >= _storyGroups.length) { closeModal('modal-story-view'); return; }
+    _storyPlayer.groupIdx = nextGroupIdx;
+    _storyPlayer.segIdx = 0;
+    renderStorySegment();
+    return;
+  }
+  if (nextSeg < 0) {
+    // go to previous user's group, at their last segment
+    const prevGroupIdx = _storyPlayer.groupIdx - 1;
+    if (prevGroupIdx < 0) { renderStorySegment(); return; } // already first story overall
+    _storyPlayer.groupIdx = prevGroupIdx;
+    _storyPlayer.segIdx = _storyGroups[prevGroupIdx].stories.length - 1;
+    renderStorySegment();
+    return;
+  }
+  _storyPlayer.segIdx = nextSeg;
+  renderStorySegment();
+}
+
+document.querySelector('.story-close-btn')?.addEventListener('click', () => {
+  clearStoryTimer();
+});
+document.getElementById('modal-story-view')?.addEventListener('click', e => {
+  if (e.target.id === 'modal-story-view') clearStoryTimer();
+});
 
 // ══════════════════════════════════════
 // CONFESSIONS
@@ -1540,8 +1833,12 @@ function buildPollCard(id, d) {
 // ══════════════════════════════════════
 // CLUBS  (with Members view)
 // ══════════════════════════════════════
-$('new-club-btn').addEventListener('click', () => openModal('modal-club'));
+$('new-club-btn').addEventListener('click', () => {
+  if (!isCurrentUserAdmin()) { toast('Only admins can create clubs', 'error'); return; }
+  openModal('modal-club');
+});
 $('submit-club-btn').addEventListener('click', async () => {
+  if (!isCurrentUserAdmin()) { toast('Only admins can create clubs', 'error'); return; }
   const name = $('club-name').value.trim();
   const desc = $('club-desc').value.trim();
   const cat  = $('club-category').value;
