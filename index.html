@@ -222,6 +222,7 @@
       </div>
       <div class="field">
         <input type="text" id="signup-username" placeholder="Username (e.g. @coolkid)" />
+        <small id="signup-username-hint" style="display:block;margin-top:4px;font-size:12px"></small>
       </div>
       <div class="field">
         <input type="text" id="signup-college" placeholder="Your College / University" />
@@ -311,10 +312,7 @@
     <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
     <a class="mnav-item" data-view="notes"><i data-lucide="book-open"></i><span>Notes</span></a>
-    <a class="mnav-item" data-view="chats">
-      <i data-lucide="message-circle"></i><span>Chat</span>
-      <span class="notif-badge-mobile" id="chat-badge-mobile" style="display:none">0</span>
-    </a>
+
     <a class="mnav-item" data-view="friends">
       <i data-lucide="user-plus"></i><span>Friends</span>
       <span class="notif-badge-mobile" id="friend-req-badge-mobile" style="display:none">0</span>
@@ -389,7 +387,7 @@
       </div>
       <div class="confession-hero">
         <p>100% anonymous. No tracking. Just vibes.</p>
-        <p>Message Disappeare after 6 Hours.</p>
+        <p>After 6 hrs chat will disappear</p>
       </div>
       <div class="post-list" id="confession-list">
         <div class="loading-spinner">Loading confessions…</div>
@@ -1087,15 +1085,49 @@ document.querySelectorAll('.tab').forEach(btn => {
   });
 });
 
+let _usernameCheckDebounce = null;
+$('signup-username')?.addEventListener('input', () => {
+  const hint = $('signup-username-hint');
+  const raw = $('signup-username').value.trim().replace('@', '').toLowerCase();
+  clearTimeout(_usernameCheckDebounce);
+  if (!raw) { hint.textContent = ''; return; }
+  hint.textContent = 'Checking availability…';
+  hint.style.color = 'var(--muted, #888)';
+  _usernameCheckDebounce = setTimeout(async () => {
+    try {
+      const dup = await db.collection('users').where('username', '==', raw).limit(1).get();
+      // Only trust the result if the field hasn't changed since we asked
+      if ($('signup-username').value.trim().replace('@', '').toLowerCase() !== raw) return;
+      if (!dup.empty) {
+        hint.textContent = `@${raw} is already taken`;
+        hint.style.color = 'var(--danger, #f66)';
+      } else {
+        hint.textContent = `@${raw} is available ✓`;
+        hint.style.color = 'var(--success, #4caf50)';
+      }
+    } catch (e) { hint.textContent = ''; }
+  }, 500);
+});
+
 $('signup-btn').addEventListener('click', async () => {
   const name     = $('signup-name').value.trim();
-  const username = $('signup-username').value.trim().replace('@','');
+  const username = $('signup-username').value.trim().replace('@','').toLowerCase();
   const college  = $('signup-college').value.trim();
   const email    = $('signup-email').value.trim();
   const password = $('signup-password').value;
   if (!name || !username || !college || !email || !password) return toast('Fill all fields', 'error');
   showLoading();
   try {
+    // Username must be unique — check before creating the auth account so we
+    // don't end up with an orphaned account if the username is taken.
+    const dupCheck = await db.collection('users').where('username', '==', username).limit(1).get();
+    if (!dupCheck.empty) {
+      $('auth-error').textContent = `Username "@${username}" is already taken. Please choose another.`;
+      toast('That username is already taken', 'error');
+      hideLoading();
+      return;
+    }
+
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await cred.user.updateProfile({ displayName: name });
     await db.collection('users').doc(cred.user.uid).set({
