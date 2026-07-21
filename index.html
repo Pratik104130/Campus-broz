@@ -286,7 +286,8 @@
         <i data-lucide="book-open"></i><span>Notes</span>
       </a>
       <a class="nav-item" data-view="chats">
-        <i data-lucide="message-circle"></i><span>Chats</span><span class="badge" id="chat-badge" style="display:none">0</span>
+        <i data-lucide="message-circle"></i><span>Chats</span>
+        <span class="badge" id="chat-badge" style="display:none">0</span>
       </a>
       <a class="nav-item" data-view="friends">
         <i data-lucide="user-plus"></i><span>Friends</span><span class="badge" id="friend-req-badge" style="display:none">0</span>
@@ -311,10 +312,7 @@
     <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
     <a class="mnav-item" data-view="notes"><i data-lucide="book-open"></i><span>Notes</span></a>
-    <a class="mnav-item" data-view="chats">
-      <i data-lucide="message-circle"></i><span>Chat</span>
-      <span class="notif-badge-mobile" id="chat-badge-mobile" style="display:none">0</span>
-    </a>
+
     <a class="mnav-item" data-view="friends">
       <i data-lucide="user-plus"></i><span>Friends</span>
       <span class="notif-badge-mobile" id="friend-req-badge-mobile" style="display:none">0</span>
@@ -433,6 +431,11 @@
       </div>
       <div class="friends-section">
         <div class="friends-section-title">Your Friends</div>
+        <div class="friends-search-wrap" style="position:relative;margin-bottom:10px">
+          <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted,#888);pointer-events:none"></i>
+          <input type="text" id="friends-search-input" placeholder="Search your friends…"
+                 style="width:100%;padding:10px 12px 10px 36px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,0.12));background:var(--surface2,rgba(255,255,255,0.06));color:inherit;font-size:14px;box-sizing:border-box"/>
+        </div>
         <div id="friends-list"><div class="loading-spinner">Loading…</div></div>
       </div>
     </section>
@@ -899,8 +902,7 @@ let currentUserData = null;
 let currentChatId = null;
 let currentChatUid = null;
 let chatListener = null;
-let datingProfiles = [];
-let datingIdx = 0;
+let chatListUnsub = null;
 let searchDebounce = null;
 let currentSearchFilter = 'all';
 let currentNotesFilter  = 'all';
@@ -3557,13 +3559,18 @@ function getChatId(uid1, uid2) {
 function loadChatList() {
   const list = $('chat-list');
   list.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  // Unsubscribe any previous listener first — otherwise re-entering the Chats
+  // tab stacks up multiple onSnapshot listeners, and an older stale one can
+  // fire after the newer one and overwrite the list, hiding a chat that was
+  // just created.
+  if (chatListUnsub) { chatListUnsub(); chatListUnsub = null; }
   // No orderBy to avoid composite index requirement; sort client-side
-  db.collection('chats')
+  chatListUnsub = db.collection('chats')
     .where('members', 'array-contains', currentUser.uid)
     .onSnapshot(snap => {
       list.innerHTML = '';
       if (snap.empty) {
-        list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">No chats yet.<br/>Match someone in Dating! 💘</div>';
+        list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">No chats yet.<br/>Start a conversation with a friend! 💬</div>';
         return;
       }
       // Sort by lastMessageAt client-side (desc)
@@ -3594,6 +3601,9 @@ function loadChatList() {
         item.addEventListener('click', () => openChat(doc.id, other, otherInfo));
         list.appendChild(item);
       });
+    }, err => {
+      console.error('Chat list listener failed:', err);
+      list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">Could not load chats: ' + escHtml(err.message || 'permission error') + '</div>';
     });
 }
 
@@ -3630,23 +3640,42 @@ async function openChat(chatId, otherUid, otherInfo) {
   markChatRead(chatId);
 
   const chatRef = db.collection('chats').doc(chatId);
-  const snap = await chatRef.get();
+  let snap;
+  try {
+    snap = await chatRef.get();
+  } catch (err) {
+    console.error('Failed to read chat doc:', err);
+    toast('Could not open chat: ' + (err.message || 'permission error'), 'error');
+    return;
+  }
   if (!snap.exists) {
-    await chatRef.set({
-      members: [currentUser.uid, otherUid].filter(Boolean),
-      memberInfo: {
-        [currentUser.uid]: {
-          name:   currentUserData.name   || currentUser.displayName || 'Student',
-          avatar: currentUserData.avatar || '😎'
+    try {
+      await chatRef.set({
+        members: [currentUser.uid, otherUid].filter(Boolean),
+        memberInfo: {
+          [currentUser.uid]: {
+            name:   currentUserData.name   || currentUser.displayName || 'Student',
+            avatar: currentUserData.avatar || '😎'
+          },
+          ...(otherUid ? { [otherUid]: {
+            name:   (otherInfo && otherInfo.name)   ? String(otherInfo.name)   : 'User',
+            avatar: (otherInfo && otherInfo.avatar) ? String(otherInfo.avatar) : '😎'
+          }} : {})
         },
-        ...(otherUid ? { [otherUid]: {
-          name:   (otherInfo && otherInfo.name)   ? String(otherInfo.name)   : 'User',
-          avatar: (otherInfo && otherInfo.avatar) ? String(otherInfo.avatar) : '😎'
-        }} : {})
-      },
-      lastMessage: '',
-      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+        lastMessage: '',
+        lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      // Make sure the new chat shows up in the list right away rather than
+      // waiting on the next snapshot round-trip.
+      if ($('view-chats')?.classList.contains('active')) loadChatList();
+    } catch (err) {
+      // This is the most common reason a chat silently never shows up in the
+      // list: Firestore security rules reject the create-write. Surface it
+      // clearly instead of letting the whole function die silently.
+      console.error('Failed to create chat doc:', err);
+      toast('Could not start chat: ' + (err.message || 'permission error') + '. Check Firestore rules for the "chats" collection.', 'error');
+      return;
+    }
   }
 
   const win = $('chat-window');
@@ -3756,7 +3785,20 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
       chatMetaUpdate[`unreadCount.${uid}`] = firebase.firestore.FieldValue.increment(1);
     });
   } catch(e) {}
-  await db.collection('chats').doc(chatId).set(chatMetaUpdate, { merge: true });
+  // NOTE: dot-notation nested field paths (e.g. "unreadCount.<uid>") only work
+  // with update() — set(..., {merge:true}) treats a dotted key as a single
+  // literal field name instead of a nested path, which can be rejected by
+  // Firestore rules and previously made this whole write silently fail,
+  // leaving the chat list stuck on stale data even though the message itself
+  // (sent via Realtime Database above) went through fine.
+  try {
+    await db.collection('chats').doc(chatId).update(chatMetaUpdate);
+  } catch(e) {
+    // Doc may not exist yet in rare races — fall back to a safe merge without
+    // the dotted keys so lastMessage/lastMessageAt still get set.
+    const { lastMessage, lastMessageAt, lastSenderId } = chatMetaUpdate;
+    try { await db.collection('chats').doc(chatId).set({ lastMessage, lastMessageAt, lastSenderId }, { merge: true }); } catch(e2) {}
+  }
   // Send notification to other chat members
   try {
     const chatSnap = await db.collection('chats').doc(chatId).get();
@@ -3846,28 +3888,54 @@ function buildMsgBubble(m) {
       <div class="msg-bubble">${content}${media}</div>
       <div class="msg-time">${new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${tickHtml}</div>
     </div>
-    ${mine ? `<button class="msg-delete-btn" title="Delete" style="display:none" data-key="${escHtml(m.key||'')}"><i data-lucide="trash-2"></i></button>` : ''}`;
+    <div class="msg-actions" style="display:none;gap:4px;align-items:center">
+      ${m.text ? `<button class="msg-copy-btn" title="Copy" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2,rgba(255,255,255,0.1));color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><i data-lucide="copy" style="width:14px;height:14px"></i></button>` : ''}
+      ${mine && m.key ? `<button class="msg-delete-btn" title="Delete" data-key="${escHtml(m.key||'')}" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2,rgba(255,255,255,0.1));color:var(--danger,#f66);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
+    </div>`;
 
-  // ── Long-press delete (3s hold) ──
-  if (mine && m.key) {
-    const bubble  = wrap.querySelector('.msg-bubble');
-    const delBtn  = wrap.querySelector('.msg-delete-btn');
+  // ── Long-press menu (3s / 1s hold): Copy for any message, Delete for your own ──
+  if (m.text || (mine && m.key)) {
+    const bubble   = wrap.querySelector('.msg-bubble');
+    const actions  = wrap.querySelector('.msg-actions');
+    const copyBtn  = wrap.querySelector('.msg-copy-btn');
+    const delBtn   = wrap.querySelector('.msg-delete-btn');
     let pressTimer = null;
     let hideTimer  = null;
 
-    const showDelete = () => {
-      delBtn.style.display = 'flex';
+    const showActions = () => {
+      actions.style.display = 'flex';
       wrap.classList.add('msg-delete-visible');
       clearTimeout(hideTimer);
-      // Auto-hide after 4s
+      // Auto-hide after 3s
       hideTimer = setTimeout(() => {
-        delBtn.style.display = 'none';
+        actions.style.display = 'none';
         wrap.classList.remove('msg-delete-visible');
       }, 3000);
     };
 
+    // Block the browser's native long-press menu (Download/Share/Print) so
+    // our custom Copy/Delete menu shows instead.
+    bubble.style.webkitUserSelect  = 'none';
+    bubble.style.userSelect        = 'none';
+    bubble.style.webkitTouchCallout = 'none';
+    bubble.style.touchAction       = 'manipulation';
+    bubble.addEventListener('contextmenu', e => e.preventDefault());
+    bubble.querySelectorAll('img').forEach(el => {
+      el.style.webkitUserSelect   = 'none';
+      el.style.webkitTouchCallout = 'none';
+      el.style.pointerEvents      = 'none'; // let taps/holds pass to the bubble itself
+      el.addEventListener('contextmenu', e => e.preventDefault());
+      el.setAttribute('draggable', 'false');
+    });
+    bubble.querySelectorAll('video').forEach(el => {
+      el.style.webkitUserSelect   = 'none';
+      el.style.webkitTouchCallout = 'none';
+      el.addEventListener('contextmenu', e => e.preventDefault());
+      el.setAttribute('draggable', 'false');
+    });
+
     const startPress = () => {
-      pressTimer = setTimeout(showDelete, 1000);
+      pressTimer = setTimeout(showActions, 800);
     };
     const cancelPress = () => clearTimeout(pressTimer);
 
@@ -3878,7 +3946,28 @@ function buildMsgBubble(m) {
     bubble.addEventListener('touchend',    cancelPress);
     bubble.addEventListener('touchcancel', cancelPress);
 
-    delBtn.addEventListener('click', async () => {
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(m.text || '');
+        toast('Message copied', 'success');
+      } catch (err) {
+        // Fallback for browsers/contexts without Clipboard API access
+        const ta = document.createElement('textarea');
+        ta.value = m.text || '';
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); toast('Message copied', 'success'); }
+        catch (e2) { toast('Could not copy message', 'error'); }
+        ta.remove();
+      }
+      clearTimeout(hideTimer);
+      actions.style.display = 'none';
+      wrap.classList.remove('msg-delete-visible');
+    });
+
+    delBtn?.addEventListener('click', async () => {
       showConfirmDialog('Delete this message?', async () => {
       try {
         await rtdb.ref(`chats/${currentChatId}/messages/${m.key}`).remove();
@@ -4192,6 +4281,68 @@ function loadFriends() {
 
 let _friendsViewLoading = false;
 
+let _allFriendUsers = [];
+
+function renderFriendRows(users) {
+  const fList = document.getElementById('friends-list');
+  if (!fList) return;
+  fList.innerHTML = '';
+
+  if (users.length === 0) {
+    fList.innerHTML = `
+      <div class="friends-empty">
+        <span style="font-size:40px">🔍</span>
+        <p>No friends found</p>
+        <small>Try a different name or username</small>
+      </div>`;
+    return;
+  }
+
+  users.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'friend-row';
+    const avatarHtml = u.profilePic
+      ? `<img src="${escHtml(u.profilePic)}" class="friend-avatar-img"/>`
+      : `<span class="friend-avatar-emoji">${u.avatar || '😎'}</span>`;
+    row.innerHTML = `
+      <div class="friend-avatar">${avatarHtml}</div>
+      <div class="friend-info">
+        <strong>${escHtml(u.name || 'Student')}</strong>
+        <small>@${escHtml(u.username || 'user')} · 🎓 ${escHtml(u.college || '')}</small>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="friend-btn msg" title="Open chat">💬 Chat</button>
+        <button class="friend-btn unfriend small">Remove</button>
+      </div>`;
+
+    // Chat button: startChat already calls switchView('chats')
+    row.querySelector('.friend-btn.msg').addEventListener('click', () => {
+      startChat(u.uid, u.name || 'User', u.avatar || '😎');
+    });
+    row.querySelector('.friend-btn.unfriend').addEventListener('click', () => unfriend(u.uid));
+    fList.appendChild(row);
+  });
+}
+
+let _friendsSearchWired = false;
+function setupFriendsSearch() {
+  const input = document.getElementById('friends-search-input');
+  if (!input) return;
+  input.value = '';
+  if (_friendsSearchWired) return; // avoid stacking duplicate listeners on re-render
+  _friendsSearchWired = true;
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { renderFriendRows(_allFriendUsers); return; }
+    const filtered = _allFriendUsers.filter(u =>
+      (u.name || '').toLowerCase().includes(q) ||
+      (u.username || '').toLowerCase().includes(q) ||
+      (u.college || '').toLowerCase().includes(q)
+    );
+    renderFriendRows(filtered);
+  });
+}
+
 async function loadFriendsView() {
   if (_friendsViewLoading) return;
   _friendsViewLoading = true;
@@ -4282,33 +4433,16 @@ async function loadFriendsView() {
 
     // Deduplicate confirmed friends by uid
     const seenFriends = new Set();
+    const dedupedUsers = [];
     users.forEach(u => {
       if (seenFriends.has(u.uid)) return;
       seenFriends.add(u.uid);
-
-      const row = document.createElement('div');
-      row.className = 'friend-row';
-      const avatarHtml = u.profilePic
-        ? `<img src="${escHtml(u.profilePic)}" class="friend-avatar-img"/>`
-        : `<span class="friend-avatar-emoji">${u.avatar || '😎'}</span>`;
-      row.innerHTML = `
-        <div class="friend-avatar">${avatarHtml}</div>
-        <div class="friend-info">
-          <strong>${escHtml(u.name || 'Student')}</strong>
-          <small>@${escHtml(u.username || 'user')} · 🎓 ${escHtml(u.college || '')}</small>
-        </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="friend-btn msg" title="Open chat">💬 Chat</button>
-          <button class="friend-btn unfriend small">Remove</button>
-        </div>`;
-
-      // Chat button: startChat already calls switchView('chats')
-      row.querySelector('.friend-btn.msg').addEventListener('click', () => {
-        startChat(u.uid, u.name || 'User', u.avatar || '😎');
-      });
-      row.querySelector('.friend-btn.unfriend').addEventListener('click', () => unfriend(u.uid));
-      fList.appendChild(row);
+      dedupedUsers.push(u);
     });
+
+    _allFriendUsers = dedupedUsers;
+    renderFriendRows(dedupedUsers);
+    setupFriendsSearch();
   } catch(e) {
     const fList = document.getElementById('friends-list');
     if (fList) fList.innerHTML = `<p style="color:var(--danger);padding:12px">${escHtml(e.message)}</p>`;
@@ -4847,15 +4981,7 @@ function loadNotes(searchQuery) {
 
 
 function buildNoteCard(note) {
-  // Cloudinary blocks *inline* delivery of PDFs (both "raw" and "image" resource
-  // types) by default as an anti-XSS security measure — the browser gets an
-  // invalid/empty response (ERR_INVALID_RESPONSE). Forcing Cloudinary's
-  // "fl_attachment" flag switches delivery to a download, which is allowed and
-  // works reliably regardless of account security settings.
-  let openUrl = note.fileUrl;
-  if (openUrl && /\.pdf($|\?)/i.test(openUrl) && openUrl.includes('res.cloudinary.com') && !openUrl.includes('fl_attachment')) {
-    openUrl = openUrl.replace('/raw/upload/', '/image/upload/').replace('/upload/', '/upload/fl_attachment/');
-  }
+  const openUrl = note.fileUrl;
   const card = document.createElement('div');
   card.className = 'note-card';
   const typeColor = NOTE_TYPE_COLORS[note.type] || '#4f8ef7';
