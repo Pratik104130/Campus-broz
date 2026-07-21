@@ -286,8 +286,7 @@
         <i data-lucide="book-open"></i><span>Notes</span>
       </a>
       <a class="nav-item" data-view="chats">
-        <i data-lucide="message-circle"></i><span>Chats</span>
-        <span class="badge" id="chat-badge" style="display:none">0</span>
+        <i data-lucide="message-circle"></i><span>Chats</span><span class="badge" id="chat-badge" style="display:none">0</span>
       </a>
       <a class="nav-item" data-view="friends">
         <i data-lucide="user-plus"></i><span>Friends</span><span class="badge" id="friend-req-badge" style="display:none">0</span>
@@ -312,7 +311,10 @@
     <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
     <a class="mnav-item" data-view="notes"><i data-lucide="book-open"></i><span>Notes</span></a>
-
+    <a class="mnav-item" data-view="chats">
+      <i data-lucide="message-circle"></i><span>Chat</span>
+      <span class="notif-badge-mobile" id="chat-badge-mobile" style="display:none">0</span>
+    </a>
     <a class="mnav-item" data-view="friends">
       <i data-lucide="user-plus"></i><span>Friends</span>
       <span class="notif-badge-mobile" id="friend-req-badge-mobile" style="display:none">0</span>
@@ -387,6 +389,7 @@
       </div>
       <div class="confession-hero">
         <p>100% anonymous. No tracking. Just vibes.</p>
+        <p>Message Disappeare after 6 Hours.</p>
       </div>
       <div class="post-list" id="confession-list">
         <div class="loading-spinner">Loading confessions…</div>
@@ -2116,8 +2119,8 @@ function buildPostCard(id, d, showDelete = null) {
     try {
       await db.collection('posts').doc(id).collection('comments').add({
         uid: currentUser.uid,
-        name: currentUserData.name,
-        avatar: currentUserData.avatar,
+        name: currentUserData.name || 'Student',
+        avatar: currentUserData.avatar || '😎',
         profilePic: currentUserData.profilePic || '',
         text: txt,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2448,7 +2451,7 @@ $('submit-confession-btn').addEventListener('click', async () => {
   try {
     await db.collection('confessions').add({
       text, category,
-      college: currentUserData.college,
+      college: currentUserData.college || '',
       likes: [], comments: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -2460,14 +2463,49 @@ $('submit-confession-btn').addEventListener('click', async () => {
   hideLoading();
 });
 
+const CONFESSION_LIFETIME_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+// Sweep visible confession cards every minute so expiry fires on time even
+// when nothing else has changed to trigger a fresh Firestore snapshot.
+setInterval(() => {
+  const list = $('confession-list');
+  if (!list) return;
+  const now = Date.now();
+  list.querySelectorAll('.confession-card[data-created-ms]').forEach(card => {
+    const createdMs = Number(card.dataset.createdMs);
+    if (!createdMs) return;
+    if (now - createdMs >= CONFESSION_LIFETIME_MS) {
+      const id = card.dataset.confessionId;
+      card.remove();
+      if (id) db.collection('confessions').doc(id).delete().catch(() => {});
+    }
+  });
+}, 60 * 1000);
+
 function loadConfessions() {
   const list = $('confession-list');
   list.innerHTML = '<div class="loading-spinner">Loading…</div>';
   db.collection('confessions').orderBy('createdAt','desc').limit(30)
     .onSnapshot(snap => {
-      if (snap.empty) { list.innerHTML = '<div class="loading-spinner">No confessions yet. Be brave! 👻</div>'; return; }
+      const now = Date.now();
+      const visibleDocs = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        const createdMs = d.createdAt?.toMillis?.();
+        // Confessions with no timestamp yet (still writing to server) are kept
+        // visible until they sync; only expire ones we can actually measure.
+        const isExpired = createdMs != null && (now - createdMs) >= CONFESSION_LIFETIME_MS;
+        if (isExpired) {
+          // Best-effort cleanup: whoever's client notices it first deletes it.
+          // Safe even if several clients race — delete on a missing doc is a no-op.
+          db.collection('confessions').doc(doc.id).delete().catch(() => {});
+        } else {
+          visibleDocs.push(doc);
+        }
+      });
+      if (visibleDocs.length === 0) { list.innerHTML = '<div class="loading-spinner">No confessions yet. Be brave! 👻</div>'; return; }
       list.innerHTML = '';
-      snap.forEach(doc => list.appendChild(buildConfessionCard(doc.id, doc.data())));
+      visibleDocs.forEach(doc => list.appendChild(buildConfessionCard(doc.id, doc.data())));
       lucide.createIcons();
     });
 }
@@ -2475,6 +2513,8 @@ function loadConfessions() {
 function buildConfessionCard(id, d) {
   const card = document.createElement('div');
   card.className = `confession-card ${d.category}`;
+  card.dataset.confessionId = id;
+  card.dataset.createdMs = d.createdAt?.toMillis?.() || '';
   const liked = d.likes?.includes(currentUser.uid);
   const catEmoji = {general:'💬',crush:'💘',academics:'📚',hostel:'🏠',drama:'🎭',funny:'😂'}[d.category]||'💬';
   card.innerHTML = `
@@ -3269,7 +3309,7 @@ function renderClubAnnouncements(body, clubId, clubData, isOwner) {
       const txt = document.getElementById('ann-text')?.value.trim();
       if (!txt) return;
       await db.collection('clubs').doc(clubId).collection('announcements').add({
-        text: txt, authorName: currentUserData.name, authorAvatar: currentUserData.avatar,
+        text: txt, authorName: currentUserData.name || 'Student', authorAvatar: currentUserData.avatar || '😎',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       document.getElementById('ann-text').value = '';
@@ -3395,7 +3435,7 @@ function renderClubPolls(body, clubId, clubData, isMember) {
       await db.collection('clubs').doc(clubId).collection('polls').add({
         question: q,
         options: opts.map(o => ({ text: o, votes: [] })),
-        createdBy: currentUser.uid, createdByName: currentUserData.name,
+        createdBy: currentUser.uid, createdByName: currentUserData.name || 'Student',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       loadClubPolls(clubId);
@@ -3471,7 +3511,7 @@ function renderClubGallery(body, clubId, clubData, isMember) {
       try {
         const url = await uploadToCloudinary(file, 'image', '🖼️ Uploading to gallery…');
         await db.collection('clubs').doc(clubId).collection('gallery').add({
-          url, uploaderName: currentUserData.name, uploaderAvatar: currentUserData.avatar,
+          url, uploaderName: currentUserData.name || 'Student', uploaderAvatar: currentUserData.avatar || '😎',
           uid: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         loadClubGallery(clubId);
