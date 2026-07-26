@@ -911,6 +911,8 @@ let notesSearchDebounce = null;
 let friendsList    = [];   // confirmed friend uids
 let pendingRequests = [];  // incoming request uids (other person sent to me)
 let outgoingRequests = []; // uids I sent requests to
+let blockedByMe = new Set(); // uids I've blocked
+let blockedMe   = new Set(); // uids who've blocked me
 let _friendsViewDebounce = null;
 
 // ── DOM HELPERS ──────────────────────────────────
@@ -1428,7 +1430,8 @@ auth.onAuthStateChanged(async user => {
 // ══════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════
-function initApp() {
+async function initApp() {
+  await loadBlockList();
   setupNav();
   loadProfile();
   loadFeed();
@@ -1441,6 +1444,85 @@ function initApp() {
   setupNotes();
   
   lucide.createIcons();
+}
+
+/* ── BLOCK / MUTE (user-level, app-wide) ──────────────────────────── */
+async function loadBlockList() {
+  blockedByMe = new Set();
+  blockedMe   = new Set();
+  if (!currentUser) return;
+  try {
+    const [byMeSnap, meSnap] = await Promise.all([
+      db.collection('blocks').where('blockerUid', '==', currentUser.uid).get(),
+      db.collection('blocks').where('blockedUid', '==', currentUser.uid).get()
+    ]);
+    byMeSnap.forEach(d => blockedByMe.add(d.data().blockedUid));
+    meSnap.forEach(d => blockedMe.add(d.data().blockerUid));
+  } catch (e) { console.warn('Block list load error:', e); }
+}
+
+function isBlocked(uid) {
+  if (!uid) return false;
+  return blockedByMe.has(uid) || blockedMe.has(uid);
+}
+
+async function blockUser(uid, name) {
+  if (!uid || uid === currentUser.uid) return;
+  showConfirmDialog(`Block ${name || 'this user'}? You won't see each other's posts, notes, or stories, and neither of you can message the other.`, async () => {
+    try {
+      await db.collection('blocks').doc(`${currentUser.uid}_${uid}`).set({
+        blockerUid: currentUser.uid,
+        blockedUid: uid,
+        blockedName: name || '',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      blockedByMe.add(uid);
+      toast(`${name || 'User'} blocked`, 'success');
+
+      // Immediately hide their content already on screen
+      document.querySelectorAll(`[data-uid="${uid}"]`).forEach(el => {
+        const card = el.closest('.post-card, .note-card, .story-bubble');
+        if (card) card.remove();
+      });
+      // If currently chatting with them, close the chat
+      if (currentChatUid === uid) {
+        currentChatId = null;
+        currentChatUid = null;
+        switchView('chats');
+      }
+      renderBlockedList();
+    } catch (e) { toast('Failed: ' + e.message, 'error'); }
+  });
+}
+
+async function unblockUser(uid) {
+  try {
+    await db.collection('blocks').doc(`${currentUser.uid}_${uid}`).delete();
+    blockedByMe.delete(uid);
+    toast('User unblocked', 'success');
+    renderBlockedList();
+    loadFeed();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function renderBlockedList() {
+  const container = $('blocked-users-list');
+  if (!container) return;
+  if (blockedByMe.size === 0) {
+    container.innerHTML = `<p style="color:var(--muted,#aaa);font-size:13px;margin:6px 0 0">You haven't blocked anyone.</p>`;
+    return;
+  }
+  container.innerHTML = `<div class="loading-spinner">Loading…</div>`;
+  const users = await fetchUsersByUids([...blockedByMe]);
+  container.innerHTML = users.map(u => `
+    <div class="blocked-user-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border,rgba(255,255,255,0.08))">
+      <span style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${renderAvatarHtml(u.avatar, u.profilePic, 28)}</span>
+      <span style="flex:1;font-size:13.5px;color:var(--text,#fff)">${escHtml(u.name || 'Student')}</span>
+      <button class="btn-sm unblock-btn" data-uid="${u.uid}" style="background:var(--surface2,rgba(255,255,255,0.08));border:1px solid var(--border,rgba(255,255,255,0.12));color:var(--text,#fff);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px">Unblock</button>
+    </div>`).join('');
+  container.querySelectorAll('.unblock-btn').forEach(btn => {
+    btn.addEventListener('click', () => unblockUser(btn.dataset.uid));
+  });
 }
 
 // Global: when ANY video starts playing, pause all others
@@ -1895,7 +1977,9 @@ function loadFeed() {
           }
         }
         if (change.type === 'added' && !renderedIds.has(docId)) {
-          const card = buildPostCard(docId, change.doc.data());
+          const pd = change.doc.data();
+          if (isBlocked(pd.uid)) return; // hide posts from blocked/blocked-by users
+          const card = buildPostCard(docId, pd);
           card.dataset.postId = docId;
           if (change.newIndex === 0) list.prepend(card);
           else list.appendChild(card);
@@ -1912,6 +1996,8 @@ function buildPostCard(id, d, showDelete = null) {
   const liked = d.likes?.includes(currentUser.uid);
   const isOwner = (showDelete !== null) ? showDelete : (d.uid === currentUser.uid);
 
+  card.dataset.uid = d.uid || '';
+
   card.innerHTML = `
     <div class="post-header">
       <div class="post-avatar">${renderAvatarHtml(d.avatar, d.profilePic, 36)}</div>
@@ -1919,7 +2005,9 @@ function buildPostCard(id, d, showDelete = null) {
         <strong>${d.name || 'Student'}</strong>
         <small>@${d.username || 'user'} · ${timeAgo(d.createdAt)}</small>
       </div>
-      ${isOwner ? `<button class="post-delete-btn" data-id="${id}" title="Delete post"><i data-lucide="trash-2"></i></button>` : ''}
+      ${isOwner
+        ? `<button class="post-delete-btn" data-id="${id}" title="Delete post"><i data-lucide="trash-2"></i></button>`
+        : `<button class="post-block-btn" data-uid="${d.uid}" data-name="${escHtml(d.name || 'this user')}" title="Block user"><i data-lucide="user-x"></i></button>`}
     </div>
     ${d.text ? `<div class="post-body">${highlightHashtags(d.text)}</div>` : ''}
     ${d.mediaUrl ? (d.isVideo
@@ -1973,6 +2061,12 @@ function buildPostCard(id, d, showDelete = null) {
       });
     });
   }
+
+  // Block user
+  card.querySelector('.post-block-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    blockUser(d.uid, d.name);
+  });
 
   // Video play — custom player, only one video at a time
   const videoWrap = card.querySelector('.post-video-wrap');
@@ -2916,7 +3010,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
   $('club-members-list').innerHTML = '<div class="loading-spinner">Loading members…</div>';
   openModal('modal-club-members');
 
-  const isOwner = createdBy === currentUser.uid;
+  const isTrueOwner = createdBy === currentUser.uid;
 
   try {
     // Always refresh from Firestore for latest data
@@ -2924,15 +3018,20 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
     const freshClub = clubSnap2.data() || {};
     memberUids = freshClub.members || memberUids || [];
     const bannedUids = freshClub.banned || [];
+    const moderatorUids = freshClub.moderators || [];
+    const isModerator = moderatorUids.includes(currentUser.uid);
+    // Owner and club moderators can both manage members (kick/ban); only the
+    // true owner can promote/demote other moderators.
+    const isPrivileged = isTrueOwner || isModerator;
 
     const listEl = $('club-members-list');
     listEl.innerHTML = '';
 
-    // ── Owner: show ban management header ─────
-    if (isOwner) {
+    // ── Owner/Moderator: show management header ─────
+    if (isPrivileged) {
       const adminBanner = document.createElement('div');
       adminBanner.style.cssText = 'background:linear-gradient(135deg,#6c47ff22,#ff4ecd22);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px';
-      adminBanner.innerHTML = `<div style="font-weight:700;margin-bottom:2px">👑 Admin View</div>
+      adminBanner.innerHTML = `<div style="font-weight:700;margin-bottom:2px">${isTrueOwner ? '👑 Owner View' : '🛡️ Moderator View'}</div>
         <div style="color:var(--muted)">Members: <strong>${memberUids.length}</strong> &nbsp;|&nbsp; Banned: <strong style="color:${bannedUids.length>0?'#ff4444':'var(--muted)'}">${bannedUids.length}</strong></div>
         ${bannedUids.length>0?'<div style="font-size:11px;margin-top:4px;color:#ff8888">Scroll down to see banned users</div>':''}`;
       listEl.appendChild(adminBanner);
@@ -2940,7 +3039,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
 
     if (!memberUids || memberUids.length === 0) {
       listEl.innerHTML += '<p style="color:var(--muted);text-align:center;padding:20px">No members yet</p>';
-      if (!isOwner || bannedUids.length === 0) return;
+      if (!isPrivileged || bannedUids.length === 0) return;
     }
 
     // Fetch up to 10 members at a time (Firestore limit)
@@ -2961,8 +3060,8 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
 
     listEl.innerHTML = '';
 
-    // If owner, show banned section header
-    if (isOwner && bannedUids.length > 0) {
+    // If privileged, show banned section header
+    if (isPrivileged && bannedUids.length > 0) {
       const bannedHeader = document.createElement('div');
       bannedHeader.innerHTML = `<div style="padding:8px 0 4px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Members (${allUsers.length})</div>`;
       listEl.appendChild(bannedHeader);
@@ -2971,16 +3070,19 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
     allUsers.forEach(u => {
       const isAdmin = u.uid === createdBy;
       const isSelf  = u.uid === currentUser.uid;
+      const isMod   = moderatorUids.includes(u.uid);
       const row = document.createElement('div');
       row.className = 'club-member-item';
       row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)';
 
       let actionBtns = '';
-      if (isOwner && !isAdmin && !isSelf) {
+      if (isPrivileged && !isAdmin && !isSelf && !(isModerator && isMod)) {
+        // Club moderators can kick/ban regular members, but not other moderators.
         actionBtns = `
-          <div style="display:flex;gap:6px;flex-shrink:0">
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+            ${isTrueOwner ? `<button class="btn-mod" data-uid="${u.uid}" style="background:${isMod ? 'var(--accent)' : 'var(--surface2)'};border:1px solid ${isMod ? 'var(--accent)' : 'var(--border)'};color:${isMod ? '#fff' : 'var(--text)'};font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="${isMod ? 'Remove moderator' : 'Make moderator'}">${isMod ? '★ Mod' : '☆ Make Mod'}</button>` : ''}
             <button class="btn-kick" data-uid="${u.uid}" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="Remove from club">Kick</button>
-            <button class="btn-ban" data-uid="${u.uid}" style="background:#ff000020;border:1px solid #ff000040;color:#ff4444;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="Ban from club">Ban</button>
+            <button class="btn-ban" data-uid="${u.uid}" style="background:#ff000020;border:1px solid #ff000040;color:#ff4444;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="Block from club">Block</button>
           </div>`;
       }
 
@@ -2992,15 +3094,30 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
         <div style="flex-shrink:0">${avatarHtml}</div>
         <div style="flex:1;min-width:0">
           <strong style="font-size:14px">${escHtml(u.name||'Student')}</strong>
-          ${isAdmin ? '<span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px">Admin</span>' : ''}
+          ${isAdmin ? '<span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px">Owner</span>' : ''}
+          ${isMod && !isAdmin ? '<span style="font-size:10px;background:var(--accent)33;color:var(--accent);padding:2px 6px;border-radius:99px;margin-left:4px">Club Mod</span>' : ''}
           <div style="font-size:12px;color:var(--muted)">@${escHtml(u.username||'user')}</div>
         </div>
         ${actionBtns}
       `;
 
-      if (isOwner && !isAdmin && !isSelf) {
+      if (isTrueOwner && !isAdmin && !isSelf) {
+        row.querySelector('.btn-mod')?.addEventListener('click', async () => {
+          try {
+            await db.collection('clubs').doc(clubId).update({
+              moderators: isMod
+                ? firebase.firestore.FieldValue.arrayRemove(u.uid)
+                : firebase.firestore.FieldValue.arrayUnion(u.uid)
+            });
+            toast(isMod ? `${u.name} is no longer a moderator` : `${u.name} is now a moderator ⭐`, 'success');
+            showClubMembers(clubId, clubName, emoji, memberUids, createdBy);
+          } catch(e) { toast(e.message, 'error'); }
+        });
+      }
+
+      if (isPrivileged && !isAdmin && !isSelf && !(isModerator && isMod)) {
         row.querySelector('.btn-kick')?.addEventListener('click', async () => {
-          if (!confirm(`Remove ${u.name} from this club?`)) return;
+          showConfirmDialog(`Remove ${u.name} from this club?`, async () => {
           try {
             await db.collection('clubs').doc(clubId).update({
               members: firebase.firestore.FieldValue.arrayRemove(u.uid)
@@ -3011,10 +3128,11 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
             row.remove();
             toast(`${u.name} removed from club`, 'success');
           } catch(e) { toast(e.message, 'error'); }
+          });
         });
 
         row.querySelector('.btn-ban')?.addEventListener('click', async () => {
-          if (!confirm(`Ban ${u.name} from this club? They will be removed and cannot rejoin.`)) return;
+          showConfirmDialog(`Block ${u.name} from this club? They will be removed and cannot rejoin.`, async () => {
           try {
             await db.collection('clubs').doc(clubId).update({
               members: firebase.firestore.FieldValue.arrayRemove(u.uid),
@@ -3024,18 +3142,19 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
               clubs: firebase.firestore.FieldValue.arrayRemove(clubId)
             });
             row.remove();
-            toast(`${u.name} banned from club 🚫`, 'success');
+            toast(`${u.name} blocked from club 🚫`, 'success');
             // Add to banned section
             addBannedRow(listEl, u, clubId, clubName, emoji);
           } catch(e) { toast(e.message, 'error'); }
+          });
         });
       }
 
       listEl.appendChild(row);
     });
 
-    // Show banned users section for owner
-    if (isOwner && bannedUids.length > 0) {
+    // Show banned users section for privileged users
+    if (isPrivileged && bannedUids.length > 0) {
       const bannedChunks = [];
       for (let i = 0; i < bannedUids.length; i += 10) bannedChunks.push(bannedUids.slice(i, i + 10));
       const bannedUsers = [];
@@ -3045,7 +3164,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
       }
       if (bannedUsers.length > 0) {
         const bannedSection = document.createElement('div');
-        bannedSection.innerHTML = `<div style="padding:12px 0 4px;font-size:12px;color:#ff4444;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Banned (${bannedUsers.length})</div>`;
+        bannedSection.innerHTML = `<div style="padding:12px 0 4px;font-size:12px;color:#ff4444;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Blocked (${bannedUsers.length})</div>`;
         listEl.appendChild(bannedSection);
         bannedUsers.forEach(u => addBannedRow(listEl, u, clubId, clubName, emoji));
       }
@@ -3178,8 +3297,9 @@ function openClubChat(clubId, clubName, emoji, memberUids, createdBy) {
   document.getElementById('club-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSend(); });
 }
 
-function buildClubMsgBubble(m, key, clubId) {
+function buildClubMsgBubble(m, key, clubId, isPrivileged) {
   const mine = m.uid === currentUser?.uid;
+  const canDelete = mine || isPrivileged;
   const wrap = document.createElement('div');
   wrap.className = `chat-msg ${mine ? 'mine' : ''}`;
   wrap.innerHTML = `
@@ -3189,9 +3309,9 @@ function buildClubMsgBubble(m, key, clubId) {
       <div class="msg-bubble">${escHtml(m.text || '')}</div>
       <div class="msg-time">${new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
     </div>
-    ${mine ? `<button class="msg-delete-btn" style="display:none" data-key="${key}" title="Delete"><i data-lucide="trash-2"></i></button>` : ''}`;
+    ${canDelete ? `<button class="msg-delete-btn" style="display:none" data-key="${key}" title="${mine ? 'Delete' : 'Delete (moderator)'}"><i data-lucide="trash-2"></i></button>` : ''}`;
 
-  if (mine && key) {
+  if (canDelete && key) {
     const bubble = wrap.querySelector('.msg-bubble');
     const delBtn = wrap.querySelector('.msg-delete-btn');
     let pressTimer = null;
@@ -3202,7 +3322,7 @@ function buildClubMsgBubble(m, key, clubId) {
     bubble.addEventListener('touchstart', () => { pressTimer = setTimeout(showDel, 800); }, { passive: true });
     bubble.addEventListener('touchend',   () => clearTimeout(pressTimer));
     delBtn.addEventListener('click', async () => {
-      showConfirmDialog('Delete message?', async () => {
+      showConfirmDialog(mine ? 'Delete message?' : `Delete this message from ${m.name || 'this member'}?`, async () => {
         await rtdb.ref(`clubChats/${clubId}/messages/${key}`).remove().catch(() => {});
         wrap.remove();
       });
@@ -3221,7 +3341,7 @@ function openClubDashboard(clubId, clubData) {
   modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.id = 'modal-club-dashboard';
-  const isOwner = clubData.createdBy === currentUser.uid;
+  const isOwner = clubData.createdBy === currentUser.uid || (clubData.moderators || []).includes(currentUser.uid);
   const isMember = (clubData.members || []).includes(currentUser.uid);
 
   modal.innerHTML = `
@@ -3276,17 +3396,17 @@ function renderClubTab(tab, clubId, clubData, isOwner, isMember) {
   const body = document.getElementById('club-dash-body');
   if (!body) return;
 
-  if (tab === 0) renderClubChat(body, clubId, clubData, isMember);
+  if (tab === 0) renderClubChat(body, clubId, clubData, isMember, isOwner);
   else if (tab === 1) renderClubAnnouncements(body, clubId, clubData, isOwner);
   else if (tab === 2) renderClubEvents(body, clubId, clubData, isOwner);
   else if (tab === 3) renderClubPolls(body, clubId, clubData, isMember);
-  else if (tab === 4) renderClubGallery(body, clubId, clubData, isMember);
+  else if (tab === 4) renderClubGallery(body, clubId, clubData, isMember, isOwner);
   else if (tab === 5) renderClubLeaderboard(body, clubId, clubData);
   else if (tab === 6) showClubMembers(clubId, clubData.name, clubData.emoji, clubData.members || [], clubData.createdBy);
 }
 
 // ── Club Chat Tab ──
-function renderClubChat(body, clubId, clubData, isMember) {
+function renderClubChat(body, clubId, clubData, isMember, isPrivileged) {
   if (!isMember) { body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Join the club to chat 💬</div>'; return; }
   body.innerHTML = `
     <div style="display:flex;flex-direction:column;height:100%">
@@ -3307,7 +3427,7 @@ function renderClubChat(body, clubId, clubData, isMember) {
     el.innerHTML = '';
     const sorted = Object.entries(msgs).sort((a,b) => a[1].ts - b[1].ts);
     if (!sorted.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px">No messages yet. Say hi! 👋</div>'; }
-    else sorted.forEach(([k,m]) => el.appendChild(buildClubMsgBubble(m, k, clubId)));
+    else sorted.forEach(([k,m]) => el.appendChild(buildClubMsgBubble(m, k, clubId, isPrivileged)));
     el.scrollTop = el.scrollHeight;
   });
 
@@ -3524,7 +3644,7 @@ function loadClubPolls(clubId) {
 }
 
 // ── Club Gallery Tab ──
-function renderClubGallery(body, clubId, clubData, isMember) {
+function renderClubGallery(body, clubId, clubData, isMember, isPrivileged) {
   body.innerHTML = `<div style="padding:16px">
     ${isMember ? `<div style="margin-bottom:14px;display:flex;gap:8px;align-items:center">
       <label style="background:var(--accent);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
@@ -3533,29 +3653,28 @@ function renderClubGallery(body, clubId, clubData, isMember) {
       </label>
       <span style="font-size:12px;color:var(--muted)">Share moments with the club</span>
     </div>` : ''}
-    <div id="gallery-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><div class="loading-spinner" style="grid-column:1/-1">Loading…</div></div>
+    <div id="gallery-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"><div class="loading-spinner" style="grid-column:1/-1">Loading…</div></div>
   </div>`;
 
   if (isMember) {
     document.getElementById('gallery-upload')?.addEventListener('change', async e => {
       const file = e.target.files[0]; if (!file) return;
-      showLoading();
       try {
         const url = await uploadToCloudinary(file, 'image', '🖼️ Uploading to gallery…');
         await db.collection('clubs').doc(clubId).collection('gallery').add({
           url, uploaderName: currentUserData.name || 'Student', uploaderAvatar: currentUserData.avatar || '😎',
           uid: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        loadClubGallery(clubId);
+        loadClubGallery(clubId, isPrivileged);
         toast('Photo added to gallery! 🖼️', 'success');
       } catch(err) { toast(err.message, 'error'); }
-      hideLoading();
+      e.target.value = '';
     });
   }
-  loadClubGallery(clubId);
+  loadClubGallery(clubId, isPrivileged);
 }
 
-function loadClubGallery(clubId) {
+function loadClubGallery(clubId, isPrivileged) {
   const grid = document.getElementById('gallery-grid'); if (!grid) return;
   grid.innerHTML = '<div class="loading-spinner" style="grid-column:1/-1">Loading…</div>';
   db.collection('clubs').doc(clubId).collection('gallery')
@@ -3564,13 +3683,31 @@ function loadClubGallery(clubId) {
       grid.innerHTML = '';
       snap.forEach(doc => {
         const d = doc.data();
+        const canDelete = d.uid === currentUser.uid || isPrivileged;
         const tile = document.createElement('div');
-        tile.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;background:var(--surface2)';
+        tile.style.cssText = 'position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface2)';
         tile.innerHTML = `<img src="${d.url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
-          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:6px;font-size:10px;color:#fff">${escHtml(d.uploaderAvatar||'😎')} ${escHtml(d.uploaderName||'')}</div>`;
-        tile.addEventListener('click', () => { window.open(d.url, '_blank'); });
+          ${canDelete ? `<button class="gallery-delete-btn" title="Delete photo" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px;font-size:11px;color:#fff">${escHtml(d.uploaderAvatar||'😎')} ${escHtml(d.uploaderName||'')}</div>`;
+        tile.addEventListener('click', (e) => {
+          if (e.target.closest('.gallery-delete-btn')) return;
+          window.open(d.url, '_blank');
+        });
+        if (canDelete) {
+          tile.querySelector('.gallery-delete-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showConfirmDialog('Delete this photo from the gallery?', async () => {
+              try {
+                await db.collection('clubs').doc(clubId).collection('gallery').doc(doc.id).delete();
+                tile.remove();
+                toast('Photo deleted', 'success');
+              } catch(err) { toast(err.message, 'error'); }
+            });
+          });
+        }
         grid.appendChild(tile);
       });
+      lucide.createIcons();
     }).catch(e => { grid.innerHTML = `<p style="color:var(--danger);padding:16px;grid-column:1/-1">${escHtml(e.message)}</p>`; });
 }
 
@@ -3654,6 +3791,7 @@ function loadChatList() {
       chatDocs.forEach(doc => {
         const d = doc.data();
         const other = d.members.find(m => m !== currentUser.uid);
+        if (isBlocked(other)) return; // hide chats with blocked/blocked-by users
         const otherInfo = d.memberInfo?.[other] || { name: d.name || 'User', avatar: '😎' };
         // Fix 4: Count unread messages for this chat
         const isLastSenderMe = d.lastSenderId === currentUser.uid;
@@ -3680,6 +3818,10 @@ function loadChatList() {
 }
 
 function startChat(uid, name, avatar) {
+  if (isBlocked(uid)) {
+    toast('You can\'t message this user.', 'error');
+    return;
+  }
   // 1. Switch to chats view (loads chat list via switchView → loadChatList)
   switchView('chats');
   // 2. After list renders, open the specific chat and highlight it
@@ -3829,6 +3971,10 @@ function sendDesktopMsg(chatId) {
 }
 
 async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
+  if (isBlocked(currentChatUid)) {
+    toast('You can\'t message this user.', 'error');
+    return;
+  }
   mediaUrl = mediaUrl || '';
   isVideo  = !!isVideo;
   const msg = {
@@ -4146,6 +4292,23 @@ function loadProfile() {
     logoutBtn.style.cssText = 'margin-top:16px;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px 18px;border-radius:10px;cursor:pointer;font-size:14px;width:100%;justify-content:center;';
     logoutBtn.addEventListener('click', () => { showConfirmDialog('Logout of CampusBroz?', () => auth.signOut()); });
     $('view-profile').querySelector('.profile-card').appendChild(logoutBtn);
+
+    // Blocked Users section
+    const blockedSection = document.createElement('div');
+    blockedSection.id = 'blocked-users-section';
+    blockedSection.style.cssText = 'margin-top:16px;';
+    blockedSection.innerHTML = `
+      <button id="blocked-users-toggle" style="display:flex;align-items:center;gap:8px;background:var(--surface2,rgba(255,255,255,0.06));border:1px solid var(--border,rgba(255,255,255,0.1));color:var(--muted,#aaa);padding:10px 18px;border-radius:10px;cursor:pointer;font-size:14px;width:100%;justify-content:center">
+        <i data-lucide="shield"></i> Blocked Users
+      </button>
+      <div id="blocked-users-list" style="display:none;margin-top:10px;padding:0 4px;"></div>`;
+    $('view-profile').querySelector('.profile-card').appendChild(blockedSection);
+    $('blocked-users-toggle').addEventListener('click', () => {
+      const listEl = $('blocked-users-list');
+      const showing = listEl.style.display !== 'none';
+      listEl.style.display = showing ? 'none' : 'block';
+      if (!showing) renderBlockedList();
+    });
     lucide.createIcons();
   }
 
@@ -5024,6 +5187,7 @@ function loadNotes(searchQuery) {
 
   query.get().then(snap => {
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    docs = docs.filter(n => !isBlocked(n.uploaderUid));
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
