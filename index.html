@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CampusVibes – College Social</title>
   <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <style>
     /* ── Forgot Password ── */
     .forgot-pw-wrap { text-align: right; margin: -4px 0 10px; }
@@ -141,6 +142,21 @@
       display: flex; align-items: center; justify-content: center;
     }
     .cv-broadcast-close:hover { background: rgba(255,255,255,0.32); }
+    .cv-broadcast-toast.warning {
+      background: linear-gradient(135deg, rgba(239,68,68,0.96), rgba(153,27,27,0.92));
+    }
+    .notif-item.admin-warning { background: rgba(239,68,68,0.08); border-left: 3px solid #ef4444; }
+    .notif-item.admin-announcement { background: rgba(108,99,255,0.08); border-left: 3px solid var(--accent, #6c63ff); }
+
+    /* ── Club "online now" pill ── */
+    .club-online-pill {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      background: rgba(46,204,113,0.16); border: 1px solid rgba(46,204,113,0.45);
+      color: #2ecc71; font-size: 10.5px; font-weight: 800;
+      padding: 3px 8px; border-radius: 999px; line-height: 1.2;
+      display: inline-flex; align-items: center; gap: 3px;
+      backdrop-filter: blur(2px);
+    }
 
     /* ── Grouped Story Bubble Count Badge ── */
     .story-count-badge {
@@ -149,6 +165,153 @@
       min-width: 16px; height: 16px; border-radius: 999px; display: flex; align-items: center;
       justify-content: center; padding: 0 3px; border: 2px solid var(--bg, #0b0c10);
     }
+
+    /* ── Comment Box (redesigned) ── */
+    .post-comments {
+      margin-top: 10px; padding-top: 12px;
+      border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+    .comment-input-row {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface2, rgba(255,255,255,0.05));
+      border: 1px solid var(--border, rgba(255,255,255,0.09));
+      border-radius: 999px; padding: 5px 6px 5px 14px;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .comment-input-row:focus-within {
+      border-color: var(--accent, #6c63ff);
+      background: var(--surface, rgba(255,255,255,0.07));
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.14);
+    }
+    .comment-input {
+      flex: 1; min-width: 0; background: none !important; border: none !important;
+      outline: none !important; color: var(--text, #fff); font-size: 13.5px;
+      padding: 7px 2px !important; box-shadow: none !important;
+    }
+    .comment-input::placeholder { color: var(--muted, #888); }
+    .comment-submit {
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #8b7bff);
+      color: #fff; border: none; padding: 8px 18px; border-radius: 999px;
+      font-size: 12.5px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+      transition: opacity 0.15s, transform 0.1s; letter-spacing: 0.01em;
+    }
+    .comment-submit:hover { opacity: 0.9; }
+    .comment-submit:active { transform: scale(0.94); }
+    .comment-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .comment-item {
+      display: flex; align-items: flex-start; gap: 9px;
+      background: var(--surface2, rgba(255,255,255,0.035));
+      border: 1px solid var(--border, rgba(255,255,255,0.06));
+      border-radius: 14px; padding: 9px 11px;
+      transition: background 0.15s;
+    }
+    .comment-item:hover { background: var(--surface2, rgba(255,255,255,0.06)); }
+    .comment-item .c-avatar { flex-shrink: 0; margin-top: 1px; }
+    .comment-body { flex: 1; min-width: 0; font-size: 13px; line-height: 1.5; color: var(--text, #fff); word-break: break-word; }
+    .comment-body strong { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 2px; color: var(--accent, #6c63ff); }
+    .comment-delete-btn { align-self: flex-start; }
+
+    /* ── Comment GIFs ── */
+    .comment-gif-btn {
+      background: none; border: none; cursor: pointer; flex-shrink: 0;
+      color: var(--muted, #aaa); padding: 8px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .comment-gif-btn:hover { background: var(--surface3, rgba(255,255,255,0.1)); color: var(--accent, #6c63ff); }
+    .comment-gif-btn i { width: 18px; height: 18px; }
+    .comment-gif-picker {
+      display: none; flex-direction: column; gap: 10px;
+      background: var(--surface2, rgba(255,255,255,0.04));
+      border: 1px solid var(--border, rgba(255,255,255,0.09));
+      border-radius: 16px; padding: 10px;
+      margin-bottom: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    .comment-gif-picker.open { display: flex; }
+    .gif-search-row {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      background: var(--surface, rgba(255,255,255,0.06));
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 999px; padding: 8px 14px;
+    }
+    .gif-search-row:focus-within { border-color: var(--accent, #6c63ff); }
+    .gif-search-row i { width: 14px; height: 14px; color: var(--muted, #aaa); flex-shrink: 0; }
+    .gif-search-input {
+      flex: 1; min-width: 0; background: none; border: none; outline: none;
+      color: var(--text, #fff); font-size: 12.5px;
+    }
+    .gif-search-input::placeholder { color: var(--muted, #888); }
+    .gif-picker-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      max-height: 340px; overflow-y: auto; padding: 2px;
+    }
+    .gif-picker-item {
+      width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px;
+      cursor: pointer; border: none; background: var(--surface, rgba(255,255,255,0.06));
+      transition: transform 0.12s, opacity 0.12s, box-shadow 0.12s;
+    }
+    .gif-picker-item:hover { transform: scale(1.035); opacity: 0.9; box-shadow: 0 6px 16px rgba(0,0,0,0.35); z-index: 1; position: relative; }
+    .gif-picker-empty { grid-column: 1/-1; text-align: center; font-size: 12.5px; color: var(--muted, #aaa); padding: 24px 0; }
+    .gif-load-more-btn {
+      align-self: center; background: var(--surface, rgba(255,255,255,0.07));
+      border: 1px solid var(--border, rgba(255,255,255,0.12));
+      color: var(--accent, #6c63ff); font-size: 12.5px; font-weight: 700;
+      padding: 8px 22px; border-radius: 999px; cursor: pointer; flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .gif-load-more-btn:hover { background: var(--surface3, rgba(255,255,255,0.12)); }
+    .gif-load-more-btn:active { transform: scale(0.95); }
+    .comment-gif-img {
+      display: block; max-width: 230px; max-height: 230px; width: 100%; border-radius: 14px;
+      margin-top: 4px; object-fit: cover; border: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+
+    /* ── Search screen polish (Instagram-style) ── */
+    .search-bar-mobile { padding: 10px 14px 4px; }
+    .search-input-wrap {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2, rgba(255,255,255,0.06));
+      border: 1px solid var(--border, rgba(255,255,255,0.09));
+      border-radius: 999px; padding: 10px 16px;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .search-input-wrap:focus-within {
+      border-color: var(--accent, #6c63ff);
+      background: var(--surface, rgba(255,255,255,0.08));
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.14);
+    }
+    .search-input-wrap .search-icon-svg { width: 16px; height: 16px; color: var(--muted, #aaa); flex-shrink: 0; }
+    .search-input-wrap input {
+      flex: 1; min-width: 0; background: none !important; border: none !important;
+      outline: none !important; color: var(--text, #fff); font-size: 14px;
+      box-shadow: none !important;
+    }
+    .search-input-wrap input::placeholder { color: var(--muted, #888); }
+    .search-filter-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 10px 14px 4px; scrollbar-width: none; }
+    .search-filter-tabs::-webkit-scrollbar { display: none; }
+    .search-tab {
+      flex-shrink: 0; background: var(--surface2, rgba(255,255,255,0.05));
+      border: 1px solid var(--border, rgba(255,255,255,0.09));
+      color: var(--muted, #aaa); font-size: 12.5px; font-weight: 600;
+      padding: 7px 15px; border-radius: 999px; cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .search-tab.active {
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #8b7bff);
+      color: #fff; border-color: transparent;
+    }
+    .search-tab:not(.active):hover { background: var(--surface3, rgba(255,255,255,0.09)); }
+    .search-person-card {
+      border-radius: 16px; border: 1px solid var(--border, rgba(255,255,255,0.08));
+      background: var(--surface2, rgba(255,255,255,0.035)); transition: background 0.15s, transform 0.12s;
+    }
+    .search-person-card:hover { background: var(--surface2, rgba(255,255,255,0.06)); transform: translateY(-1px); }
+    .search-club-row, .search-post-row {
+      border-radius: 14px; border: 1px solid var(--border, rgba(255,255,255,0.06));
+      background: var(--surface2, rgba(255,255,255,0.03)); margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+    .search-club-row:hover, .search-post-row:hover { background: var(--surface2, rgba(255,255,255,0.055)); }
 
     /* ── Sequential Story Viewer: segmented progress bar + tap zones ── */
     .story-seg-bar {
@@ -164,6 +327,114 @@
     }
     .story-tap-prev, .story-tap-next { flex: 1; cursor: pointer; }
     #story-view-content { position: relative; }
+
+    /* ── Splash screen (logo + name) shown while auth state resolves ── */
+    #splash-screen {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px;
+      background: var(--bg, #0b0b12);
+      background-image: radial-gradient(circle at 30% 20%, rgba(108,99,255,0.18), transparent 55%),
+                         radial-gradient(circle at 75% 80%, rgba(139,123,255,0.14), transparent 50%);
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash-logo-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .splash-logo-icon { font-size: 52px; line-height: 1; }
+    .splash-logo-text {
+      font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 30px;
+      color: var(--text, #fff); letter-spacing: -0.01em; margin: 0;
+    }
+.splash-logo-text span {
+  background: linear-gradient(90deg, #FF5E8F, #6c63ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+.splash-spinner {
+width: 20px;
+height: 20px;
+border-radius: 50%;
+background: linear-gradient(45deg, #C2185B, #6c63ff);
+animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+0%,100% {
+transform: scale(1);
+opacity: 1;
+}
+50% {
+transform: scale(1.4);
+opacity: .4;
+}
+}
+    /* ── Profile: online status dot ── */
+    .profile-avatar-wrap { position: relative; }
+    .presence-dot {
+      position: absolute; bottom: 6px; right: 6px; width: 15px; height: 15px;
+      border-radius: 50%; background: var(--muted, #888); border: 3px solid var(--bg, #0b0b12);
+      transition: background 0.2s;
+    }
+    .presence-dot.online { background: #2ecc71; box-shadow: 0 0 0 0 rgba(46,204,113,0.5); animation: presencePulse 2s infinite; }
+    @keyframes presencePulse {
+      0% { box-shadow: 0 0 0 0 rgba(46,204,113,0.45); }
+      70% { box-shadow: 0 0 0 6px rgba(46,204,113,0); }
+      100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
+    }
+    .friend-avatar { position: relative; }
+    .friend-avatar .presence-dot { width: 11px; height: 11px; bottom: 0; right: 0; border-width: 2px; }
+
+    /* ── Profile: year/branch, badges, skills, social links ── */
+    .profile-year-branch { font-size: 12.5px; margin-top: -2px; }
+    .profile-badges {
+      display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+      margin-top: 10px;
+    }
+    .profile-badge-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px;
+      background: var(--surface2, rgba(255,255,255,0.06)); border: 1px solid var(--border, rgba(255,255,255,0.1));
+      cursor: default;
+    }
+    .profile-skills {
+      display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+      margin-top: 10px; max-width: 340px;
+    }
+    .skill-chip {
+      font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px;
+      background: rgba(108,99,255,0.12); color: var(--accent, #6c63ff);
+      border: 1px solid rgba(108,99,255,0.25);
+    }
+    .profile-social-links {
+      display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+    }
+    .profile-social-links a {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--surface2, rgba(255,255,255,0.06)); border: 1px solid var(--border, rgba(255,255,255,0.1));
+      color: var(--text, #fff); transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+    .profile-social-links a:hover { background: var(--accent, #6c63ff); color: #fff; transform: translateY(-2px); }
+    .profile-social-links a svg, .profile-social-links a i { width: 16px; height: 16px; }
+    .profile-social-links a .social-link-emoji { font-size: 15px; line-height: 1; }
+
+    /* ── Edit Profile modal: social link inputs ── */
+    .social-links-edit-grid { display: flex; flex-direction: column; gap: 8px; }
+    .social-link-input-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface2, rgba(255,255,255,0.05));
+      border: 1px solid var(--border, rgba(255,255,255,0.09));
+      border-radius: 10px; padding: 8px 12px;
+    }
+    .social-link-input-row:focus-within { border-color: var(--accent, #6c63ff); }
+    .social-link-input-row i { width: 16px; height: 16px; color: var(--muted, #aaa); flex-shrink: 0; }
+    .social-link-input-row .social-link-emoji { font-size: 15px; line-height: 1; flex-shrink: 0; width: 16px; text-align: center; }
+    .social-link-input-row input {
+      flex: 1; min-width: 0; background: none !important; border: none !important;
+      outline: none !important; color: var(--text, #fff); font-size: 13px; box-shadow: none !important;
+    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <!-- Firebase -->
@@ -177,8 +448,21 @@
 </head>
 <body>
 
+<!-- ══════════════ SPLASH SCREEN ══════════════ -->
+<!-- Shown immediately on load while Firebase figures out if the user is
+     already logged in. This avoids ever flashing the login form for a
+     returning, already-authenticated user — they see this instead until
+     onAuthStateChanged resolves, then we go straight to the app. -->
+<div id="splash-screen">
+  <div class="splash-logo-mark">
+    <span class="splash-logo-icon">🎓</span>
+    <h1 class="splash-logo-text">Campus<span>Broz</span></h1>
+  </div>
+  <div class="splash-spinner"></div>
+</div>
+
 <!-- ══════════════ AUTH SCREEN ══════════════ -->
-<div id="auth-screen" class="screen active">
+<div id="auth-screen" class="screen">
   <div class="auth-bg">
     <div class="blob b1"></div>
     <div class="blob b2"></div>
@@ -274,9 +558,6 @@
       <a class="nav-item" data-view="confessions">
         <i data-lucide="ghost"></i><span>Confessions</span>
       </a>
-      <a class="nav-item" data-view="memes">
-        <i data-lucide="laugh"></i><span>Memes</span>
-      </a>
       <a class="nav-item" data-view="polls">
         <i data-lucide="bar-chart-2"></i><span>Polls</span>
       </a>
@@ -308,7 +589,6 @@
   <nav class="mobile-nav">
     <a class="mnav-item active" data-view="feed"><i data-lucide="home"></i><span>Feed</span></a>
     <a class="mnav-item" data-view="confessions"><i data-lucide="ghost"></i><span>Confess</span></a>
-    <a class="mnav-item" data-view="memes"><i data-lucide="laugh"></i><span>Memes</span></a>
     <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
     <a class="mnav-item" data-view="notes"><i data-lucide="book-open"></i><span>Notes</span></a>
@@ -346,13 +626,12 @@
         <button class="search-tab" data-filter="users">👤 Users</button>
         <button class="search-tab" data-filter="clubs">🏛️ Clubs</button>
         <button class="search-tab" data-filter="posts">📝 Posts</button>
-        <button class="search-tab" data-filter="memes">😂 Memes</button>
         <button class="search-tab" data-filter="hashtags"># Tags</button>
       </div>
       <div id="search-results" class="search-results">
         <div class="search-empty-state">
           <span style="font-size:48px">🔍</span>
-          <p>Search for users, clubs, posts, memes, or hashtags</p>
+          <p>Search for users, clubs, posts, or hashtags</p>
         </div>
       </div>
     </section>
@@ -374,6 +653,8 @@
         </div>
       </div>
 
+      <div id="pinned-feed-banner-wrap"></div>
+
       <div class="post-list" id="feed-list">
         <div class="loading-spinner">Loading posts…</div>
       </div>
@@ -391,17 +672,6 @@
       </div>
       <div class="post-list" id="confession-list">
         <div class="loading-spinner">Loading confessions…</div>
-      </div>
-    </section>
-
-    <!-- ── MEMES ── -->
-    <section id="view-memes" class="view">
-      <div class="view-header">
-        <h2>😂 Meme Wall</h2>
-        <button class="btn-fab" id="new-meme-btn"><i data-lucide="image"></i></button>
-      </div>
-      <div class="meme-grid" id="meme-grid">
-        <div class="loading-spinner">Loading memes…</div>
       </div>
     </section>
 
@@ -443,11 +713,27 @@
 
     <!-- ── CLUBS ── -->
     <section id="view-clubs" class="view">
-      <div class="view-header">
+      <!-- Sections list (1st Year – 4th Year + custom) -->
+      <div class="view-header" id="clubs-sections-header">
         <h2>🏛️ Clubs</h2>
-        <button class="btn-fab" id="new-club-btn"><i data-lucide="plus"></i></button>
+        <button class="btn-fab" id="add-section-btn" style="display:none" title="Add section"><i data-lucide="plus"></i></button>
       </div>
-      <div class="club-grid" id="club-grid">
+      <div class="club-grid" id="club-sections-grid">
+        <div class="loading-spinner">Loading sections…</div>
+      </div>
+
+      <!-- Clubs inside a selected section -->
+      <div class="view-header" id="clubs-list-header" style="display:none">
+        <button id="clubs-back-btn" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 14px;cursor:pointer;color:var(--text);font-size:14px;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;margin-right:10px"><i data-lucide="arrow-left" style="width:15px;height:15px"></i></button>
+        <h2 id="clubs-section-title" style="flex:1">🏛️ Clubs</h2>
+        <button id="new-club-btn" style="background:var(--accent,#6c63ff);border:none;color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;display:none;align-items:center;gap:6px;flex-shrink:0"><i data-lucide="plus" style="width:15px;height:15px"></i> Add Club</button>
+      </div>
+      <div class="club-search-wrap" id="club-search-wrap" style="display:none;position:relative;margin:0 0 14px">
+        <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted,#888);pointer-events:none"></i>
+        <input type="text" id="club-search-input" placeholder="Search clubs in this section…"
+               style="width:100%;padding:10px 12px 10px 36px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,0.12));background:var(--surface2,rgba(255,255,255,0.06));color:inherit;font-size:14px;box-sizing:border-box"/>
+      </div>
+      <div class="club-grid" id="club-grid" style="display:none">
         <div class="loading-spinner">Loading clubs…</div>
       </div>
     </section>
@@ -502,23 +788,27 @@
       <div class="profile-banner"></div>
       <div class="profile-card">
         <div class="profile-avatar-wrap">
-          <div class="profile-avatar" id="profile-avatar-display">😎</div>
+          <div class="profile-avatar" id="profile-avatar-display"><img src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"/></div>
+          <span class="presence-dot online" id="profile-presence-dot" title="Online"></span>
           <button class="avatar-edit-btn" id="avatar-edit-btn"><i data-lucide="camera"></i></button>
         </div>
         <h2 id="profile-name">Loading…</h2>
         <p id="profile-username" class="muted">@username</p>
         <p id="profile-college" class="muted">🎓 College</p>
+        <p id="profile-year-branch" class="muted profile-year-branch"></p>
         <div class="profile-stats">
           <div><span id="stat-posts">0</span><small>Posts</small></div>
           <div><span id="stat-friends">0</span><small>Friends</small></div>
           <div><span id="stat-clubs">0</span><small>Clubs</small></div>
         </div>
         <button class="btn-edit-profile" id="edit-profile-btn"><i data-lucide="pencil"></i> Edit Profile</button>
+        <div class="profile-badges" id="profile-badges"></div>
+        <div class="profile-skills" id="profile-skills"></div>
+        <div class="profile-social-links" id="profile-social-links"></div>
         <div class="profile-bio-wrap">
           <textarea id="profile-bio" placeholder="Write a bio…" rows="3"></textarea>
           <button class="btn-sm" id="save-bio-btn">Save Bio</button>
         </div>
-        <div class="profile-badges" id="profile-badges"></div>
         <div class="post-list" id="my-posts-list"></div>
       </div>
     </section>
@@ -566,28 +856,14 @@
         <option value="funny">Funny 😂</option>
       </select>
     </div>
+    <div class="meme-upload-zone" id="confession-upload-zone">
+      <i data-lucide="image-plus"></i>
+      <p>Click or drag to add an image (optional)</p>
+      <input type="file" id="confession-file-input" accept="image/*" hidden/>
+    </div>
+    <div id="confession-preview-wrap"></div>
     <div class="modal-actions">
       <button class="btn-primary" id="submit-confession-btn">Post Anonymously</button>
-    </div>
-  </div>
-</div>
-
-<!-- New Meme Modal -->
-<div class="modal-overlay" id="modal-meme">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>😂 Upload Meme</h3>
-      <button class="modal-close" data-modal="modal-meme">✕</button>
-    </div>
-    <div class="meme-upload-zone" id="meme-upload-zone">
-      <i data-lucide="image-plus"></i>
-      <p>Click or drag to upload meme</p>
-      <input type="file" id="meme-file-input" accept="image/*" hidden/>
-    </div>
-    <div id="meme-preview-wrap"></div>
-    <input type="text" id="meme-caption" placeholder="Caption (optional)" style="margin-top:12px"/>
-    <div class="modal-actions">
-      <button class="btn-primary" id="submit-meme-btn">Upload Meme</button>
     </div>
   </div>
 </div>
@@ -611,6 +887,20 @@
   </div>
 </div>
 
+<!-- New Section Modal (admin-only) -->
+<div class="modal-overlay" id="modal-section">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>➕ New Section</h3>
+      <button class="modal-close" data-modal="modal-section">✕</button>
+    </div>
+    <input type="text" id="section-name" placeholder="Section name (e.g. 5th Year)"/>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-section-btn">Create Section</button>
+    </div>
+  </div>
+</div>
+
 <!-- New Club Modal -->
 <div class="modal-overlay" id="modal-club">
   <div class="modal">
@@ -630,8 +920,30 @@
         <option value="social">Social 🎉</option>
       </select>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;margin:12px 2px 4px;font-size:13.5px;cursor:pointer;user-select:none">
+      <input type="checkbox" id="club-private-toggle" style="width:16px;height:16px;accent-color:var(--accent,#6c63ff)"/>
+      🔒 Make this a private club (requires a password to join)
+    </label>
+    <div class="field" id="club-password-wrap" style="display:none">
+      <input type="text" id="club-password" placeholder="Set a join password"/>
+    </div>
     <div class="modal-actions">
       <button class="btn-primary" id="submit-club-btn">Create Club</button>
+    </div>
+  </div>
+</div>
+
+<!-- Private Club Join (password) Modal -->
+<div class="modal-overlay" id="modal-club-password">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <h3>🔒 Private Club</h3>
+      <button class="modal-close" data-modal="modal-club-password">✕</button>
+    </div>
+    <p class="modal-note" id="club-password-modal-note">This club is private. Enter the password to join.</p>
+    <input type="password" id="club-password-input" placeholder="Password"/>
+    <div class="modal-actions">
+      <button class="btn-primary" id="club-password-submit-btn">Join Club</button>
     </div>
   </div>
 </div>
@@ -646,17 +958,6 @@
     <div id="club-members-list" class="club-members-list">
       <div class="loading-spinner">Loading members…</div>
     </div>
-  </div>
-</div>
-
-<!-- Avatar Picker Modal -->
-<div class="modal-overlay" id="modal-avatar">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>🎭 Pick Avatar</h3>
-      <button class="modal-close" data-modal="modal-avatar">✕</button>
-    </div>
-    <div class="avatar-grid" id="avatar-grid"></div>
   </div>
 </div>
 
@@ -712,13 +1013,12 @@
       <button class="modal-close" data-modal="modal-edit-profile">X</button>
     </div>
     <div class="edit-profile-pic-section">
-      <div class="edit-profile-pic-preview" id="edit-pic-preview">😎</div>
+      <div class="edit-profile-pic-preview" id="edit-pic-preview"><img src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"/></div>
       <div class="edit-profile-pic-btns">
         <label class="btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
           <i data-lucide="image"></i> Upload Photo
           <input type="file" id="edit-profile-pic-input" accept="image/*" hidden/>
         </label>
-        <button class="btn-sm" id="edit-pick-avatar-btn" style="margin-top:6px"><i data-lucide="smile"></i> Pick Emoji Avatar</button>
       </div>
     </div>
     <div class="field" style="margin-top:14px">
@@ -732,6 +1032,38 @@
     <div class="field">
       <label>Bio</label>
       <textarea id="edit-profile-bio" rows="3" placeholder="Write something about yourself..."></textarea>
+    </div>
+    <div class="field-row" style="display:flex;gap:10px">
+      <div class="field" style="flex:1">
+        <label>Year</label>
+        <select id="edit-profile-year">
+          <option value="">Select year</option>
+          <option>1st Year</option>
+          <option>2nd Year</option>
+          <option>3rd Year</option>
+          <option>4th Year</option>
+          <option>Final Year</option>
+          <option>Alumni</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1">
+        <label>Branch</label>
+        <input type="text" id="edit-profile-branch" placeholder="e.g. Computer Science"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Skills &amp; Interests</label>
+      <input type="text" id="edit-profile-skills" placeholder="e.g. Coding, Photography, Basketball (comma separated)"/>
+    </div>
+    <div class="field">
+      <label>Social Links</label>
+      <div class="social-links-edit-grid">
+        <div class="social-link-input-row"><span class="social-link-emoji"><i class="fa-brands fa-instagram"></i></span><input type="text" id="edit-profile-instagram" placeholder="Instagram username"/></div>
+        <div class="social-link-input-row"><span class="social-link-emoji">🐦</span><input type="text" id="edit-profile-twitter" placeholder="X / Twitter username"/></div>
+        <div class="social-link-input-row"><span class="social-link-emoji">💼</span><input type="text" id="edit-profile-linkedin" placeholder="LinkedIn username"/></div>
+        <div class="social-link-input-row"><span class="social-link-emoji">💻</span><input type="text" id="edit-profile-github" placeholder="GitHub username"/></div>
+        <div class="social-link-input-row"><i data-lucide="globe"></i><input type="text" id="edit-profile-website" placeholder="Website URL"/></div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-primary" id="save-profile-btn">Save Changes</button>
@@ -890,11 +1222,30 @@ const ADMIN_EMAILS = ['admin@campusbroz.com'];
 function isCurrentUserAdmin() {
   return !!(currentUser && currentUser.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase()));
 }
+// App moderator status — live-tracked (see startBanListener), not just
+// read once at login, so revoking it takes effect immediately everywhere.
+let currentUserIsAppMod = false;
+function isCurrentUserAppMod() {
+  return isCurrentUserAdmin() || currentUserIsAppMod;
+}
+// Re-applies moderator-only UI visibility across whatever's currently on
+// screen. Called whenever appModerator status changes (live) so a demoted
+// moderator loses ban buttons instantly, without needing a page reload.
+function refreshModUi() {
+  const show = isCurrentUserAppMod();
+  document.querySelectorAll('.post-ban-btn').forEach(btn => {
+    btn.style.display = show ? '' : 'none';
+  });
+}
 
-// ── AVATARS ──────────────────────────────────────
-const AVATARS = ['😎','🤓','🎓','😜','🦊','🐼','🦋','🐸','🌸','🎭','🦁','🐯',
-                 '🐵','🦄','🐺','🦀','🎃','👻','🤖','👽','💀','🧠','🔥','⚡',
-                 '🌈','🍕','🎮','🎵','🏆','🎨','🚀','🌙','⭐','💎','🎯','🎲'];
+// ── DEFAULT AVATAR IMAGE (used whenever a user has no profile photo) ──
+const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+  '<rect width="100" height="100" fill="#c9c9d1"/>' +
+  '<circle cx="50" cy="38" r="20" fill="#ffffff"/>' +
+  '<path d="M15 95c0-22 15.7-40 35-40s35 18 35 40" fill="#ffffff"/>' +
+  '</svg>'
+);
 const CLUB_EMOJI = { tech:'💻', arts:'🎨', sports:'⚽', music:'🎵', debate:'🗣️', social:'🎉' };
 
 // ── STATE ────────────────────────────────────────
@@ -965,6 +1316,10 @@ function showConfirmDialog(message, onConfirm, onCancel) {
 }
 function showLoading() { show('loading-overlay'); }
 function hideLoading() { hide('loading-overlay'); }
+function hideSplash() {
+  const s = $('splash-screen');
+  if (s) s.classList.add('hidden');
+}
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -988,13 +1343,11 @@ function escHtml(str) {
 }
 
 // ── AVATAR HELPER ────────────────────────────────
-// Returns HTML for a user avatar: photo img if available, else emoji
+// Returns HTML for a user avatar: always an image (profile photo, or a default placeholder image)
 function renderAvatarHtml(avatarEmoji, profilePicUrl, size) {
   size = size || 36;
-  if (profilePicUrl) {
-    return `<img src="${escHtml(profilePicUrl)}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block;" loading="lazy" onerror="this.outerHTML='<span style=\\'font-size:${Math.round(size*0.55)}px\\'>${escHtml(avatarEmoji || '😎')}</span>'"/>`;
-  }
-  return escHtml(avatarEmoji || '😎');
+  const src = profilePicUrl || DEFAULT_AVATAR;
+  return `<img src="${escHtml(src)}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block;" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}';"/>`;
 }
 
 // Extract hashtags from text
@@ -1031,8 +1384,56 @@ function hideUploadProgress() {
   if (bar) bar.classList.remove('visible');
 }
 
-function uploadToCloudinary(file, resourceType, label) {
+// Resize + re-encode large images client-side before upload, so posts load
+// fast without needing full original resolution. Skips GIFs (would break
+// animation) and SVGs (already tiny/vector). Falls back to the original
+// file if anything goes wrong or compression doesn't actually help.
+function compressImage(file, { maxDim = 1600, quality = 0.75 } = {}) {
+  return new Promise(resolve => {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+      resolve(file);
+      return;
+    }
+    const objUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      const { width, height } = img;
+      if (width <= maxDim && height <= maxDim && file.size < 400 * 1024) {
+        resolve(file); // already small — don't bother re-encoding
+        return;
+      }
+      const scale = Math.min(1, maxDim / Math.max(width, height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if (!blob || blob.size >= file.size) { resolve(file); return; }
+        resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => resolve(file); // decode failed — just upload the original
+    img.src = objUrl;
+  });
+}
+
+// Inserts Cloudinary auto-optimization params into a delivery URL so
+// images/videos are served in the smallest suitable format/quality for
+// the viewer's browser (q_auto,f_auto), without touching the stored
+// original. This is what actually makes videos "load fast" — real
+// client-side video compression isn't practical in-browser.
+function optimizeCloudinaryUrl(url, resourceType) {
+  if (!url || !url.includes('/upload/')) return url;
+  const transform = resourceType === 'video' ? 'q_auto,f_auto' : 'q_auto,f_auto,w_1600,c_limit';
+  return url.replace('/upload/', `/upload/${transform}/`);
+}
+
+async function uploadToCloudinary(file, resourceType, label) {
   resourceType = resourceType || 'auto';
+  if (resourceType === 'image' || (resourceType === 'auto' && file.type.startsWith('image/'))) {
+    file = await compressImage(file);
+  }
   return new Promise(function(resolve, reject) {
     const fd = new FormData();
     fd.append('file', file);
@@ -1066,7 +1467,7 @@ function uploadToCloudinary(file, resourceType, label) {
           reject(new Error(`Upload to Cloudinary did not complete (no file was stored). This usually means the "${UPLOAD_PRESET}" preset doesn't allow ${resourceType} uploads — check Cloudinary → Settings → Upload presets.`));
           return;
         }
-        resolve(data.secure_url);
+        resolve(optimizeCloudinaryUrl(data.secure_url, resourceType === 'auto' ? (file.type.startsWith('video') ? 'video' : 'image') : resourceType));
       } catch(e) { reject(new Error('Could not read Cloudinary\'s response: ' + e.message)); }
     };
     xhr.onerror = function() { hideUploadProgress(); reject(new Error('Upload failed — check your internet connection.')); };
@@ -1134,7 +1535,7 @@ $('signup-btn').addEventListener('click', async () => {
     await cred.user.updateProfile({ displayName: name });
     await db.collection('users').doc(cred.user.uid).set({
       uid: cred.user.uid, name, username, college,
-      email, avatar: '😎', bio: '',
+      email, avatar: '', bio: '',
       posts: 0, friends: 0, clubs: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -1172,7 +1573,7 @@ async function ensureGoogleUserDoc(u) {
         username: (u.email || '').split('@')[0].replace(/[^a-z0-9_]/gi, ''),
         college: 'My College',
         email: u.email || '',
-        avatar: '😎', bio: '',
+        avatar: '', bio: '',
         posts: 0, friends: 0, clubs: [],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -1265,7 +1666,24 @@ function startBanListener(uid) {
       stopPresence();
       const reason = d.banReason || '';
       auth.signOut().finally(() => showBannedScreen(reason));
+      return;
     }
+    // Live app-moderator tracking: keep this in sync with Firestore instead
+    // of only reading it once at login, so removing the role revokes ban
+    // powers immediately in whatever screens are already open.
+    const wasAppMod = currentUserIsAppMod;
+    currentUserIsAppMod = !!(d && d.appModerator === true);
+    if (wasAppMod !== currentUserIsAppMod) {
+      refreshModUi();
+      if (wasAppMod && !currentUserIsAppMod) {
+        toast('Your app moderator access was removed.', 'info');
+      }
+    }
+  }, err => {
+    // Surface listener errors instead of failing silently — a permission-
+    // denied here (e.g. from Firestore rules) would otherwise look
+    // identical to "nothing happened."
+    console.error('User doc listener error:', err);
   });
 }
 function stopBanListener() {
@@ -1284,14 +1702,14 @@ function startPresence(uid, profile) {
       online: false,
       lastSeen: firebase.database.ServerValue.TIMESTAMP,
       name: profile?.name || 'Student',
-      avatar: profile?.avatar || '😎',
+      avatar: profile?.avatar || '',
       profilePic: profile?.profilePic || ''
     }).then(() => {
       _presenceRef.set({
         online: true,
         lastSeen: firebase.database.ServerValue.TIMESTAMP,
         name: profile?.name || 'Student',
-        avatar: profile?.avatar || '😎',
+        avatar: profile?.avatar || '',
         profilePic: profile?.profilePic || ''
       });
     });
@@ -1302,22 +1720,41 @@ function stopPresence() {
   rtdb.ref('.info/connected').off();
 }
 
+// ── CLUBS PRESENCE (shared cache — powers "🟢 X online" on club cards/dashboard) ──
+let _clubsPresenceCache = {};
+let _clubsPresenceRef = null;
+function startClubsPresenceWatch() {
+  if (_clubsPresenceRef) return; // already watching
+  _clubsPresenceRef = rtdb.ref('presence');
+  _clubsPresenceRef.on('value', snap => {
+    _clubsPresenceCache = snap.val() || {};
+    // Refresh whatever club UI is currently visible so counts stay live
+    if ($('club-grid') && $('club-grid').style.display !== 'none' && typeof renderClubGrid === 'function') {
+      renderClubGrid();
+    }
+    if (typeof updateOpenClubDashboardOnlineCount === 'function') updateOpenClubDashboardOnlineCount();
+  });
+}
+function stopClubsPresenceWatch() {
+  if (_clubsPresenceRef) { _clubsPresenceRef.off(); _clubsPresenceRef = null; }
+  _clubsPresenceCache = {};
+}
+function countClubOnline(memberUids) {
+  return (memberUids || []).filter(uid => _clubsPresenceCache?.[uid]?.online).length;
+}
+
 // ── PINNED FEED MESSAGE ───────────────────────────────────────────────
 function loadPinnedMessage() {
   db.collection('config').doc('pinnedMessage').onSnapshot(snap => {
-    const list = $('feed-list');
-    if (!list) return;
-    const existing = document.getElementById('pinned-feed-banner');
-    if (existing) existing.remove();
+    const wrap = $('pinned-feed-banner-wrap');
+    if (!wrap) return;
     const d = snap.exists ? snap.data() : null;
-    if (!d || !d.text) return;
-    const banner = document.createElement('div');
-    banner.id = 'pinned-feed-banner';
-    banner.className = 'pinned-feed-banner';
-    banner.innerHTML = `
-      <i data-lucide="pin"></i>
-      <span class="pinned-feed-text">${highlightHashtags(d.text)}</span>`;
-    list.prepend(banner);
+    if (!d || !d.text) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `
+      <div id="pinned-feed-banner" class="pinned-feed-banner">
+        <i data-lucide="pin"></i>
+        <span class="pinned-feed-text">${highlightHashtags(d.text)}</span>
+      </div>`;
     lucide.createIcons();
   }, () => {});
 }
@@ -1325,12 +1762,10 @@ function loadPinnedMessage() {
 // ── CLUB CREATION GATING (admin-only) ─────────────────────────────────
 function applyAdminUiGates() {
   const btn = $('new-club-btn');
-  if (!btn) return;
-  if (isCurrentUserAdmin()) {
-    btn.style.display = '';
-  } else {
-    btn.style.display = 'none';
-  }
+  const sectionBtn = $('add-section-btn');
+  const isAdmin = isCurrentUserAdmin();
+  if (btn) btn.style.display = isAdmin ? 'inline-flex' : 'none';
+  if (sectionBtn) sectionBtn.style.display = isAdmin ? '' : 'none';
 }
 
 // ── BROADCAST NOTIFICATIONS (admin → all users, single shared doc) ────
@@ -1368,6 +1803,31 @@ function showBroadcastToast(text) {
   playNotifSound();
 }
 
+// ── DIRECT ADMIN ANNOUNCEMENT / WARNING (one user, prominent popup) ───
+function showAdminAlertToast(d, docId) {
+  document.querySelector('.cv-broadcast-toast')?.remove();
+  const isWarning = d.type === 'admin_warning';
+  const t = document.createElement('div');
+  t.className = 'cv-broadcast-toast' + (isWarning ? ' warning' : '');
+  t.innerHTML = `
+    <div class="cv-broadcast-icon">${isWarning ? '⚠️' : '📢'}</div>
+    <div class="cv-broadcast-body">
+      <div class="cv-broadcast-title">${isWarning ? 'Warning from admin' : 'Message from admin'}</div>
+      <div class="cv-broadcast-text">${escHtml(d.text)}</div>
+    </div>
+    <button class="cv-broadcast-close">×</button>`;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  const dismiss = () => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+    if (docId) db.collection('notifications').doc(docId).update({ read: true }).catch(() => {});
+  };
+  t.querySelector('.cv-broadcast-close').addEventListener('click', dismiss);
+  setTimeout(dismiss, isWarning ? 12000 : 8000);
+  playNotifSound();
+}
+
 auth.onAuthStateChanged(async user => {
   hideLoading();
   if (user) {
@@ -1385,6 +1845,7 @@ auth.onAuthStateChanged(async user => {
       if (preSnap.exists && preSnap.data().banned === true) {
         const reason = preSnap.data().banReason || '';
         await auth.signOut();
+        hideSplash();
         showBannedScreen(reason);
         return;
       }
@@ -1397,30 +1858,36 @@ auth.onAuthStateChanged(async user => {
       currentUserData = snap.exists ? snap.data() : {
         uid: user.uid, name: user.displayName || 'Student',
         username: (user.email?.split('@')[0] || 'user').replace(/[^a-z0-9_]/gi, ''),
-        college: 'My College', avatar: '😎', bio: ''
+        college: 'My College', avatar: '', bio: ''
       };
     } catch (e) {
       currentUserData = {
         uid: user.uid, name: user.displayName || 'Student',
         username: (user.email?.split('@')[0] || 'user').replace(/[^a-z0-9_]/gi, ''),
-        college: 'My College', avatar: '😎', bio: ''
+        college: 'My College', avatar: '', bio: ''
       };
       toast('Connection issue — some features may be limited.', 'error');
     }
+    // Already-logged-in users go straight from splash → app, skipping the
+    // login form entirely — it's never shown or removed here at all.
+    hideSplash();
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
     lucide.createIcons();
     initApp();
     startBanListener(user.uid);
     startPresence(user.uid, currentUserData);
+    startClubsPresenceWatch();
     applyAdminUiGates();
     loadPinnedMessage();
     setupBroadcastListener();
   } else {
     stopBanListener();
     stopPresence();
+    stopClubsPresenceWatch();
     currentUser = null;
     currentUserData = null;
+    hideSplash();
     $('app-screen').classList.remove('active');
     $('auth-screen').classList.add('active');
     lucide.createIcons();
@@ -1464,6 +1931,20 @@ async function loadBlockList() {
 function isBlocked(uid) {
   if (!uid) return false;
   return blockedByMe.has(uid) || blockedMe.has(uid);
+}
+
+async function banUserFromApp(uid, name) {
+  if (!isCurrentUserAppMod()) { toast('You no longer have moderator access.', 'error'); return; }
+  showConfirmDialog(`Ban ${name || 'this user'}? They'll be signed out immediately and blocked from the app.`, async () => {
+    try {
+      await db.collection('users').doc(uid).update({
+        banned: true,
+        banReason: 'Banned by a moderator.',
+        bannedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast(`${name || 'User'} banned 🚫`, 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  });
 }
 
 async function blockUser(uid, name) {
@@ -1562,9 +2043,8 @@ function switchView(view) {
   });
   if (view === 'feed') { if (!$('feed-list').hasChildNodes() || $('feed-list').querySelector('.loading-spinner')) loadFeed(); }
   if (view === 'confessions') loadConfessions();
-  if (view === 'memes') loadMemes();
   if (view === 'polls') loadPolls();
-  if (view === 'clubs') loadClubs();
+  if (view === 'clubs') loadClubSections();
   if (view === 'chats') loadChatList();
   if (view === 'friends') loadFriendsView();
   if (view === 'profile') loadProfile();
@@ -1640,7 +2120,7 @@ function setupSearch() {
 function debouncedSearch(q) {
   clearTimeout(searchDebounce);
   if (!q) {
-    $('search-results').innerHTML = `<div class="search-empty-state"><span style="font-size:48px">🔍</span><p>Search for users, clubs, posts, memes, or hashtags</p></div>`;
+    $('search-results').innerHTML = `<div class="search-empty-state"><span style="font-size:48px">🔍</span><p>Search for users, clubs, posts, or hashtags</p></div>`;
     return;
   }
   $('search-results').innerHTML = `<div class="loading-spinner">Searching…</div>`;
@@ -1649,7 +2129,7 @@ function debouncedSearch(q) {
 
 async function performSearch(q) {
   const qLow = q.toLowerCase();
-  const results = { users: [], clubs: [], posts: [], memes: [], hashtags: [] };
+  const results = { users: [], clubs: [], posts: [], hashtags: [] };
   const filter = currentSearchFilter;
 
   try {
@@ -1705,21 +2185,6 @@ async function performSearch(q) {
       );
     }
 
-    // Memes
-    if (filter === 'all' || filter === 'memes') {
-      promises.push(
-        db.collection('memes').orderBy('createdAt','desc').limit(60).get().then(snap => {
-          snap.forEach(doc => {
-            const d = doc.data();
-            if ((d.caption||'').toLowerCase().includes(qLow) ||
-                (d.name||'').toLowerCase().includes(qLow)) {
-              results.memes.push({id: doc.id, ...d});
-            }
-          });
-        })
-      );
-    }
-
     // Hashtags: scan posts for matching hashtags
     if (filter === 'all' || filter === 'hashtags') {
       promises.push(
@@ -1750,7 +2215,7 @@ async function performSearch(q) {
 function renderSearchResults(results, q) {
   const container = $('search-results');
   const filter = currentSearchFilter;
-  const total = results.users.length + results.clubs.length + results.posts.length + results.memes.length + results.hashtags.length;
+  const total = results.users.length + results.clubs.length + results.posts.length + results.hashtags.length;
 
   if (total === 0) {
     container.innerHTML = `
@@ -1772,15 +2237,13 @@ function renderSearchResults(results, q) {
       <div class="search-people-grid">
       ${results.users.slice(0,8).map(u => {
         const uid = u.uid || u.id;
-        const avatarHtml = u.profilePic
-          ? `<img src="${escHtml(u.profilePic)}" class="search-avatar-img"/>`
-          : `<span class="search-avatar-emoji">${u.avatar||'😎'}</span>`;
+        const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" class="search-avatar-img"/>`;
         return `<div class="search-person-card" data-uid="${uid}">
           <div class="search-person-avatar">${avatarHtml}</div>
           <div class="search-person-name">${escHtml(u.name||'Student')}</div>
           <div class="search-person-meta">@${escHtml(u.username||'user')}</div>
           <div class="search-person-college">🎓 ${escHtml((u.college||'').slice(0,20))}</div>
-          <div class="search-person-action" data-uid="${uid}" data-name="${escHtml(u.name||'Student')}" data-avatar="${escHtml(u.avatar||'😎')}"></div>
+          <div class="search-person-action" data-uid="${uid}" data-name="${escHtml(u.name||'Student')}" data-avatar="${escHtml(u.avatar||'')}"></div>
         </div>`;
       }).join('')}
       </div>
@@ -1819,27 +2282,13 @@ function renderSearchResults(results, q) {
       <div class="search-section-label">📝 Posts</div>
       ${results.posts.slice(0,5).map(p => `
         <div class="search-post-row">
-          <div class="search-post-avatar">${p.avatar||'😎'}</div>
+          <div class="search-post-avatar">${renderAvatarHtml(null, p.profilePic, 32)}</div>
           <div class="search-post-body">
             <div class="search-post-author"><strong>${escHtml(p.name||'Student')}</strong> <span class="search-post-time">${timeAgo(p.createdAt)}</span></div>
             ${p.text ? `<div class="search-post-text">${highlightHashtags(p.text.slice(0,120))}${p.text.length>120?'…':''}</div>` : ''}
             ${p.mediaUrl && !p.isVideo ? `<img class="search-post-thumb" src="${p.mediaUrl}" loading="lazy"/>` : ''}
           </div>
         </div>`).join('')}
-    </div>`;
-  }
-
-  // ── Memes ──
-  if (results.memes.length > 0 && (filter === 'all' || filter === 'memes')) {
-    html += `<div class="search-result-section">
-      <div class="search-section-label">😂 Memes</div>
-      <div class="search-meme-grid">
-        ${results.memes.slice(0,6).map(m => `
-          <div class="search-meme-tile">
-            <img src="${m.url}" loading="lazy" alt="meme"/>
-            ${m.caption ? `<div class="search-meme-caption">${escHtml(m.caption.slice(0,30))}</div>` : ''}
-          </div>`).join('')}
-      </div>
     </div>`;
   }
 
@@ -1908,7 +2357,7 @@ $('submit-post-btn').addEventListener('click', async () => {
     const postData = {
       uid:      currentUser.uid,
       name:     currentUserData.name     || currentUser.displayName || 'Student',
-      avatar:   currentUserData.avatar   || '😎',
+      avatar:   currentUserData.avatar   || '',
       profilePic: currentUserData.profilePic || '',
       username: currentUserData.username || (currentUser.email ? currentUser.email.split('@')[0] : 'user'),
       college:  currentUserData.college  || '',
@@ -2007,7 +2456,8 @@ function buildPostCard(id, d, showDelete = null) {
       </div>
       ${isOwner
         ? `<button class="post-delete-btn" data-id="${id}" title="Delete post"><i data-lucide="trash-2"></i></button>`
-        : `<button class="post-block-btn" data-uid="${d.uid}" data-name="${escHtml(d.name || 'this user')}" title="Block user"><i data-lucide="user-x"></i></button>`}
+        : `<button class="post-block-btn" data-uid="${d.uid}" data-name="${escHtml(d.name || 'this user')}" title="Block user"><i data-lucide="user-x"></i></button>
+           <button class="post-ban-btn" data-uid="${d.uid}" data-name="${escHtml(d.name || 'this user')}" title="Ban user from app" style="display:${isCurrentUserAppMod() ? '' : 'none'};margin-left:4px;background:#ff000018;border:1px solid #ff000030;color:#ff4444"><i data-lucide="ban"></i></button>`}
     </div>
     ${d.text ? `<div class="post-body">${highlightHashtags(d.text)}</div>` : ''}
     ${d.mediaUrl ? (d.isVideo
@@ -2036,9 +2486,11 @@ function buildPostCard(id, d, showDelete = null) {
     </div>
     <div class="post-comments" id="comments-${id}">
       <div class="comment-input-row">
+        <button class="comment-gif-btn" data-id="${id}" title="Send a GIF" type="button"><i data-lucide="image"></i></button>
         <input type="text" placeholder="Comment…" class="comment-input" id="ci-${id}"/>
         <button class="btn-sm comment-submit" data-id="${id}">Send</button>
       </div>
+      <div class="comment-gif-picker" id="gif-picker-${id}"></div>
       <div class="comment-list" id="cl-${id}"></div>
     </div>
   `;
@@ -2066,6 +2518,13 @@ function buildPostCard(id, d, showDelete = null) {
   card.querySelector('.post-block-btn')?.addEventListener('click', e => {
     e.stopPropagation();
     blockUser(d.uid, d.name);
+  });
+
+  // Ban user from app (admins + app moderators only)
+  card.querySelector('.post-ban-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!isCurrentUserAppMod()) { toast('You no longer have moderator access.', 'error'); return; }
+    banUserFromApp(d.uid, d.name);
   });
 
   // Video play — custom player, only one video at a time
@@ -2246,19 +2705,25 @@ function buildPostCard(id, d, showDelete = null) {
       await db.collection('posts').doc(id).collection('comments').add({
         uid: currentUser.uid,
         name: currentUserData.name || 'Student',
-        avatar: currentUserData.avatar || '😎',
+        avatar: currentUserData.avatar || '',
         profilePic: currentUserData.profilePic || '',
         text: txt,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      await db.collection('posts').doc(id).update({ comments: firebase.firestore.FieldValue.increment(1) });
-      // onSnapshot modified handler updates the count — no manual increment here
+      await syncCommentCount(id);
       loadComments(id);
       // Send notification to post owner
       if (d.uid && d.uid !== currentUser.uid) {
         sendNotification(d.uid, 'comment', `commented: "${txt.slice(0,40)}" 💬`, null, id);
       }
     } catch(e) { toast(e.message, 'error'); }
+  });
+
+  // GIF picker toggle
+  card.querySelector('.comment-gif-btn').addEventListener('click', () => {
+    const c = $(`comments-${id}`);
+    if (!c.classList.contains('open')) { c.classList.add('open'); loadComments(id); }
+    toggleGifPicker(id, d.uid);
   });
 
   // Share
@@ -2285,7 +2750,9 @@ function loadComments(postId) {
           <div class="c-avatar">${renderAvatarHtml(c.avatar, c.profilePic, 28)}</div>
           <div class="comment-body">
             <strong>${escHtml(c.name || 'Student')}</strong>
-            ${escHtml(c.text)}
+            ${c.gifUrl
+              ? `<img src="${escHtml(c.gifUrl)}" class="comment-gif-img" loading="lazy" alt="gif"/>`
+              : escHtml(c.text)}
           </div>
           ${isCommentOwner ? `<button class="comment-delete-btn" title="Delete comment" style="margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;opacity:0.6" data-comment-id="${doc.id}" data-post-id="${postId}">✖</button>` : ''}
         `;
@@ -2295,15 +2762,12 @@ function loadComments(postId) {
             showConfirmDialog('Delete this comment?', async () => {
             try {
               await db.collection('posts').doc(postId).collection('comments').doc(doc.id).delete();
-              await db.collection('posts').doc(postId).update({ comments: firebase.firestore.FieldValue.increment(-1) });
               commentEl.remove();
-              // Update comment count display
-              const countBtn = document.querySelector(`.comment-toggle-btn[data-id="${postId}"]`);
-              if (countBtn) {
-                const curr = parseInt(countBtn.textContent.trim()) || 1;
-                countBtn.innerHTML = `<i data-lucide="message-circle"></i> ${Math.max(0, curr - 1)}`;
-                lucide.createIcons();
-              }
+              // Recompute the TRUE count from the comments subcollection itself
+              // instead of trusting a separately-tracked +/-1 counter, which can
+              // drift out of sync with reality (that drift was the root cause of
+              // the count showing 0 even with comments still left).
+              await syncCommentCount(postId);
               toast('Comment deleted', 'success');
             } catch(err) { toast(err.message, 'error'); }
             });
@@ -2311,7 +2775,140 @@ function loadComments(postId) {
         }
         cl.appendChild(commentEl);
       });
+      // Reconcile the visible counter to the real number of comment docs
+      // every time the panel is opened — this self-heals any post whose
+      // counter had already drifted from earlier sessions/bugs.
+      syncCommentCount(postId);
     });
+}
+
+// Computes the TRUE comment count directly from the comments subcollection
+// (rather than trusting a hand-maintained +/-1 field, which can silently
+// drift), patches every visible counter, and writes the corrected value
+// back to the post doc so the drift is fixed for good.
+async function syncCommentCount(postId) {
+  let trueCount;
+  try {
+    const agg = await db.collection('posts').doc(postId).collection('comments').count().get();
+    trueCount = agg.data().count;
+  } catch (aggErr) {
+    // Fallback if the aggregate count() API isn't available: fetch all docs.
+    try {
+      const snap = await db.collection('posts').doc(postId).collection('comments').get();
+      trueCount = snap.size;
+    } catch (e) { return; }
+  }
+  document.querySelectorAll(`.comment-toggle-btn[data-id="${postId}"] .comm-count`).forEach(span => {
+    span.textContent = trueCount;
+  });
+  db.collection('posts').doc(postId).set({ comments: trueCount }, { merge: true }).catch(() => {});
+  return trueCount;
+}
+
+// ══════════════════════════════════════
+// COMMENT GIFs  (curated by admins in admin.html → posted like Instagram
+// gif-comments; fetched once and cached for the session)
+// ══════════════════════════════════════
+let _gifsCache = null; // null = not loaded yet, [] = loaded but empty
+const GIF_PAGE_SIZE = 9;
+
+function loadGifsCache() {
+  if (_gifsCache) return Promise.resolve(_gifsCache);
+  return db.collection('gifs').orderBy('createdAt', 'desc').limit(300).get().then(snap => {
+    _gifsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return _gifsCache;
+  }).catch(() => { _gifsCache = []; return _gifsCache; });
+}
+
+function toggleGifPicker(postId, postOwnerUid) {
+  const picker = $(`gif-picker-${postId}`);
+  if (!picker) return;
+  if (picker.classList.contains('open')) {
+    picker.classList.remove('open');
+    return;
+  }
+  // Close any other open picker
+  document.querySelectorAll('.comment-gif-picker.open').forEach(p => p.classList.remove('open'));
+  picker.classList.add('open');
+  picker.innerHTML = `
+    <div class="gif-search-row">
+      <i data-lucide="search"></i>
+      <input type="text" class="gif-search-input" placeholder="Search GIFs" id="gif-search-${postId}" autocomplete="off"/>
+    </div>
+    <div class="gif-picker-grid" id="gif-grid-${postId}">
+      <div class="gif-picker-empty">Loading GIFs…</div>
+    </div>
+    <button class="gif-load-more-btn" id="gif-more-${postId}" type="button" style="display:none">Show more</button>
+  `;
+  if (window.lucide) lucide.createIcons();
+
+  const grid = $(`gif-grid-${postId}`);
+  const moreBtn = $(`gif-more-${postId}`);
+  const searchInput = $(`gif-search-${postId}`);
+  let currentList = [];
+  let visibleCount = GIF_PAGE_SIZE;
+
+  const renderGifGrid = () => {
+    if (!picker.classList.contains('open')) return; // closed meanwhile
+    if (!currentList.length) {
+      grid.innerHTML = `<div class="gif-picker-empty">No GIFs found.</div>`;
+      moreBtn.style.display = 'none';
+      return;
+    }
+    const slice = currentList.slice(0, visibleCount);
+    grid.innerHTML = slice.map(g =>
+      `<img class="gif-picker-item" src="${escHtml(g.url)}" loading="lazy" title="${escHtml(g.label || '')}" data-url="${escHtml(g.url)}"/>`
+    ).join('');
+    grid.querySelectorAll('.gif-picker-item').forEach(img => {
+      img.addEventListener('click', () => {
+        picker.classList.remove('open');
+        sendGifComment(postId, img.dataset.url, postOwnerUid);
+      });
+    });
+    moreBtn.style.display = currentList.length > visibleCount ? 'block' : 'none';
+  };
+
+  moreBtn.addEventListener('click', () => {
+    visibleCount += GIF_PAGE_SIZE;
+    renderGifGrid();
+  });
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    currentList = q ? (_gifsCache || []).filter(g => (g.label || '').toLowerCase().includes(q)) : (_gifsCache || []).slice();
+    visibleCount = GIF_PAGE_SIZE;
+    renderGifGrid();
+  });
+
+  loadGifsCache().then(gifs => {
+    if (!picker.classList.contains('open')) return;
+    if (!gifs.length) {
+      grid.innerHTML = `<div class="gif-picker-empty">No GIFs available yet.</div>`;
+      moreBtn.style.display = 'none';
+      return;
+    }
+    currentList = gifs.slice();
+    renderGifGrid();
+  });
+}
+
+async function sendGifComment(postId, gifUrl, postOwnerUid) {
+  try {
+    await db.collection('posts').doc(postId).collection('comments').add({
+      uid: currentUser.uid,
+      name: currentUserData.name || 'Student',
+      avatar: currentUserData.avatar || '',
+      profilePic: currentUserData.profilePic || '',
+      text: '',
+      gifUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await syncCommentCount(postId);
+    loadComments(postId);
+    if (postOwnerUid && postOwnerUid !== currentUser.uid) {
+      sendNotification(postOwnerUid, 'comment', 'commented a GIF 🎬', null, postId);
+    }
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ══════════════════════════════════════
@@ -2379,7 +2976,7 @@ function loadStories() {
             <div class="story-avatar-inner" style="position:relative;overflow:hidden;">
               ${thumb}
               ${hasVideo ? '<span class="story-vid-badge">▶</span>' : ''}
-              <span style="font-size:20px;position:relative;z-index:1">${latest.avatar||'😎'}</span>
+              <img src="${escHtml(latest.profilePic || DEFAULT_AVATAR)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:0" onerror="this.src='${DEFAULT_AVATAR}'"/>
             </div>
             ${segCount > 1 ? `<span class="story-count-badge">${segCount}</span>` : ''}
             ${isOwn ? `<button class="story-delete-btn" data-uid="${group.uid}" title="Delete latest story">×</button>` : ''}
@@ -2428,7 +3025,7 @@ $('add-story-btn').addEventListener('click', () => {
       await db.collection('stories').add({
         uid:      currentUser.uid,
         name:     currentUserData.name   || currentUser.displayName || 'Student',
-        avatar:   currentUserData.avatar || '😎',
+        avatar:   currentUserData.avatar || '',
         profilePic: currentUserData.profilePic || '',
         mediaUrl: url,
         isVideo:  !!isVideo,
@@ -2569,24 +3166,51 @@ document.getElementById('modal-story-view')?.addEventListener('click', e => {
 // CONFESSIONS
 // ══════════════════════════════════════
 $('new-confession-btn').addEventListener('click', () => openModal('modal-confession'));
+
+let confessionFile = null;
+$('confession-upload-zone').addEventListener('click', () => $('confession-file-input').click());
+$('confession-file-input').addEventListener('change', e => {
+  confessionFile = e.target.files[0];
+  if (confessionFile) {
+    const url = URL.createObjectURL(confessionFile);
+    $('confession-preview-wrap').innerHTML = `<div style="position:relative;margin-top:10px">
+      <img src="${url}" style="width:100%;border-radius:10px;max-height:250px;object-fit:cover"/>
+      <button type="button" id="confession-remove-img" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer">✕</button>
+    </div>`;
+    $('confession-remove-img').addEventListener('click', e2 => {
+      e2.stopPropagation();
+      confessionFile = null;
+      $('confession-preview-wrap').innerHTML = '';
+      $('confession-file-input').value = '';
+    });
+  }
+});
+
 $('submit-confession-btn').addEventListener('click', async () => {
   const text = $('confession-text').value.trim();
   const category = $('confession-category').value;
   if (!text) return toast('Write something!', 'error');
-  showLoading();
+  const btn = $('submit-confession-btn');
+  btn.disabled = true;
   try {
+    let imageUrl = '';
+    if (confessionFile) {
+      imageUrl = await uploadToCloudinary(confessionFile, 'image', '📎 Uploading image…');
+    }
     await db.collection('confessions').add({
-      text, category,
+      text, category, imageUrl: imageUrl || '',
       college: currentUserData.college || '',
       likes: [], comments: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     $('confession-text').value = '';
+    confessionFile = null;
+    $('confession-preview-wrap').innerHTML = '';
+    $('confession-file-input').value = '';
     closeModal('modal-confession');
     toast('Confession posted anonymously 👻', 'success');
-    loadConfessions();
   } catch(e) { toast(e.message, 'error'); }
-  hideLoading();
+  btn.disabled = false;
 });
 
 const CONFESSION_LIFETIME_MS = 6 * 60 * 60 * 1000; // 6 hours
@@ -2608,31 +3232,85 @@ setInterval(() => {
   });
 }, 60 * 1000);
 
+let _confessionsUnsub = null; // tracks the active listener so we never stack duplicates
+
 function loadConfessions() {
+  // Tear down any previous listener first — without this, revisiting the
+  // Confessions tab kept creating ANOTHER onSnapshot subscription on top of
+  // the old ones. Each stacked listener rendered the full list independently,
+  // which is why a single post could show up 2x, 3x, 4x… (once per visit).
+  if (_confessionsUnsub) { _confessionsUnsub(); _confessionsUnsub = null; }
+
   const list = $('confession-list');
   list.innerHTML = '<div class="loading-spinner">Loading…</div>';
-  db.collection('confessions').orderBy('createdAt','desc').limit(30)
+  const renderedIds = new Set();
+
+  _confessionsUnsub = db.collection('confessions').orderBy('createdAt','desc').limit(30)
     .onSnapshot(snap => {
       const now = Date.now();
-      const visibleDocs = [];
-      snap.forEach(doc => {
-        const d = doc.data();
+
+      if (snap.empty) {
+        list.innerHTML = '<div class="loading-spinner">No confessions yet. Be brave! 👻</div>';
+        renderedIds.clear();
+        return;
+      }
+
+      const spinner = list.querySelector('.loading-spinner');
+      if (spinner) spinner.remove();
+
+      snap.docChanges().forEach(change => {
+        const docId = change.doc.id;
+
+        if (change.type === 'removed') {
+          const el = list.querySelector('[data-confession-id="' + docId + '"]');
+          if (el) el.remove();
+          renderedIds.delete(docId);
+          return;
+        }
+
+        const d = change.doc.data();
         const createdMs = d.createdAt?.toMillis?.();
-        // Confessions with no timestamp yet (still writing to server) are kept
-        // visible until they sync; only expire ones we can actually measure.
         const isExpired = createdMs != null && (now - createdMs) >= CONFESSION_LIFETIME_MS;
         if (isExpired) {
-          // Best-effort cleanup: whoever's client notices it first deletes it.
-          // Safe even if several clients race — delete on a missing doc is a no-op.
-          db.collection('confessions').doc(doc.id).delete().catch(() => {});
-        } else {
-          visibleDocs.push(doc);
+          db.collection('confessions').doc(docId).delete().catch(() => {});
+          const el = list.querySelector('[data-confession-id="' + docId + '"]');
+          if (el) el.remove();
+          renderedIds.delete(docId);
+          return;
+        }
+
+        if (change.type === 'modified') {
+          const existing = list.querySelector('[data-confession-id="' + docId + '"]');
+          if (existing) {
+            // Patch ONLY the like button — never touch innerHTML for anything else
+            const likeBtn = existing.querySelector('.conf-like');
+            if (likeBtn) {
+              const isLiked = d.likes && d.likes.includes(currentUser.uid);
+              likeBtn.classList.toggle('liked', isLiked);
+              const countSpan = likeBtn.querySelector('.conf-like-count');
+              if (countSpan) countSpan.textContent = d.likes ? d.likes.length : 0;
+            }
+            return;
+          }
+          // Not currently rendered (e.g. just became visible) — fall through to add it
+        }
+
+        if (change.type === 'added' || (change.type === 'modified' && !renderedIds.has(docId))) {
+          if (renderedIds.has(docId)) return;
+          // Belt-and-braces: also check the live DOM, not just this closure's
+          // Set, in case anything else already rendered this id.
+          if (list.querySelector('[data-confession-id="' + docId + '"]')) { renderedIds.add(docId); return; }
+          const card = buildConfessionCard(docId, d);
+          if (change.newIndex === 0) list.prepend(card);
+          else list.appendChild(card);
+          renderedIds.add(docId);
+          lucide.createIcons();
         }
       });
-      if (visibleDocs.length === 0) { list.innerHTML = '<div class="loading-spinner">No confessions yet. Be brave! 👻</div>'; return; }
-      list.innerHTML = '';
-      visibleDocs.forEach(doc => list.appendChild(buildConfessionCard(doc.id, doc.data())));
-      lucide.createIcons();
+
+      if (list.children.length === 0) {
+        list.innerHTML = '<div class="loading-spinner">No confessions yet. Be brave! 👻</div>';
+      }
     });
 }
 
@@ -2646,110 +3324,43 @@ function buildConfessionCard(id, d) {
   card.innerHTML = `
     <span class="confession-tag">${catEmoji} ${d.category}</span>
     <p class="confession-text">${escHtml(d.text)}</p>
+    ${d.imageUrl ? `<img src="${escHtml(d.imageUrl)}" loading="lazy" alt="confession image" style="width:100%;border-radius:10px;max-height:340px;object-fit:cover;margin:8px 0"/>` : ''}
     <div class="confession-footer">
       <button class="action-btn conf-like ${liked?'liked':''}" data-id="${id}">
-        <i data-lucide="heart"></i> ${d.likes?.length||0}
+        <i data-lucide="heart"></i> <span class="conf-like-count">${d.likes?.length||0}</span>
       </button>
       <span>${timeAgo(d.createdAt)}</span>
       <span>Anonymous</span>
     </div>
   `;
   card.querySelector('.conf-like').addEventListener('click', async () => {
-    const liked2 = d.likes?.includes(currentUser.uid);
-    await db.collection('confessions').doc(id).update({
-      likes: liked2
-        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-    });
+    const ref = db.collection('confessions').doc(id);
+    const btn = card.querySelector('.conf-like');
+    const liked2 = btn.classList.contains('liked');
+    const countSpan = btn.querySelector('.conf-like-count');
+    const curCount = countSpan ? (parseInt(countSpan.textContent) || 0) : 0;
+    // Optimistic update — only touch class + count text, never full re-render
+    if (liked2) {
+      btn.classList.remove('liked');
+      if (countSpan) countSpan.textContent = Math.max(0, curCount - 1);
+    } else {
+      btn.classList.add('liked');
+      if (countSpan) countSpan.textContent = curCount + 1;
+    }
+    try {
+      await ref.update({
+        likes: liked2
+          ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+          : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+    } catch(e) {
+      // Revert on failure
+      if (liked2) { btn.classList.add('liked'); if (countSpan) countSpan.textContent = curCount; }
+      else { btn.classList.remove('liked'); if (countSpan) countSpan.textContent = curCount; }
+      toast('Could not update like: ' + e.message, 'error');
+    }
   });
   return card;
-}
-
-// ══════════════════════════════════════
-// MEMES
-// ══════════════════════════════════════
-$('new-meme-btn').addEventListener('click', () => openModal('modal-meme'));
-$('meme-upload-zone').addEventListener('click', () => $('meme-file-input').click());
-let memeFile = null;
-$('meme-file-input').addEventListener('change', e => {
-  memeFile = e.target.files[0];
-  if (memeFile) {
-    const url = URL.createObjectURL(memeFile);
-    $('meme-preview-wrap').innerHTML = `<img src="${url}" style="width:100%;border-radius:10px;max-height:250px;object-fit:cover;margin-top:10px"/>`;
-  }
-});
-
-$('submit-meme-btn').addEventListener('click', async () => {
-  if (!memeFile) return toast('Select an image!', 'error');
-  showLoading();
-  try {
-    const url = await uploadToCloudinary(memeFile, 'image');
-    const caption = $('meme-caption').value.trim();
-    await db.collection('memes').add({
-      uid: currentUser.uid,
-      name: currentUserData.name || currentUser.displayName || 'Student',
-      avatar: currentUserData.avatar || '😎',
-      college: currentUserData.college || '',
-      url, caption: caption || '', likes: [],
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    memeFile = null;
-    $('meme-preview-wrap').innerHTML = '';
-    $('meme-caption').value = '';
-    closeModal('modal-meme');
-    toast('Meme uploaded! 😂', 'success');
-    loadMemes();
-  } catch(e) { toast(e.message, 'error'); }
-  hideLoading();
-});
-
-function loadMemes() {
-  const grid = $('meme-grid');
-  grid.innerHTML = '<div class="loading-spinner">Loading memes…</div>';
-  db.collection('memes').orderBy('createdAt','desc').limit(40)
-    .onSnapshot(snap => {
-      if (snap.empty) { grid.innerHTML = '<div class="loading-spinner">No memes yet. Upload one! 😂</div>'; return; }
-      grid.innerHTML = '';
-      snap.forEach(doc => {
-        const d = doc.data();
-        const liked = d.likes?.includes(currentUser.uid);
-        const isOwner = d.uid === currentUser.uid;
-        const card = document.createElement('div');
-        card.className = 'meme-card';
-        card.innerHTML = `
-          <img src="${d.url}" loading="lazy" alt="meme"/>
-          <div class="meme-card-footer">
-            <span class="meme-caption">${escHtml(d.caption || d.name)}</span>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="action-btn meme-like ${liked?'liked':''}" data-id="${doc.id}">
-                <i data-lucide="heart"></i> ${d.likes?.length||0}
-              </button>
-              ${isOwner ? `<button class="post-delete-btn meme-delete-btn" data-id="${doc.id}" style="margin-left:0" title="Delete meme"><i data-lucide="trash-2"></i></button>` : ''}
-            </div>
-          </div>`;
-        card.querySelector('.meme-like').addEventListener('click', async e => {
-          e.stopPropagation();
-          const l = d.likes?.includes(currentUser.uid);
-          await db.collection('memes').doc(doc.id).update({
-            likes: l
-              ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-              : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-          });
-          loadMemes();
-        });
-        if (isOwner) {
-          card.querySelector('.meme-delete-btn')?.addEventListener('click', async e => {
-            e.stopPropagation();
-            showConfirmDialog('Delete this meme?', async () => {
-              await db.collection('memes').doc(doc.id).delete();
-              toast('Meme deleted', 'success');
-            });
-          });
-        }
-        grid.appendChild(card);
-      });
-      lucide.createIcons();
-    });
 }
 
 // ══════════════════════════════════════
@@ -2778,7 +3389,8 @@ $('submit-poll-btn').addEventListener('click', async () => {
     await db.collection('polls').add({
       uid: currentUser.uid,
       name: currentUserData.name || currentUser.displayName || 'Student',
-      avatar: currentUserData.avatar || '😎',
+      avatar: currentUserData.avatar || '',
+      profilePic: currentUserData.profilePic || null,
       question: question || '',
       options: optData,
       votes: {}, totalVotes: 0,
@@ -2827,7 +3439,7 @@ function buildPollCard(id, d) {
   });
   card.innerHTML = `
     <div class="post-header" style="padding-bottom:0">
-      <div class="post-avatar">${d.avatar||'😎'}</div>
+      <div class="post-avatar">${renderAvatarHtml(null, d.profilePic, 36)}</div>
       <div class="post-meta"><strong>${escHtml(d.name)}</strong><small>${timeAgo(d.createdAt)}</small></div>
       ${isOwner ? `<button class="post-delete-btn" data-id="${id}" title="Delete poll"><i data-lucide="trash-2"></i></button>` : ''}
     </div>
@@ -2862,18 +3474,117 @@ function buildPollCard(id, d) {
 
 
 // ══════════════════════════════════════
-// CLUBS  (with Members view)
+// CLUBS  (with sections + Members view)
 // ══════════════════════════════════════
+
+// ── CLUB SECTIONS (1st Year – 4th Year built-in, plus admin-added custom ones) ──
+const DEFAULT_CLUB_SECTIONS = [
+  { id: 'year-1', name: '1st Year', emoji: '🎓', builtin: true },
+  { id: 'year-2', name: '2nd Year', emoji: '🎓', builtin: true },
+  { id: 'year-3', name: '3rd Year', emoji: '🎓', builtin: true },
+  { id: 'year-4', name: '4th Year', emoji: '🎓', builtin: true },
+];
+let currentClubSection = null; // { id, name }
+let _clubsUnsub = null;        // active onSnapshot unsubscribe for club-grid
+
+function loadClubSections() {
+  // Reset back to the sections list whenever the Clubs tab is opened
+  $('clubs-list-header').style.display = 'none';
+  $('club-search-wrap').style.display = 'none';
+  $('club-grid').style.display = 'none';
+  $('clubs-sections-header').style.display = '';
+  $('club-sections-grid').style.display = '';
+  if (_clubsUnsub) { _clubsUnsub(); _clubsUnsub = null; }
+
+  const grid = $('club-sections-grid');
+  grid.innerHTML = '<div class="loading-spinner">Loading sections…</div>';
+
+  db.collection('clubSections').orderBy('createdAt', 'asc').get()
+    .then(snap => {
+      const custom = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderClubSections([...DEFAULT_CLUB_SECTIONS, ...custom]);
+    })
+    .catch(() => renderClubSections(DEFAULT_CLUB_SECTIONS));
+}
+
+function renderClubSections(sections) {
+  const grid = $('club-sections-grid');
+  grid.innerHTML = '';
+  sections.forEach(sec => {
+    const card = document.createElement('div');
+    card.className = 'club-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <div class="club-emoji">${sec.emoji || '🏫'}</div>
+      <div class="club-name">${escHtml(sec.name)}</div>
+      <div class="club-desc">Tap to view clubs</div>`;
+    card.addEventListener('click', () => openClubSection(sec));
+    grid.appendChild(card);
+  });
+  lucide.createIcons();
+}
+
+$('add-section-btn').addEventListener('click', () => {
+  if (!isCurrentUserAdmin()) { toast('Only admins can add sections', 'error'); return; }
+  $('section-name').value = '';
+  openModal('modal-section');
+});
+$('submit-section-btn').addEventListener('click', async () => {
+  if (!isCurrentUserAdmin()) { toast('Only admins can add sections', 'error'); return; }
+  const name = $('section-name').value.trim();
+  if (!name) return toast('Section name required', 'error');
+  showLoading();
+  try {
+    await db.collection('clubSections').add({
+      name,
+      emoji: '🏫',
+      createdBy: currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal('modal-section');
+    toast('Section added! 🏫', 'success');
+    loadClubSections();
+  } catch(e) { toast(e.message, 'error'); }
+  hideLoading();
+});
+
+function openClubSection(section) {
+  currentClubSection = section;
+  $('clubs-sections-header').style.display = 'none';
+  $('club-sections-grid').style.display = 'none';
+  $('clubs-list-header').style.display = '';
+  $('club-search-wrap').style.display = '';
+  $('club-search-input').value = '';
+  $('club-grid').style.display = '';
+  $('clubs-section-title').textContent = `${section.emoji || '🏛️'} ${section.name}`;
+  applyAdminUiGates();
+  loadClubs();
+}
+
+$('clubs-back-btn').addEventListener('click', () => {
+  currentClubSection = null;
+  loadClubSections();
+});
+
 $('new-club-btn').addEventListener('click', () => {
   if (!isCurrentUserAdmin()) { toast('Only admins can create clubs', 'error'); return; }
+  $('club-private-toggle').checked = false;
+  $('club-password-wrap').style.display = 'none';
+  $('club-password').value = '';
   openModal('modal-club');
+});
+$('club-private-toggle').addEventListener('change', (e) => {
+  $('club-password-wrap').style.display = e.target.checked ? '' : 'none';
 });
 $('submit-club-btn').addEventListener('click', async () => {
   if (!isCurrentUserAdmin()) { toast('Only admins can create clubs', 'error'); return; }
   const name = $('club-name').value.trim();
   const desc = $('club-desc').value.trim();
   const cat  = $('club-category').value;
+  const isPrivate = $('club-private-toggle').checked;
+  const password = $('club-password').value.trim();
   if (!name) return toast('Club name required', 'error');
+  if (isPrivate && !password) return toast('Set a password for a private club', 'error');
   showLoading();
   try {
     const clubRef = await db.collection('clubs').add({
@@ -2881,9 +3592,13 @@ $('submit-club-btn').addEventListener('click', async () => {
       desc: desc || '',
       category: cat || 'social',
       emoji: CLUB_EMOJI[cat] || '🏛️',
+      section: currentClubSection?.id || null,
+      sectionName: currentClubSection?.name || null,
       createdBy: currentUser.uid,
       college: currentUserData.college || '',
       members: [currentUser.uid],
+      private: isPrivate,
+      password: isPrivate ? password : null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     // Update user clubs array
@@ -2892,118 +3607,216 @@ $('submit-club-btn').addEventListener('click', async () => {
     });
     currentUserData.clubs = [...(currentUserData.clubs||[]), clubRef.id];
     $('club-name').value = ''; $('club-desc').value = '';
+    $('club-private-toggle').checked = false; $('club-password-wrap').style.display = 'none'; $('club-password').value = '';
     closeModal('modal-club');
-    toast('Club created! 🏛️', 'success');
+    toast(isPrivate ? 'Private club created! 🔒' : 'Club created! 🏛️', 'success');
     loadClubs();
     updateProfileStats();
   } catch(e) { toast(e.message, 'error'); }
   hideLoading();
 });
 
+let _clubsAllDocs = [];   // cached [{id, d}] for the currently open section — powers search + star sort
+let _pendingPrivateJoin = null; // {id, d} awaiting password entry
+
+$('club-search-input').addEventListener('input', () => renderClubGrid());
+
 function loadClubs() {
   const grid = $('club-grid');
   grid.innerHTML = '<div class="loading-spinner">Loading clubs…</div>';
-  db.collection('clubs').orderBy('createdAt','desc').limit(30)
+  if (_clubsUnsub) { _clubsUnsub(); _clubsUnsub = null; }
+  if (!currentClubSection) { grid.innerHTML = '<div class="loading-spinner">Select a section above.</div>'; return; }
+
+  _clubsUnsub = db.collection('clubs')
+    .where('section', '==', currentClubSection.id)
+    .limit(30)
     .onSnapshot(snap => {
-      if (snap.empty) { grid.innerHTML = '<div class="loading-spinner">No clubs yet. Create one! 🏛️</div>'; return; }
-      grid.innerHTML = '';
-      snap.forEach(doc => {
-        const d = doc.data();
-        const joined = d.members?.includes(currentUser.uid);
-        const card = document.createElement('div');
-        card.className = 'club-card';
-        card.innerHTML = `
-          <div class="club-emoji">${d.emoji || '🏛️'}</div>
-          <div class="club-name">${escHtml(d.name)}</div>
-          <div class="club-desc">${escHtml(d.desc || '')}</div>
-          <div class="club-meta">
-            <span>
-              👥 ${d.members?.length || 1}
-              <button class="club-card-members-btn" data-id="${doc.id}" data-name="${escHtml(d.name)}" data-emoji="${d.emoji||'🏛️'}">
-                Members
-              </button>
-              ${d.createdBy === currentUser.uid ? `<button class="club-card-ban-btn" data-id="${doc.id}" style="margin-left:4px;background:#ff000018;border:1px solid #ff000030;color:#ff4444;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer">🚫 Banned</button>` : ''}
-            </span>
-            <button class="club-join-btn ${joined?'joined':''}" data-id="${doc.id}" data-joined="${joined}">
-              ${joined ? 'Joined ✓' : 'Join'}
-            </button>
-          </div>`;
-
-        // View members
-        card.querySelector('.club-card-members-btn').addEventListener('click', e => {
-          e.stopPropagation();
-          showClubMembers(doc.id, d.name, d.emoji || '🏛️', d.members || [], d.createdBy);
-        });
-
-        // View banned (owner only)
-        card.querySelector('.club-card-ban-btn')?.addEventListener('click', async e => {
-          e.stopPropagation();
-          // Show only banned section
-          const freshSnap = await db.collection('clubs').doc(doc.id).get();
-          const fresh = freshSnap.data() || {};
-          const bannedUids = fresh.banned || [];
-          $('club-members-title').textContent = `🚫 Banned Users — ${d.name}`;
-          const listEl = $('club-members-list');
-          listEl.innerHTML = `<div style="padding:8px 0 12px;font-size:12px;color:#ff4444;font-weight:700">
-            🔒 Admin Only · ${bannedUids.length} banned user${bannedUids.length!==1?'s':''}
-          </div>`;
-          openModal('modal-club-members');
-          if (bannedUids.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No banned users 🎉</div>';
-            return;
-          }
-          const bu = await fetchUsersByUids(bannedUids);
-          listEl.innerHTML = `<div style="padding:8px 0 12px;font-size:12px;color:#ff4444;font-weight:700">🔒 Admin Only · ${bannedUids.length} banned user${bannedUids.length!==1?'s':''}</div>`;
-          if (!bu.length) { listEl.innerHTML += '<div style="text-align:center;padding:20px;color:var(--muted)">User data not found</div>'; return; }
-          bu.forEach(u => addBannedRow(listEl, u, doc.id));
-        });
-
-        // Join/Leave
-        card.querySelector('.club-join-btn').addEventListener('click', async e => {
-          e.stopPropagation();
-          const isJoined = e.target.dataset.joined === 'true';
-          // Check if banned before joining
-          if (!isJoined) {
-            const clubSnap = await db.collection('clubs').doc(doc.id).get();
-            const banned = clubSnap.data()?.banned || [];
-            if (banned.includes(currentUser.uid)) {
-              toast('You are banned from this club 🚫', 'error');
-              return;
-            }
-          }
-          await db.collection('clubs').doc(doc.id).update({
-            members: isJoined
-              ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-              : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-          });
-          // Update user clubs array
-          await db.collection('users').doc(currentUser.uid).update({
-            clubs: isJoined
-              ? firebase.firestore.FieldValue.arrayRemove(doc.id)
-              : firebase.firestore.FieldValue.arrayUnion(doc.id)
-          });
-          if (isJoined) {
-            currentUserData.clubs = (currentUserData.clubs||[]).filter(c => c !== doc.id);
-          } else {
-            currentUserData.clubs = [...(currentUserData.clubs||[]), doc.id];
-          }
-          toast(isJoined ? 'Left club' : 'Joined club! 🎉', 'success');
-          // Notify club owner when someone joins
-          if (!isJoined && d.createdBy && d.createdBy !== currentUser.uid) {
-            sendNotification(d.createdBy, 'club_join', `joined your club ${d.emoji||'🏛️'} ${d.name}`, null);
-          }
-          updateProfileStats();
-        });
-
-        // Club dashboard on click (only if member, else show info)
-        card.addEventListener('click', () => {
-          openClubDashboard(doc.id, { ...d, id: doc.id });
-        });
-        grid.appendChild(card);
+      if (snap.empty) { _clubsAllDocs = []; grid.innerHTML = `<div class="loading-spinner">No clubs yet in ${escHtml(currentClubSection.name)}. Create one! 🏛️</div>`; return; }
+      const docs = snap.docs.slice().sort((a, b) => {
+        const ta = a.data().createdAt?.toMillis?.() || 0;
+        const tb = b.data().createdAt?.toMillis?.() || 0;
+        return tb - ta;
       });
-      lucide.createIcons();
+      _clubsAllDocs = docs.map(doc => ({ id: doc.id, d: doc.data() }));
+      renderClubGrid();
+    }, err => {
+      grid.innerHTML = `<div class="loading-spinner">Couldn't load clubs: ${escHtml(err.message)}</div>`;
     });
 }
+
+function renderClubGrid() {
+  const grid = $('club-grid');
+  const term = ($('club-search-input').value || '').trim().toLowerCase();
+  const starred = new Set(currentUserData.starredClubs || []);
+
+  let list = _clubsAllDocs;
+  if (term) {
+    list = list.filter(({ d }) =>
+      (d.name || '').toLowerCase().includes(term) ||
+      (d.desc || '').toLowerCase().includes(term)
+    );
+  }
+  // Starred clubs float to the top; original (recency) order is preserved within each group.
+  list = [...list].sort((a, b) => (starred.has(b.id) ? 1 : 0) - (starred.has(a.id) ? 1 : 0));
+
+  if (!list.length) {
+    grid.innerHTML = term
+      ? `<div class="loading-spinner">No clubs match "${escHtml(term)}" 🔍</div>`
+      : `<div class="loading-spinner">No clubs yet in ${escHtml(currentClubSection?.name||'')}. Create one! 🏛️</div>`;
+    return;
+  }
+
+  grid.innerHTML = '';
+  list.forEach(({ id, d }) => {
+    const joined = d.members?.includes(currentUser.uid);
+    const isStarred = starred.has(id);
+    const onlineNow = countClubOnline(d.members);
+    const card = document.createElement('div');
+    card.className = 'club-card';
+    card.style.position = 'relative';
+    card.innerHTML = `
+      ${onlineNow > 0 ? `<div class="club-online-pill" title="Members online right now">🟢 ${onlineNow} online</div>` : ''}
+      <button class="club-star-btn ${isStarred?'starred':''}" data-id="${id}" title="${isStarred?'Unstar this club':'Star this club'}"
+        style="position:absolute;top:8px;right:8px;background:none;color:#fff;border:none;cursor:pointer;font-size:19px;line-height:1;padding:2px;z-index:2;filter:${isStarred?'none':'grayscale(1) opacity(0.55)'}">
+        ${isStarred ? '⭐' : '☆'}
+      </button>
+      <div class="club-emoji">${d.emoji || '🏛️'}</div>
+      <div class="club-name">${escHtml(d.name)} ${d.private ? '<span title="Private club" style="font-size:12px">🔒</span>' : ''}</div>
+      <div class="club-desc">${escHtml(d.desc || '')}</div>
+      <div class="club-meta">
+        <span>
+          👥 ${d.members?.length || 1}
+          <button class="club-card-members-btn" data-id="${id}" data-name="${escHtml(d.name)}" data-emoji="${d.emoji||'🏛️'}">
+            Members
+          </button>
+          ${d.createdBy === currentUser.uid ? `<button class="club-card-ban-btn" data-id="${id}" style="margin-left:4px;background:#ff000018;border:1px solid #ff000030;color:#ff4444;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer">🚫 Banned</button>` : ''}
+        </span>
+        <button class="club-join-btn ${joined?'joined':''}" data-id="${id}" data-joined="${joined}">
+          ${joined ? 'Joined ✓' : (d.private ? '🔒 Join' : 'Join')}
+        </button>
+      </div>`;
+
+    // Star / unstar
+    card.querySelector('.club-star-btn').addEventListener('click', async e => {
+      e.stopPropagation();
+      try {
+        await db.collection('users').doc(currentUser.uid).update({
+          starredClubs: isStarred
+            ? firebase.firestore.FieldValue.arrayRemove(id)
+            : firebase.firestore.FieldValue.arrayUnion(id)
+        });
+        currentUserData.starredClubs = isStarred
+          ? (currentUserData.starredClubs||[]).filter(c => c !== id)
+          : [...(currentUserData.starredClubs||[]), id];
+        renderClubGrid();
+      } catch(err) { toast(err.message, 'error'); }
+    });
+
+    // View members
+    card.querySelector('.club-card-members-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      showClubMembers(id, d.name, d.emoji || '🏛️', d.members || [], d.createdBy);
+    });
+
+    // View banned (owner only)
+    card.querySelector('.club-card-ban-btn')?.addEventListener('click', async e => {
+      e.stopPropagation();
+      // Show only banned section
+      const freshSnap = await db.collection('clubs').doc(id).get();
+      const fresh = freshSnap.data() || {};
+      const bannedUids = fresh.banned || [];
+      $('club-members-title').textContent = `🚫 Banned Users — ${d.name}`;
+      const listEl = $('club-members-list');
+      listEl.innerHTML = `<div style="padding:8px 0 12px;font-size:12px;color:#ff4444;font-weight:700">
+        🔒 Admin Only · ${bannedUids.length} banned user${bannedUids.length!==1?'s':''}
+      </div>`;
+      openModal('modal-club-members');
+      if (bannedUids.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No banned users 🎉</div>';
+        return;
+      }
+      const bu = await fetchUsersByUids(bannedUids);
+      listEl.innerHTML = `<div style="padding:8px 0 12px;font-size:12px;color:#ff4444;font-weight:700">🔒 Admin Only · ${bannedUids.length} banned user${bannedUids.length!==1?'s':''}</div>`;
+      if (!bu.length) { listEl.innerHTML += '<div style="text-align:center;padding:20px;color:var(--muted)">User data not found</div>'; return; }
+      bu.forEach(u => addBannedRow(listEl, u, id));
+    });
+
+    // Join/Leave
+    card.querySelector('.club-join-btn').addEventListener('click', async e => {
+      e.stopPropagation();
+      const isJoined = e.target.closest('.club-join-btn').dataset.joined === 'true';
+      if (isJoined) { leaveClub(id, d); return; }
+      if (d.private) {
+        _pendingPrivateJoin = { id, d };
+        $('club-password-input').value = '';
+        $('club-password-modal-note').textContent = `"${d.name}" is private. Enter the password to join.`;
+        openModal('modal-club-password');
+        return;
+      }
+      joinClub(id, d);
+    });
+
+    // Club dashboard on click (only if member, else show info)
+    card.addEventListener('click', () => {
+      openClubDashboard(id, { ...d, id });
+    });
+    grid.appendChild(card);
+  });
+  lucide.createIcons();
+}
+
+async function joinClub(clubId, d) {
+  try {
+    const clubSnap = await db.collection('clubs').doc(clubId).get();
+    const banned = clubSnap.data()?.banned || [];
+    if (banned.includes(currentUser.uid)) {
+      toast('You are banned from this club 🚫', 'error');
+      return;
+    }
+    await db.collection('clubs').doc(clubId).update({
+      members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+    });
+    await db.collection('users').doc(currentUser.uid).update({
+      clubs: firebase.firestore.FieldValue.arrayUnion(clubId)
+    });
+    currentUserData.clubs = [...(currentUserData.clubs||[]), clubId];
+    toast('Joined club! 🎉', 'success');
+    if (d.createdBy && d.createdBy !== currentUser.uid) {
+      sendNotification(d.createdBy, 'club_join', `joined your club ${d.emoji||'🏛️'} ${d.name}`, null);
+    }
+    updateProfileStats();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function leaveClub(clubId, d) {
+  try {
+    await db.collection('clubs').doc(clubId).update({
+      members: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+    });
+    await db.collection('users').doc(currentUser.uid).update({
+      clubs: firebase.firestore.FieldValue.arrayRemove(clubId)
+    });
+    currentUserData.clubs = (currentUserData.clubs||[]).filter(c => c !== clubId);
+    toast('Left club', 'success');
+    updateProfileStats();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+$('club-password-submit-btn').addEventListener('click', async () => {
+  if (!_pendingPrivateJoin) return;
+  const entered = $('club-password-input').value;
+  const { id, d } = _pendingPrivateJoin;
+  // Re-fetch fresh in case the password was changed since the grid loaded
+  const freshSnap = await db.collection('clubs').doc(id).get();
+  const freshPassword = freshSnap.data()?.password || '';
+  if (!entered || entered !== freshPassword) {
+    toast('Incorrect password 🚫', 'error');
+    return;
+  }
+  closeModal('modal-club-password');
+  await joinClub(id, d);
+  _pendingPrivateJoin = null;
+});
 
 async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
   $('club-members-title').textContent = `${emoji} ${clubName} — Members`;
@@ -3086,9 +3899,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
           </div>`;
       }
 
-      const avatarHtml = u.profilePic
-        ? `<img src="${escHtml(u.profilePic)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover"/>`
-        : `<span style="font-size:28px">${u.avatar||'😎'}</span>`;
+      const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover"/>`;
 
       row.innerHTML = `
         <div style="flex-shrink:0">${avatarHtml}</div>
@@ -3178,9 +3989,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
 function addBannedRow(listEl, u, clubId) {
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);opacity:0.7';
-  const avatarHtml = u.profilePic
-    ? `<img src="${escHtml(u.profilePic)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;filter:grayscale(1)"/>`
-    : `<span style="font-size:28px;filter:grayscale(1)">${u.avatar||'😎'}</span>`;
+  const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;filter:grayscale(1)"/>`;
   row.innerHTML = `
     <div style="flex-shrink:0">${avatarHtml}</div>
     <div style="flex:1;min-width:0">
@@ -3283,11 +4092,12 @@ function openClubChat(clubId, clubName, emoji, memberUids, createdBy) {
     const txt = document.getElementById('club-chat-input')?.value.trim();
     if (!txt) return;
     const msg = {
-      uid:    currentUser.uid,
-      name:   currentUserData.name   || 'Student',
-      avatar: currentUserData.avatar || '😎',
-      text:   txt,
-      ts:     Date.now()
+      uid:        currentUser.uid,
+      name:       currentUserData.name       || 'Student',
+      avatar:     currentUserData.avatar     || '',
+      profilePic: currentUserData.profilePic || null,
+      text:       txt,
+      ts:         Date.now()
     };
     rtdb.ref(`clubChats/${clubId}/messages`).push(msg).catch(() => {});
     document.getElementById('club-chat-input').value = '';
@@ -3352,11 +4162,12 @@ function openClubDashboard(clubId, clubData) {
           <div style="flex:1">
             <h2 style="color:#fff;font-size:20px;margin:0">${escHtml(clubData.name)}</h2>
             <div style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:2px">👥 ${(clubData.members||[]).length} members · ${escHtml(clubData.category||'')}</div>
+            <div id="club-dash-online-badge" style="color:#7CFFB2;font-size:12px;font-weight:700;margin-top:2px"></div>
           </div>
           <button id="club-dash-close" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">✕</button>
         </div>
         <div style="display:flex;gap:6px;margin-top:14px;overflow-x:auto;padding-bottom:4px" id="club-tab-bar">
-          ${['💬 Chat','📢 Announce','📅 Events','🗳️ Polls','🖼️ Gallery','🏆 Leaderboard','👥 Members'].map((t,i)=>`
+          ${['💬 Chat','📢 Announce','📅 Events','🗳️ Polls','🖼️ Gallery','📝 Notes','✅ Projects','🏆 Leaderboard','👥 Members'].map((t,i)=>`
             <button class="club-tab-btn ${i===0?'active':''}" data-tab="${i}" style="white-space:nowrap;padding:6px 12px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;${i===0?'background:#fff;color:var(--accent)':'background:rgba(255,255,255,0.2);color:#fff'}">${t}</button>
           `).join('')}
         </div>
@@ -3380,16 +4191,29 @@ function openClubDashboard(clubId, clubData) {
   document.getElementById('club-dash-close').addEventListener('click', () => {
     modal.classList.remove('open');
     if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
+    _openClubDashboard = null;
   });
   modal.addEventListener('click', e => {
     if (e.target === modal) {
       modal.classList.remove('open');
       if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
+      _openClubDashboard = null;
     }
   });
 
   modal.classList.add('open');
+  _openClubDashboard = { id: clubId, members: clubData.members || [] };
+  updateOpenClubDashboardOnlineCount();
   renderClubTab(0, clubId, clubData, isOwner, isMember);
+}
+
+let _openClubDashboard = null;
+function updateOpenClubDashboardOnlineCount() {
+  if (!_openClubDashboard) return;
+  const badge = document.getElementById('club-dash-online-badge');
+  if (!badge) { _openClubDashboard = null; return; }
+  const onlineNow = countClubOnline(_openClubDashboard.members);
+  badge.textContent = onlineNow > 0 ? `🟢 ${onlineNow} online now` : '';
 }
 
 function renderClubTab(tab, clubId, clubData, isOwner, isMember) {
@@ -3401,8 +4225,10 @@ function renderClubTab(tab, clubId, clubData, isOwner, isMember) {
   else if (tab === 2) renderClubEvents(body, clubId, clubData, isOwner);
   else if (tab === 3) renderClubPolls(body, clubId, clubData, isMember);
   else if (tab === 4) renderClubGallery(body, clubId, clubData, isMember, isOwner);
-  else if (tab === 5) renderClubLeaderboard(body, clubId, clubData);
-  else if (tab === 6) showClubMembers(clubId, clubData.name, clubData.emoji, clubData.members || [], clubData.createdBy);
+  else if (tab === 5) renderClubNotes(body, clubId, clubData, isMember, isOwner);
+  else if (tab === 6) renderClubProjects(body, clubId, clubData, isMember, isOwner);
+  else if (tab === 7) renderClubLeaderboard(body, clubId, clubData);
+  else if (tab === 8) showClubMembers(clubId, clubData.name, clubData.emoji, clubData.members || [], clubData.createdBy);
 }
 
 // ── Club Chat Tab ──
@@ -3437,7 +4263,7 @@ function renderClubChat(body, clubId, clubData, isMember, isPrivileged) {
     inp.value = '';
     rtdb.ref(`clubChats/${clubId}/messages`).push({
       uid: currentUser.uid, name: currentUserData.name || 'Student',
-      avatar: currentUserData.avatar || '😎',
+      avatar: currentUserData.avatar || '',
       profilePic: currentUserData.profilePic || '',
       text: txt, ts: Date.now()
     }).catch(() => {});
@@ -3461,7 +4287,8 @@ function renderClubAnnouncements(body, clubId, clubData, isOwner) {
       const txt = document.getElementById('ann-text')?.value.trim();
       if (!txt) return;
       await db.collection('clubs').doc(clubId).collection('announcements').add({
-        text: txt, authorName: currentUserData.name || 'Student', authorAvatar: currentUserData.avatar || '😎',
+        text: txt, authorName: currentUserData.name || 'Student', authorAvatar: currentUserData.avatar || '',
+        authorProfilePic: currentUserData.profilePic || null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       document.getElementById('ann-text').value = '';
@@ -3484,7 +4311,7 @@ function loadAnnouncements(clubId) {
         const div = document.createElement('div');
         div.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:10px';
         div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="font-size:22px">${d.authorAvatar||'😎'}</span>
+          ${renderAvatarHtml(null, d.authorProfilePic, 26)}
           <div><strong style="font-size:13px">${escHtml(d.authorName||'Admin')}</strong><div style="font-size:11px;color:var(--muted)">${timeAgo(d.createdAt)}</div></div>
         </div><div style="font-size:14px">${escHtml(d.text)}</div>`;
         el.appendChild(div);
@@ -3662,7 +4489,7 @@ function renderClubGallery(body, clubId, clubData, isMember, isPrivileged) {
       try {
         const url = await uploadToCloudinary(file, 'image', '🖼️ Uploading to gallery…');
         await db.collection('clubs').doc(clubId).collection('gallery').add({
-          url, uploaderName: currentUserData.name || 'Student', uploaderAvatar: currentUserData.avatar || '😎',
+          url, uploaderName: currentUserData.name || 'Student', uploaderAvatar: currentUserData.avatar || '',
           uid: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         loadClubGallery(clubId, isPrivileged);
@@ -3688,7 +4515,7 @@ function loadClubGallery(clubId, isPrivileged) {
         tile.style.cssText = 'position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface2)';
         tile.innerHTML = `<img src="${d.url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
           ${canDelete ? `<button class="gallery-delete-btn" title="Delete photo" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
-          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px;font-size:11px;color:#fff">${escHtml(d.uploaderAvatar||'😎')} ${escHtml(d.uploaderName||'')}</div>`;
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px;font-size:11px;color:#fff">${escHtml(d.uploaderName||'')}</div>`;
         tile.addEventListener('click', (e) => {
           if (e.target.closest('.gallery-delete-btn')) return;
           window.open(d.url, '_blank');
@@ -3709,6 +4536,204 @@ function loadClubGallery(clubId, isPrivileged) {
       });
       lucide.createIcons();
     }).catch(e => { grid.innerHTML = `<p style="color:var(--danger);padding:16px;grid-column:1/-1">${escHtml(e.message)}</p>`; });
+}
+
+// ── Club Notes Tab (everyone in the club can view + add) ──
+function renderClubNotes(body, clubId, clubData, isMember, isOwner) {
+  if (!isMember) { body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Join the club to view notes 📝</div>'; return; }
+  body.innerHTML = `<div style="padding:16px">
+    <div style="margin-bottom:16px">
+      <textarea id="note-text" rows="3" placeholder="📝 Add a shared note…" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;resize:none"></textarea>
+      <div id="club-note-file-preview" style="display:none;align-items:center;margin-top:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="file" id="club-note-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,image/*" hidden/>
+        <button id="club-note-file-btn" type="button" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px">📎 Attach file</button>
+        <button id="note-submit" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Add Note</button>
+      </div>
+    </div>
+    <div id="note-list"><div class="loading-spinner">Loading…</div></div>
+  </div>`;
+
+  const fileInput = document.getElementById('club-note-file-input');
+  document.getElementById('club-note-file-btn')?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', () => {
+    if (fileInput.files[0]) handleClubNoteFileSelect(fileInput.files[0]);
+  });
+
+  document.getElementById('note-submit')?.addEventListener('click', async () => {
+    const txt = document.getElementById('note-text')?.value.trim();
+    if (!txt && !_selectedClubNoteFile) { toast('Write something or attach a file', 'error'); return; }
+
+    const btn = document.getElementById('note-submit');
+    btn.disabled = true;
+    try {
+      let fileUrl = null, fileName = null, fileType = null;
+      if (_selectedClubNoteFile) {
+        // PDFs/docs/zips etc go up as 'raw' (Cloudinary's bucket for
+        // non-image/video files); images still get compressed + optimized
+        // via the normal image path inside uploadToCloudinary.
+        const isImg = _selectedClubNoteFile.type.startsWith('image/');
+        fileUrl  = await uploadToCloudinary(_selectedClubNoteFile, isImg ? 'image' : 'raw', '📎 Uploading file…');
+        fileName = _selectedClubNoteFile.name;
+        fileType = _selectedClubNoteFile.type;
+      }
+      await db.collection('clubs').doc(clubId).collection('notes').add({
+        text: txt || '', authorUid: currentUser.uid,
+        authorName: currentUserData.name || 'Student', authorAvatar: currentUserData.avatar || '',
+        authorProfilePic: currentUserData.profilePic || null,
+        fileUrl, fileName, fileType,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('note-text').value = '';
+      clearClubNoteFile();
+      loadClubNotes(clubId, isOwner);
+      toast('Note added 📝', 'success');
+    } catch(e) {
+      toast('Failed to add note: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  loadClubNotes(clubId, isOwner);
+}
+
+let _selectedClubNoteFile = null;
+function handleClubNoteFileSelect(file) {
+  if (file.size > 20 * 1024 * 1024) { toast('File too large (max 20 MB)', 'error'); return; }
+  _selectedClubNoteFile = file;
+  const preview = document.getElementById('club-note-file-preview');
+  if (!preview) return;
+  preview.style.display = 'flex';
+  const isImg = file.type.startsWith('image/');
+  const ext = (file.name.split('.').pop() || 'FILE').toUpperCase();
+  preview.innerHTML = isImg
+    ? `<img src="${URL.createObjectURL(file)}" style="max-height:50px;border-radius:6px;margin-right:10px"/>
+       <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${escHtml(file.name)}</span>
+       <button id="club-note-file-clear" style="margin-left:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px">✕</button>`
+    : `<span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:4px 8px;border-radius:6px;margin-right:10px">${escHtml(ext)}</span>
+       <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${escHtml(file.name)}</span>
+       <button id="club-note-file-clear" style="margin-left:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px">✕</button>`;
+  document.getElementById('club-note-file-clear')?.addEventListener('click', clearClubNoteFile);
+}
+function clearClubNoteFile() {
+  _selectedClubNoteFile = null;
+  const preview = document.getElementById('club-note-file-preview');
+  const input = document.getElementById('club-note-file-input');
+  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+  if (input) input.value = '';
+}
+
+function loadClubNotes(clubId, isOwner) {
+  const el = document.getElementById('note-list'); if (!el) return;
+  el.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  db.collection('clubs').doc(clubId).collection('notes')
+    .orderBy('createdAt', 'desc').limit(50).get().then(snap => {
+      if (snap.empty) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No notes yet — add the first one 📝</div>'; return; }
+      el.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const canDelete = isOwner || d.authorUid === currentUser.uid;
+        const div = document.createElement('div');
+        div.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-left:4px solid #ffb020;border-radius:10px;padding:12px 14px;margin-bottom:10px';
+        const isImgFile = d.fileType && d.fileType.startsWith('image/');
+        const fileExt = d.fileName ? (d.fileName.split('.').pop() || 'FILE').toUpperCase() : '';
+        const fileBlock = d.fileUrl
+          ? (isImgFile
+              ? `<a href="${d.fileUrl}" target="_blank" rel="noopener"><img src="${d.fileUrl}" style="max-width:100%;border-radius:8px;margin-top:8px;display:block"/></a>`
+              : `<a href="${d.fileUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text)">
+                   <span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:4px 8px;border-radius:6px">${escHtml(fileExt)}</span>
+                   <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${escHtml(d.fileName||'Attached file')}</span>
+                   <span style="font-size:12px;color:var(--accent)">Open ↗</span>
+                 </a>`)
+          : '';
+        div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          ${renderAvatarHtml(null, d.authorProfilePic, 26)}
+          <div style="flex:1"><strong style="font-size:13px">${escHtml(d.authorName||'Member')}</strong><div style="font-size:11px;color:var(--muted)">${timeAgo(d.createdAt)}</div></div>
+          ${canDelete ? `<button class="note-del-btn" data-id="${doc.id}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">🗑️</button>` : ''}
+        </div>${d.text ? `<div style="font-size:14px;white-space:pre-wrap">${escHtml(d.text)}</div>` : ''}${fileBlock}`;
+        el.appendChild(div);
+      });
+      el.querySelectorAll('.note-del-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await db.collection('clubs').doc(clubId).collection('notes').doc(btn.dataset.id).delete();
+          loadClubNotes(clubId, isOwner);
+        });
+      });
+    }).catch(e => { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
+}
+
+// ── Club Projects Tab (everyone in the club can view + add + update status) ──
+function renderClubProjects(body, clubId, clubData, isMember, isOwner) {
+  if (!isMember) { body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Join the club to view projects ✅</div>'; return; }
+  body.innerHTML = `<div style="padding:16px">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <input type="text" id="proj-title" placeholder="Project title" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;margin-bottom:8px"/>
+      <textarea id="proj-desc" rows="2" placeholder="What's it about?" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;resize:none;margin-bottom:8px"></textarea>
+      <button id="proj-submit" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Add Project</button>
+    </div>
+    <div id="proj-list"><div class="loading-spinner">Loading…</div></div>
+  </div>`;
+
+  document.getElementById('proj-submit')?.addEventListener('click', async () => {
+    const title = document.getElementById('proj-title')?.value.trim();
+    const desc = document.getElementById('proj-desc')?.value.trim();
+    if (!title) return;
+    await db.collection('clubs').doc(clubId).collection('projects').add({
+      title, description: desc || '', status: 'todo',
+      authorUid: currentUser.uid, authorName: currentUserData.name || 'Student', authorAvatar: currentUserData.avatar || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('proj-title').value = '';
+    document.getElementById('proj-desc').value = '';
+    loadClubProjects(clubId, isOwner);
+    toast('Project added ✅', 'success');
+  });
+  loadClubProjects(clubId, isOwner);
+}
+
+const PROJECT_STATUSES = { todo: { label: 'To Do', color: '#888' }, inprogress: { label: 'In Progress', color: '#ffb020' }, done: { label: 'Done', color: '#2ecc71' } };
+
+function loadClubProjects(clubId, isOwner) {
+  const el = document.getElementById('proj-list'); if (!el) return;
+  el.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  db.collection('clubs').doc(clubId).collection('projects')
+    .orderBy('createdAt', 'desc').limit(50).get().then(snap => {
+      if (snap.empty) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No projects yet — add the first one ✅</div>'; return; }
+      el.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const canManage = isOwner || d.authorUid === currentUser.uid;
+        const status = PROJECT_STATUSES[d.status] || PROJECT_STATUSES.todo;
+        const div = document.createElement('div');
+        div.style.cssText = `background:var(--surface2);border:1px solid var(--border);border-left:4px solid ${status.color};border-radius:10px;padding:12px 14px;margin-bottom:10px`;
+        div.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+            <div style="flex:1">
+              <strong style="font-size:14px">${escHtml(d.title)}</strong>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">by ${escHtml(d.authorName||'Member')} · ${timeAgo(d.createdAt)}</div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:${status.color};background:${status.color}18;border:1px solid ${status.color}40;padding:3px 10px;border-radius:20px;white-space:nowrap">${status.label}</span>
+          </div>
+          ${d.description ? `<div style="font-size:13px;color:var(--text);white-space:pre-wrap;margin-bottom:${canManage?'8px':'0'}">${escHtml(d.description)}</div>` : ''}
+          ${canManage ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${Object.keys(PROJECT_STATUSES).filter(s => s !== d.status).map(s => `<button class="proj-status-btn" data-id="${doc.id}" data-status="${s}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">Mark ${PROJECT_STATUSES[s].label}</button>`).join('')}
+            <button class="proj-del-btn" data-id="${doc.id}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--danger);cursor:pointer;margin-left:auto">Delete</button>
+          </div>` : ''}`;
+        el.appendChild(div);
+      });
+      el.querySelectorAll('.proj-status-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await db.collection('clubs').doc(clubId).collection('projects').doc(btn.dataset.id).update({ status: btn.dataset.status });
+          loadClubProjects(clubId, isOwner);
+        });
+      });
+      el.querySelectorAll('.proj-del-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await db.collection('clubs').doc(clubId).collection('projects').doc(btn.dataset.id).delete();
+          loadClubProjects(clubId, isOwner);
+        });
+      });
+    }).catch(e => { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
 }
 
 // ── Club Leaderboard Tab ──
@@ -3746,7 +4771,7 @@ async function loadClubLeaderboard(clubId, clubData) {
       const div = document.createElement('div');
       div.style.cssText = `display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;margin-bottom:8px;${idx<3?'background:var(--surface2);border:1px solid var(--border)':''}`;
       div.innerHTML = `<div style="font-size:22px;flex-shrink:0;width:30px;text-align:center">${medals[idx]||`${idx+1}`}</div>
-        <div style="font-size:26px;flex-shrink:0">${u.avatar||'😎'}</div>
+        <div style="flex-shrink:0">${renderAvatarHtml(null, u.profilePic, 26)}</div>
         <div style="flex:1"><strong style="font-size:14px">${escHtml(u.name||uid.slice(0,8))}</strong><div style="font-size:12px;color:var(--muted)">${count} messages</div></div>
         <div style="font-size:20px;font-weight:800;color:var(--accent)">${count}</div>`;
       el.appendChild(div);
@@ -3792,14 +4817,14 @@ function loadChatList() {
         const d = doc.data();
         const other = d.members.find(m => m !== currentUser.uid);
         if (isBlocked(other)) return; // hide chats with blocked/blocked-by users
-        const otherInfo = d.memberInfo?.[other] || { name: d.name || 'User', avatar: '😎' };
+        const otherInfo = d.memberInfo?.[other] || { name: d.name || 'User', avatar: '' };
         // Fix 4: Count unread messages for this chat
         const isLastSenderMe = d.lastSenderId === currentUser.uid;
         const unreadCount = (!isLastSenderMe && d.unreadCount && d.unreadCount[currentUser.uid]) || 0;
         const item = document.createElement('div');
         item.className = 'chat-list-item';
         item.innerHTML = `
-          <div class="chat-list-avatar">${otherInfo.avatar || '😎'}</div>
+          <div class="chat-list-avatar">${renderAvatarHtml(null, otherInfo.profilePic, 40)}</div>
           <div class="chat-list-info">
             <strong>${escHtml(otherInfo.name || 'User')}</strong>
             <small class="${unreadCount > 0 ? 'chat-unread-preview' : ''}">${escHtml(d.lastMessage || 'Say hi!')}</small>
@@ -3817,7 +4842,7 @@ function loadChatList() {
     });
 }
 
-function startChat(uid, name, avatar) {
+function startChat(uid, name, avatar, profilePic) {
   if (isBlocked(uid)) {
     toast('You can\'t message this user.', 'error');
     return;
@@ -3827,7 +4852,7 @@ function startChat(uid, name, avatar) {
   // 2. After list renders, open the specific chat and highlight it
   setTimeout(() => {
     const chatId = getChatId(currentUser.uid, uid);
-    openChat(chatId, uid, { name, avatar });
+    openChat(chatId, uid, { name, avatar, profilePic: profilePic || null });
     // Highlight the active item in the chat list
     setTimeout(() => {
       document.querySelectorAll('.chat-list-item').forEach(el => {
@@ -3868,12 +4893,14 @@ async function openChat(chatId, otherUid, otherInfo) {
         members: [currentUser.uid, otherUid].filter(Boolean),
         memberInfo: {
           [currentUser.uid]: {
-            name:   currentUserData.name   || currentUser.displayName || 'Student',
-            avatar: currentUserData.avatar || '😎'
+            name:       currentUserData.name       || currentUser.displayName || 'Student',
+            avatar:     currentUserData.avatar     || '',
+            profilePic: currentUserData.profilePic || null
           },
           ...(otherUid ? { [otherUid]: {
-            name:   (otherInfo && otherInfo.name)   ? String(otherInfo.name)   : 'User',
-            avatar: (otherInfo && otherInfo.avatar) ? String(otherInfo.avatar) : '😎'
+            name:       (otherInfo && otherInfo.name)       ? String(otherInfo.name)       : 'User',
+            avatar:     (otherInfo && otherInfo.avatar)     ? String(otherInfo.avatar)     : '',
+            profilePic: (otherInfo && otherInfo.profilePic) ? String(otherInfo.profilePic) : null
           }} : {})
         },
         lastMessage: '',
@@ -3895,7 +4922,7 @@ async function openChat(chatId, otherUid, otherInfo) {
   const win = $('chat-window');
   win.innerHTML = `
     <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
-      <span style="font-size:28px">${otherInfo.avatar||'😎'}</span>
+      ${renderAvatarHtml(null, otherInfo.profilePic, 32)}
       <strong>${escHtml(otherInfo.name||'User')}</strong>
     </div>
     <div class="chat-messages" id="desktop-chat-msgs"></div>
@@ -3980,7 +5007,7 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
   const msg = {
     uid:      currentUser.uid,
     name:     currentUserData.name   || currentUser.displayName || 'Student',
-    avatar:   currentUserData.avatar || '😎',
+    avatar:   currentUserData.avatar || '',
     profilePic: currentUserData.profilePic || '',
     text:     text     || '',
     mediaUrl: mediaUrl,
@@ -4028,7 +5055,7 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
         toUid:    uid,
         fromUid:  currentUser.uid,
         fromName: currentUserData.name || 'Student',
-        fromAvatar: currentUserData.avatar || '😎',
+        fromAvatar: currentUserData.avatar || '',
         type:     'message',
         text:     text ? text.slice(0, 60) : (mediaUrl ? '📎 Media' : ''),
         chatId:   chatId,
@@ -4202,19 +5229,79 @@ function buildMsgBubble(m) {
 // ══════════════════════════════════════
 // PROFILE  (fixed real-time stats)
 // ══════════════════════════════════════
+// Achievement badges: mix of auto-computed (activity/role/tenure-based) and
+// any custom badges an admin has granted directly on the user doc.
+function computeBadgeList(userData) {
+  const badges = [];
+  const posts = userData.posts || 0;
+  const friends = userData.friends || 0;
+  const clubs = (userData.clubs || []).length;
+  if (posts >= 1)   badges.push('🎉 First Post');
+  if (posts >= 10)  badges.push('📝 Active Poster');
+  if (posts >= 50)  badges.push('🔥 Power Poster');
+  if (clubs >= 1)   badges.push('🏛️ Club Member');
+  if (friends >= 10) badges.push('🤝 Well Connected');
+  if (friends >= 50) badges.push('👑 Campus Legend');
+  if (typeof currentUserIsAppMod !== 'undefined' && currentUserIsAppMod) badges.push('🛡️ Moderator');
+  const createdMs = userData.createdAt?.toMillis?.();
+  if (createdMs && (Date.now() - createdMs) >= 1000 * 60 * 60 * 24 * 90) badges.push('⏳ OG Member');
+  // Admin-assignable custom badges (e.g. "✔️ Verified") stored on the user doc
+  (userData.badges || []).forEach(b => { if (!badges.includes(b)) badges.push(b); });
+  return badges;
+}
+
+function renderProfileYearBranch(userData) {
+  const el = $('profile-year-branch');
+  if (!el) return;
+  const parts = [userData.year, userData.branch].filter(Boolean);
+  el.textContent = parts.length ? parts.join(' · ') : '';
+  el.style.display = parts.length ? '' : 'none';
+}
+
+function renderProfileSkills(userData) {
+  const el = $('profile-skills');
+  if (!el) return;
+  const skills = userData.skills || [];
+  el.innerHTML = skills.map(s => `<span class="skill-chip">${escHtml(s)}</span>`).join('');
+}
+
+const SOCIAL_LINK_DEFS = [
+{
+  key: 'instagram',
+  emoji: '<i class="fa-brands fa-instagram"></i>',
+  url: u => `https://instagram.com/${u}`
+},
+  { key: 'twitter',   emoji: '🐦', url: u => `https://x.com/${u}` },
+  { key: 'linkedin',  emoji: '💼', url: u => `https://linkedin.com/in/${u}` },
+  { key: 'github',    emoji: '💻', url: u => `https://github.com/${u}` },
+  { key: 'website',   icon: 'globe', url: u => (/^https?:\/\//i.test(u) ? u : `https://${u}`) },
+];
+function renderProfileSocialLinks(userData) {
+  const el = $('profile-social-links');
+  if (!el) return;
+  const links = userData.socialLinks || {};
+  el.innerHTML = SOCIAL_LINK_DEFS
+    .filter(def => links[def.key])
+    .map(def => `<a href="${escHtml(def.url(links[def.key].trim()))}" target="_blank" rel="noopener noreferrer" title="${def.key}">${def.icon ? `<i data-lucide="${def.icon}"></i>` : `<span class="social-link-emoji">${def.emoji}</span>`}</a>`)
+    .join('');
+  lucide.createIcons();
+}
+
 function loadProfile() {
   if (!currentUserData) return;
   $('profile-name').textContent = currentUserData.name || 'Student';
   $('profile-username').textContent = `@${currentUserData.username || 'user'}`;
   $('profile-college').textContent = `🎓 ${currentUserData.college || 'My College'}`;
-  // Fix 2: Show profile photo if set, else emoji avatar
+  // Show profile photo if set, else the default avatar image
   const avatarEl = $('profile-avatar-display');
-  if (currentUserData.profilePic) {
-    avatarEl.innerHTML = '<img src="' + currentUserData.profilePic + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  } else {
-    avatarEl.textContent = currentUserData.avatar || '😎';
-  }
+  avatarEl.innerHTML = '<img src="' + (currentUserData.profilePic || DEFAULT_AVATAR) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
   $('profile-bio').value = currentUserData.bio || '';
+  renderProfileYearBranch(currentUserData);
+  renderProfileSkills(currentUserData);
+  renderProfileSocialLinks(currentUserData);
+  // You're always "online" while looking at your own profile
+  const dot = $('profile-presence-dot');
+  if (dot) { dot.classList.add('online'); dot.title = 'Online'; }
 
   // Set initial values from cached data
   $('stat-posts').textContent = currentUserData.posts || 0;
@@ -4237,13 +5324,9 @@ function loadProfile() {
       }
     });
 
-    // Fix 2b: Refresh avatar/profilePic from fresh Firestore data
+    // Refresh avatar/profilePic from fresh Firestore data — always show an image
     const freshAvatarEl = $('profile-avatar-display');
-    if (fresh.profilePic) {
-      freshAvatarEl.innerHTML = '<img src="' + fresh.profilePic + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-    } else if (fresh.avatar) {
-      freshAvatarEl.textContent = fresh.avatar;
-    }
+    freshAvatarEl.innerHTML = '<img src="' + (fresh.profilePic || DEFAULT_AVATAR) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
 
     // Count friends from friends collection (accurate)
     db.collection('friends').doc(currentUser.uid).get().then(fSnap => {
@@ -4277,11 +5360,7 @@ function loadProfile() {
   }).catch(e => console.warn('Profile load error:', e));
 
   // Badges
-  const badges = [];
-  if ((currentUserData.posts||0) >= 1)  badges.push('🎉 First Post');
-  if ((currentUserData.posts||0) >= 10) badges.push('📝 Active Poster');
-  if ((currentUserData.clubs||[]).length >= 1) badges.push('🏛️ Club Member');
-  $('profile-badges').innerHTML = badges.map(b=>`<span class="badge-chip">${b}</span>`).join('');
+  $('profile-badges').innerHTML = computeBadgeList(currentUserData).map(b=>`<span class="badge-chip">${escHtml(b)}</span>`).join('');
 
   // Logout button (add once)
   if (!$('profile-logout-btn')) {
@@ -4324,11 +5403,7 @@ function updateProfileStats() {
     if ($('stat-posts')) $('stat-posts').textContent = count;
     currentUserData.posts = count;
     // Refresh badges
-    const badges = [];
-    if (count >= 1)  badges.push('🎉 First Post');
-    if (count >= 10) badges.push('📝 Active Poster');
-    if ((currentUserData.clubs||[]).length >= 1) badges.push('🏛️ Club Member');
-    if ($('profile-badges')) $('profile-badges').innerHTML = badges.map(b=>'<span class="badge-chip">'+b+'</span>').join('');
+    if ($('profile-badges')) $('profile-badges').innerHTML = computeBadgeList(currentUserData).map(b=>'<span class="badge-chip">'+escHtml(b)+'</span>').join('');
   }).catch(() => {});
   // Clubs from live Firestore
   db.collection('clubs').where('members','array-contains',currentUser.uid).get().then(snap => {
@@ -4375,20 +5450,7 @@ $('save-bio-btn').addEventListener('click', async () => {
 });
 
 $('avatar-edit-btn').addEventListener('click', () => {
-  const grid = $('avatar-grid');
-  grid.innerHTML = AVATARS.map(a => `<div class="avatar-option" data-avatar="${a}">${a}</div>`).join('');
-  grid.querySelectorAll('.avatar-option').forEach(el => {
-    if (el.dataset.avatar === currentUserData.avatar) el.classList.add('selected');
-    el.addEventListener('click', async () => {
-      const av = el.dataset.avatar;
-      await db.collection('users').doc(currentUser.uid).set({ avatar: av }, { merge: true });
-      currentUserData.avatar = av;
-      $('profile-avatar-display').textContent = av;
-      closeModal('modal-avatar');
-      toast('Avatar updated! 🎭', 'success');
-    });
-  });
-  openModal('modal-avatar');
+  openEditProfileModal();
 });
 
 // ======================================
@@ -4402,15 +5464,22 @@ function openEditProfileModal() {
   var userEl  = $('edit-profile-username');
   var bioEl   = $('edit-profile-bio');
   var picPrev = $('edit-pic-preview');
+  var yearEl  = $('edit-profile-year');
+  var branchEl = $('edit-profile-branch');
+  var skillsEl = $('edit-profile-skills');
   if (nameEl) nameEl.value = currentUserData.name || '';
   if (userEl) userEl.value = currentUserData.username || '';
   if (bioEl)  bioEl.value  = currentUserData.bio  || '';
+  if (yearEl) yearEl.value = currentUserData.year || '';
+  if (branchEl) branchEl.value = currentUserData.branch || '';
+  if (skillsEl) skillsEl.value = (currentUserData.skills || []).join(', ');
+  var links = currentUserData.socialLinks || {};
+  SOCIAL_LINK_DEFS.forEach(def => {
+    var input = $('edit-profile-' + def.key);
+    if (input) input.value = links[def.key] || '';
+  });
   if (picPrev) {
-    if (currentUserData.profilePic) {
-      picPrev.innerHTML = '<img src="' + currentUserData.profilePic + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-    } else {
-      picPrev.textContent = currentUserData.avatar || '\uD83D\uDE0E';
-    }
+    picPrev.innerHTML = '<img src="' + (currentUserData.profilePic || DEFAULT_AVATAR) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
   }
   openModal('modal-edit-profile');
   lucide.createIcons();
@@ -4425,34 +5494,24 @@ $('edit-profile-pic-input') && $('edit-profile-pic-input').addEventListener('cha
   if (prev) prev.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
 });
 
-$('edit-pick-avatar-btn') && $('edit-pick-avatar-btn').addEventListener('click', function() {
-  closeModal('modal-edit-profile');
-  var grid = $('avatar-grid'); if (!grid) return;
-  grid.innerHTML = AVATARS.map(function(a) { return '<div class="avatar-option" data-avatar="' + a + '">' + a + '</div>'; }).join('');
-  grid.querySelectorAll('.avatar-option').forEach(function(el) {
-    if (currentUserData && el.dataset.avatar === currentUserData.avatar) el.classList.add('selected');
-    el.addEventListener('click', async function() {
-      var av = el.dataset.avatar;
-      await db.collection('users').doc(currentUser.uid).set({ avatar: av }, { merge: true });
-      currentUserData.avatar = av;
-      $('profile-avatar-display').textContent = av;
-      var prev = $('edit-pic-preview'); if (prev) prev.textContent = av;
-      closeModal('modal-avatar');
-      setTimeout(openEditProfileModal, 80);
-      toast('Avatar updated!', 'success');
-    });
-  });
-  openModal('modal-avatar');
-});
-
 $('save-profile-btn') && $('save-profile-btn').addEventListener('click', async function() {
   var name     = ($('edit-profile-name') ? $('edit-profile-name').value  : '').trim();
   var username = ($('edit-profile-username') ? $('edit-profile-username').value : '').trim().replace('@','');
   var bio      = ($('edit-profile-bio')  ? $('edit-profile-bio').value   : '').trim();
+  var year     = ($('edit-profile-year') ? $('edit-profile-year').value : '').trim();
+  var branch   = ($('edit-profile-branch') ? $('edit-profile-branch').value : '').trim();
+  var skills   = ($('edit-profile-skills') ? $('edit-profile-skills').value : '')
+                   .split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0, 12);
+  var socialLinks = {};
+  SOCIAL_LINK_DEFS.forEach(function(def) {
+    var input = $('edit-profile-' + def.key);
+    var val = input ? input.value.trim() : '';
+    if (val) socialLinks[def.key] = val;
+  });
   if (!name) return toast('Name cannot be empty', 'error');
   showLoading();
   try {
-    var updates = { name: name, username: username, bio: bio };
+    var updates = { name: name, username: username, bio: bio, year: year, branch: branch, skills: skills, socialLinks: socialLinks };
     if (_editProfilePicFile) {
       var picUrl = await uploadToCloudinary(_editProfilePicFile, 'image', 'Uploading profile picture...');
       updates.profilePic = picUrl;
@@ -4463,6 +5522,9 @@ $('save-profile-btn') && $('save-profile-btn').addEventListener('click', async f
     if ($('profile-name'))    $('profile-name').textContent    = name;
     if ($('profile-username')) $('profile-username').textContent = '@' + username;
     if ($('profile-bio'))     $('profile-bio').value            = bio;
+    renderProfileYearBranch(currentUserData);
+    renderProfileSkills(currentUserData);
+    renderProfileSocialLinks(currentUserData);
     if (updates.profilePic) {
       var dispEl = $('profile-avatar-display');
       if (dispEl) dispEl.innerHTML = '<img src="' + updates.profilePic + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
@@ -4518,10 +5580,15 @@ let _friendsViewLoading = false;
 
 let _allFriendUsers = [];
 
+let _friendPresenceListeners = [];
 function renderFriendRows(users) {
   const fList = document.getElementById('friends-list');
   if (!fList) return;
   fList.innerHTML = '';
+
+  // Detach presence listeners from the previous render so they don't pile up
+  _friendPresenceListeners.forEach(({ ref, cb }) => ref.off('value', cb));
+  _friendPresenceListeners = [];
 
   if (users.length === 0) {
     fList.innerHTML = `
@@ -4536,11 +5603,9 @@ function renderFriendRows(users) {
   users.forEach(u => {
     const row = document.createElement('div');
     row.className = 'friend-row';
-    const avatarHtml = u.profilePic
-      ? `<img src="${escHtml(u.profilePic)}" class="friend-avatar-img"/>`
-      : `<span class="friend-avatar-emoji">${u.avatar || '😎'}</span>`;
+    const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" class="friend-avatar-img"/>`;
     row.innerHTML = `
-      <div class="friend-avatar">${avatarHtml}</div>
+      <div class="friend-avatar">${avatarHtml}<span class="presence-dot" title="Offline"></span></div>
       <div class="friend-info">
         <strong>${escHtml(u.name || 'Student')}</strong>
         <small>@${escHtml(u.username || 'user')} · 🎓 ${escHtml(u.college || '')}</small>
@@ -4550,9 +5615,20 @@ function renderFriendRows(users) {
         <button class="friend-btn unfriend small">Remove</button>
       </div>`;
 
+    // Live online/offline dot for this friend
+    const dot = row.querySelector('.presence-dot');
+    const pRef = rtdb.ref('presence/' + u.uid);
+    const cb = pRef.on('value', snap => {
+      const val = snap.val();
+      const isOnline = !!(val && val.online);
+      dot.classList.toggle('online', isOnline);
+      dot.title = isOnline ? 'Online' : 'Offline';
+    });
+    _friendPresenceListeners.push({ ref: pRef, cb });
+
     // Chat button: startChat already calls switchView('chats')
     row.querySelector('.friend-btn.msg').addEventListener('click', () => {
-      startChat(u.uid, u.name || 'User', u.avatar || '😎');
+      startChat(u.uid, u.name || 'User', u.avatar || '', u.profilePic || null);
     });
     row.querySelector('.friend-btn.unfriend').addEventListener('click', () => unfriend(u.uid));
     fList.appendChild(row);
@@ -4612,9 +5688,7 @@ async function loadFriendsView() {
           const row = document.createElement('div');
           row.className = 'friend-req-row';
           row.dataset.uid = uid;
-          const avatarHtml = item.profilePic
-            ? `<img src="${escHtml(item.profilePic)}" class="friend-avatar-img"/>`
-            : `<span class="friend-avatar-emoji">${item.avatar || '😎'}</span>`;
+          const avatarHtml = `<img src="${escHtml(item.profilePic || DEFAULT_AVATAR)}" class="friend-avatar-img"/>`;
           row.innerHTML = `
             <div class="friend-avatar">${avatarHtml}</div>
             <div class="friend-info">
@@ -4798,7 +5872,7 @@ function buildFriendBtn(uid, name, avatar) {
   if (s === 'pending_received') return `<button class="friend-btn accept" onclick="acceptFriendRequest('${uid}')">✅ Accept</button>
                                         <button class="friend-btn reject" onclick="rejectFriendRequest('${uid}')">✕</button>`;
   if (s === 'pending_sent')     return `<button class="friend-btn pending" disabled>Requested ✓</button>`;
-  return `<button class="friend-btn add" onclick="sendFriendRequest('${uid}','${escHtml(name||'')}','${escHtml(avatar||'😎')}')">+ Add Friend</button>`;
+  return `<button class="friend-btn add" onclick="sendFriendRequest('${uid}','${escHtml(name||'')}','${escHtml(avatar||'')}')">+ Add Friend</button>`;
 }
 
 // ══════════════════════════════════════
@@ -4810,7 +5884,7 @@ function sendNotification(toUid, type, text, chatId, postId) {
     toUid,
     fromUid:        currentUser.uid,
     fromName:       currentUserData?.name       || 'Someone',
-    fromAvatar:     currentUserData?.avatar     || '😎',
+    fromAvatar:     currentUserData?.avatar     || '',
     fromProfilePic: currentUserData?.profilePic || null,
     type,
     text,
@@ -4864,7 +5938,11 @@ function setupNotifications() {
         if (d.read) return; // skip already-read
         const tsMs = d.ts?.toMillis?.() || 0;
         if (Date.now() - tsMs < 7000) {
-          showNotifToast(d, change.doc.id);
+          if (d.type === 'admin_announcement' || d.type === 'admin_warning') {
+            showAdminAlertToast(d, change.doc.id);
+          } else {
+            showNotifToast(d, change.doc.id);
+          }
           if (_prevNotifCount === 0) playNotifSound();
         }
       });
@@ -4926,10 +6004,8 @@ function showNotifToast(d, docId) {
   document.querySelector('.notif-toast')?.remove();
   const t = document.createElement('div');
   t.className = 'notif-toast';
-  const avatarHtml = d.fromProfilePic
-    ? `<img src="${escHtml(d.fromProfilePic)}" class="notif-toast-avatar-img"/>`
-    : `<span class="notif-toast-avatar-emoji">${d.fromAvatar||'😎'}</span>`;
-  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️'}[d.type]||'🔔';
+  const avatarHtml = renderAvatarHtml(null, d.fromProfilePic, 32);
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',admin_announcement:'📢',admin_warning:'⚠️'}[d.type]||'🔔';
   t.innerHTML = `
     <div class="notif-toast-avatar">${avatarHtml}</div>
     <div class="notif-toast-body">
@@ -4939,7 +6015,7 @@ function showNotifToast(d, docId) {
     <button class="notif-toast-close" onclick="this.parentElement.remove()">×</button>`;
   t.addEventListener('click', e => {
     if (e.target.classList.contains('notif-toast-close')) return;
-    if (d.chatId) { switchView('chats'); setTimeout(() => { db.collection('chats').doc(d.chatId).get().then(snap => { if(!snap.exists)return; const cd=snap.data(); const other=(cd.members||[]).find(m=>m!==currentUser.uid); openChat(d.chatId,other,cd.memberInfo?.[other]||{name:'User',avatar:'😎'}); }); }, 200); }
+    if (d.chatId) { switchView('chats'); setTimeout(() => { db.collection('chats').doc(d.chatId).get().then(snap => { if(!snap.exists)return; const cd=snap.data(); const other=(cd.members||[]).find(m=>m!==currentUser.uid); openChat(d.chatId,other,cd.memberInfo?.[other]||{name:'User',avatar:''}); }); }, 200); }
     else if (d.type==='friend_request'||d.type==='friend_accept') switchView('friends');
     else if ((d.type==='like'||d.type==='comment') && d.postId) switchView('feed');
     else if (d.type==='club_join') switchView('clubs');
@@ -4990,18 +6066,17 @@ function loadNotifPanel() {
 function buildNotifItem(doc) {
   const d = doc.data();
   const item = document.createElement('div');
-  item.className = 'notif-item' + (d.read ? '' : ' unread');
-  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️'}[d.type]||'🔔';
-  const avatarHtml = d.fromProfilePic
-    ? `<img src="${escHtml(d.fromProfilePic)}" class="notif-item-avatar-img"/>`
-    : `<span class="notif-item-avatar-emoji">${d.fromAvatar||'😎'}</span>`;
+  const extraClass = d.type === 'admin_warning' ? ' admin-warning' : (d.type === 'admin_announcement' ? ' admin-announcement' : '');
+  item.className = 'notif-item' + (d.read ? '' : ' unread') + extraClass;
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',admin_announcement:'📢',admin_warning:'⚠️'}[d.type]||'🔔';
+  const avatarHtml = renderAvatarHtml(null, d.fromProfilePic, 32);
   item.innerHTML = `
     <div class="notif-item-avatar-wrap">
       <div class="notif-item-avatar">${avatarHtml}</div>
       <span class="notif-type-badge">${icon}</span>
     </div>
     <div class="notif-item-body">
-      <div class="notif-item-text"><strong>${escHtml(d.fromName||'Someone')}</strong> ${escHtml(d.text||'interacted with you')}</div>
+      <div class="notif-item-text"><strong>${d.type==='admin_warning' ? 'Warning from admin' : (d.type==='admin_announcement' ? 'Message from admin' : escHtml(d.fromName||'Someone'))}</strong> ${escHtml(d.text||'interacted with you')}</div>
       <div class="notif-item-time">${timeAgo(d.ts)}</div>
       ${d.type==='friend_request' ? `<div class="notif-friend-actions">
         <button class="friend-btn accept small" onclick="acceptFriendRequest('${d.fromUid}');this.closest('.notif-item').remove()">Accept</button>
@@ -5015,7 +6090,7 @@ function buildNotifItem(doc) {
     item.classList.remove('unread');
     item.querySelector('.notif-unread-dot')?.remove();
     document.getElementById('notif-panel')?.classList.remove('open');
-    if (d.chatId) { switchView('chats'); setTimeout(() => { db.collection('chats').doc(d.chatId).get().then(snap => { if(!snap.exists)return; const cd=snap.data(); const other=(cd.members||[]).find(m=>m!==currentUser.uid); openChat(d.chatId,other,cd.memberInfo?.[other]||{name:'User',avatar:'😎'}); }); }, 200); }
+    if (d.chatId) { switchView('chats'); setTimeout(() => { db.collection('chats').doc(d.chatId).get().then(snap => { if(!snap.exists)return; const cd=snap.data(); const other=(cd.members||[]).find(m=>m!==currentUser.uid); openChat(d.chatId,other,cd.memberInfo?.[other]||{name:'User',avatar:''}); }); }, 200); }
     else if (d.type==='friend_request'||d.type==='friend_accept') { switchView('friends'); }
     else if ((d.type==='like'||d.type==='comment') && d.postId) { switchView('feed'); toast(`Navigated to feed — find ${d.fromName}'s activity`, 'info'); }
     else if (d.type==='club_join') { switchView('clubs'); }
@@ -5156,7 +6231,7 @@ async function submitNote() {
       isLink:   !_selectedNoteFile,
       uploaderUid:    currentUser.uid,
       uploaderName:   currentUserData?.name    || 'Anonymous',
-      uploaderAvatar: currentUserData?.avatar  || '😎',
+      uploaderAvatar: currentUserData?.avatar  || '',
       uploaderPic:    currentUserData?.profilePic || '',
       college: currentUserData?.college || '',
       likes: 0,
