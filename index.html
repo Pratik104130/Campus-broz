@@ -166,6 +166,77 @@
       justify-content: center; padding: 0 3px; border: 2px solid var(--bg, #0b0c10);
     }
 
+    /* ── Instagram-style User Profile Modal ── */
+    .ig-profile-modal { max-width: 640px; width: 94%; padding: 0; overflow: hidden; }
+    .ig-profile-modal .modal-header { padding: 14px 18px; }
+    #ig-profile-body { max-height: 80vh; overflow-y: auto; }
+    .ig-profile-top { display: flex; align-items: flex-start; gap: 22px; padding: 20px 22px 8px; }
+    .ig-profile-avatar-wrap { position: relative; flex-shrink: 0; }
+    .ig-profile-avatar {
+      width: 86px; height: 86px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+      border: 2px solid var(--border, rgba(255,255,255,0.12)); background: var(--surface2, rgba(255,255,255,0.06));
+    }
+    .ig-profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ig-profile-presence-dot {
+      position: absolute; bottom: 4px; right: 4px; width: 14px; height: 14px; border-radius: 50%;
+      background: #555; border: 2px solid var(--surface, #1e1e2e);
+    }
+    .ig-profile-presence-dot.online { background: #2ecc71; }
+    .ig-profile-info { flex: 1; min-width: 0; }
+    .ig-profile-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ig-profile-name-row h2 { margin: 0; font-size: 18px; color: var(--text, #fff); }
+    .ig-profile-username { color: var(--muted, #aaa); font-size: 13.5px; margin: 2px 0 0; }
+    .ig-profile-meta-line { color: var(--muted, #aaa); font-size: 13px; margin: 4px 0 0; }
+    .ig-profile-stats { display: flex; gap: 22px; margin: 14px 0 10px; }
+    .ig-profile-stats div { text-align: center; cursor: default; }
+    .ig-profile-stats span { display: block; font-weight: 700; font-size: 15px; color: var(--text, #fff); }
+    .ig-profile-stats small { color: var(--muted, #aaa); font-size: 12px; }
+    .ig-profile-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .ig-profile-actions button {
+      border-radius: 8px; padding: 7px 16px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border, rgba(255,255,255,0.15));
+    }
+    .ig-profile-msg-btn { background: var(--accent, #6c63ff); color: #fff; border: none; }
+    .ig-profile-block-btn { background: transparent; color: var(--muted, #aaa); }
+    .ig-profile-block-btn:hover { color: #ef4444; border-color: rgba(239,68,68,0.4); }
+    .ig-profile-bio-block { padding: 6px 22px 4px; font-size: 13.5px; color: var(--text, #fff); line-height: 1.4; }
+    .ig-profile-badges, .ig-profile-skills, .ig-profile-social { padding: 4px 22px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .ig-profile-tabs {
+      display: flex; border-top: 1px solid var(--border, rgba(255,255,255,0.1));
+      margin-top: 16px; padding: 0 22px;
+    }
+    .ig-profile-tab {
+      flex: 1; text-align: center; padding: 12px 0 10px; font-size: 12px; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase; color: var(--muted, #aaa); cursor: pointer;
+      border-top: 2px solid transparent; margin-top: -1px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .ig-profile-tab.active { color: var(--text, #fff); border-top-color: var(--accent, #6c63ff); }
+    .ig-profile-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px 3px 16px;
+    }
+    .ig-grid-cell {
+      position: relative; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer;
+      background: var(--surface2, rgba(255,255,255,0.06));
+    }
+    .ig-grid-cell img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .15s; }
+    .ig-grid-cell:hover img { transform: scale(1.04); }
+    .ig-grid-cell-text {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      padding: 8px; font-size: 11.5px; line-height: 1.35; color: var(--text, #fff); text-align: center;
+      overflow: hidden;
+    }
+    .ig-grid-video-icon {
+      position: absolute; top: 5px; right: 5px; color: #fff; font-size: 13px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .ig-profile-empty { padding: 40px 20px; text-align: center; color: var(--muted, #aaa); }
+    .ig-profile-empty span { font-size: 40px; display: block; margin-bottom: 8px; }
+    @media (max-width: 480px) {
+      .ig-profile-top { padding: 16px 14px 6px; gap: 14px; }
+      .ig-profile-avatar { width: 68px; height: 68px; }
+      .ig-profile-bio-block, .ig-profile-badges, .ig-profile-skills, .ig-profile-social, .ig-profile-tabs { padding-left: 14px; padding-right: 14px; }
+    }
+
     /* ── Comment Box (redesigned) ── */
     .post-comments {
       margin-top: 10px; padding-top: 12px;
@@ -958,6 +1029,30 @@ opacity: .4;
     <div id="club-members-list" class="club-members-list">
       <div class="loading-spinner">Loading members…</div>
     </div>
+  </div>
+</div>
+
+<!-- Instagram-style User Profile Modal -->
+<div class="modal-overlay" id="modal-user-profile">
+  <div class="modal ig-profile-modal">
+    <div class="modal-header">
+      <h3 id="ig-profile-username-header">Profile</h3>
+      <button class="modal-close" data-modal="modal-user-profile">✕</button>
+    </div>
+    <div id="ig-profile-body">
+      <div class="loading-spinner">Loading profile…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Post detail lightbox (opened from profile grid) -->
+<div class="modal-overlay" id="modal-post-detail">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>Post</h3>
+      <button class="modal-close" data-modal="modal-post-detail">✕</button>
+    </div>
+    <div id="post-detail-body"></div>
   </div>
 </div>
 
@@ -2306,7 +2401,7 @@ function renderSearchResults(results, q) {
   container.querySelectorAll('.search-person-card').forEach(el => {
     el.addEventListener('click', e => {
       if (e.target.closest('.search-person-action') || e.target.closest('.friend-btn')) return;
-      toast(`Viewing ${el.querySelector('.search-person-name')?.textContent}'s profile`, 'info');
+      openUserProfile(el.dataset.uid);
     });
   });
 
@@ -5873,6 +5968,157 @@ function buildFriendBtn(uid, name, avatar) {
                                         <button class="friend-btn reject" onclick="rejectFriendRequest('${uid}')">✕</button>`;
   if (s === 'pending_sent')     return `<button class="friend-btn pending" disabled>Requested ✓</button>`;
   return `<button class="friend-btn add" onclick="sendFriendRequest('${uid}','${escHtml(name||'')}','${escHtml(avatar||'')}')">+ Add Friend</button>`;
+}
+
+// ══════════════════════════════════════
+// INSTAGRAM-STYLE USER PROFILE MODAL
+// ══════════════════════════════════════
+async function openUserProfile(uid) {
+  if (!uid) return;
+  if (uid === currentUser.uid) { switchView('profile'); return; }
+
+  openModal('modal-user-profile');
+  const body = $('ig-profile-body');
+  body.innerHTML = '<div class="loading-spinner">Loading profile…</div>';
+  $('ig-profile-username-header').textContent = 'Profile';
+
+  try {
+    const [userSnap, postsSnap, friendsSnap] = await Promise.all([
+      db.collection('users').doc(uid).get(),
+      db.collection('posts').where('uid', '==', uid).limit(60).get(),
+      db.collection('friends').doc(uid).get()
+    ]);
+
+    if (!userSnap.exists) {
+      body.innerHTML = `<div class="ig-profile-empty"><span>🚫</span><p>This user no longer exists.</p></div>`;
+      return;
+    }
+
+    const u = userSnap.data();
+    const posts = postsSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    const friendCount = friendsSnap.exists ? (friendsSnap.data().confirmed || []).length : (u.friends || 0);
+    const clubCount = (u.clubs || []).length;
+    const blocked = isBlocked(uid);
+
+    $('ig-profile-username-header').textContent = '@' + (u.username || 'user');
+
+    const badgesHtml = computeBadgeList(u).map(b => `<span class="badge-chip">${escHtml(b)}</span>`).join('');
+    const skillsHtml = (u.skills || []).map(s => `<span class="skill-chip">${escHtml(s)}</span>`).join('');
+    const yearBranch = [u.year, u.branch].filter(Boolean).join(' · ');
+
+    body.innerHTML = `
+      <div class="ig-profile-top">
+        <div class="ig-profile-avatar-wrap">
+          <div class="ig-profile-avatar"><img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}"/></div>
+          <span class="ig-profile-presence-dot" id="ig-presence-${uid}"></span>
+        </div>
+        <div class="ig-profile-info">
+          <div class="ig-profile-name-row"><h2>${escHtml(u.name || 'Student')}</h2></div>
+          <p class="ig-profile-username">@${escHtml(u.username || 'user')}</p>
+          <p class="ig-profile-meta-line">🎓 ${escHtml(u.college || '')}</p>
+          ${yearBranch ? `<p class="ig-profile-meta-line">${escHtml(yearBranch)}</p>` : ''}
+          <div class="ig-profile-stats">
+            <div><span>${posts.length}</span><small>Posts</small></div>
+            <div><span>${friendCount}</span><small>Friends</small></div>
+            <div><span>${clubCount}</span><small>Clubs</small></div>
+          </div>
+          <div class="ig-profile-actions" id="ig-profile-actions"></div>
+        </div>
+      </div>
+      ${u.bio ? `<div class="ig-profile-bio-block">${escHtml(u.bio)}</div>` : ''}
+      ${badgesHtml ? `<div class="ig-profile-badges">${badgesHtml}</div>` : ''}
+      ${skillsHtml ? `<div class="ig-profile-skills">${skillsHtml}</div>` : ''}
+      <div class="ig-profile-social" id="ig-profile-social-${uid}"></div>
+      <div class="ig-profile-tabs">
+        <div class="ig-profile-tab active"><i data-lucide="grid-3x3"></i> Posts</div>
+      </div>
+      <div class="ig-profile-grid" id="ig-profile-grid">
+        ${blocked ? `<div class="ig-profile-empty" style="grid-column:1/-1"><span>🚫</span><p>You've blocked this user.</p></div>` : ''}
+      </div>
+    `;
+
+    // Action buttons: friend + message + block
+    const actionsEl = $('ig-profile-actions');
+    if (!blocked) {
+      actionsEl.innerHTML = `
+        ${buildFriendBtn(uid, u.name, u.avatar)}
+        <button class="ig-profile-msg-btn" id="ig-msg-btn">Message</button>
+        <button class="ig-profile-block-btn" id="ig-block-btn">Block</button>
+      `;
+      $('ig-msg-btn').addEventListener('click', () => {
+        closeModal('modal-user-profile');
+        startChat(uid, u.name || 'Student', u.avatar || '', u.profilePic || null);
+      });
+      $('ig-block-btn').addEventListener('click', () => {
+        blockUser(uid, u.name || 'this user');
+        closeModal('modal-user-profile');
+      });
+    } else {
+      actionsEl.innerHTML = `<button class="ig-profile-block-btn" id="ig-unblock-btn">Unblock</button>`;
+      $('ig-unblock-btn').addEventListener('click', async () => {
+        await unblockUser(uid);
+        openUserProfile(uid);
+      });
+    }
+
+    // Social links
+    const socialEl = $('ig-profile-social-' + uid);
+    const links = u.socialLinks || {};
+    socialEl.innerHTML = SOCIAL_LINK_DEFS
+      .filter(def => links[def.key])
+      .map(def => `<a href="${escHtml(def.url(links[def.key].trim()))}" target="_blank" rel="noopener noreferrer" title="${def.key}">${def.icon ? `<i data-lucide="${def.icon}"></i>` : `<span class="social-link-emoji">${def.emoji}</span>`}</a>`)
+      .join('');
+
+    // Presence dot (best-effort live status)
+    db.collection('presence')?.doc?.(uid)?.get?.().then(p => {
+      const dot = $('ig-presence-' + uid);
+      if (dot && p.exists && p.data().online) dot.classList.add('online');
+    }).catch(() => {});
+
+    // Posts grid (Instagram style)
+    if (!blocked) {
+      const grid = $('ig-profile-grid');
+      if (!posts.length) {
+        grid.innerHTML = `<div class="ig-profile-empty" style="grid-column:1/-1"><span>📭</span><p>No posts yet.</p></div>`;
+      } else {
+        grid.innerHTML = posts.map(p => {
+          if (p.mediaUrl) {
+            const thumb = p.isVideo && p.mediaUrl.includes('/upload/')
+              ? p.mediaUrl.replace('/upload/', '/upload/so_0,w_400,h_400,c_fill,f_jpg/').replace(/\.\w+$/, '.jpg')
+              : p.mediaUrl;
+            return `<div class="ig-grid-cell" data-post-id="${p.id}">
+              <img src="${escHtml(thumb)}" loading="lazy"/>
+              ${p.isVideo ? `<span class="ig-grid-video-icon"><i data-lucide="play"></i></span>` : ''}
+            </div>`;
+          }
+          return `<div class="ig-grid-cell" data-post-id="${p.id}">
+            <div class="ig-grid-cell-text">${escHtml((p.text || '').slice(0, 90))}</div>
+          </div>`;
+        }).join('');
+
+        grid.querySelectorAll('.ig-grid-cell').forEach(cell => {
+          cell.addEventListener('click', () => {
+            const p = posts.find(x => x.id === cell.dataset.postId);
+            if (p) openPostDetail(cell.dataset.postId, p);
+          });
+        });
+      }
+    }
+
+    lucide.createIcons();
+  } catch (e) {
+    body.innerHTML = `<div class="ig-profile-empty"><span>⚠️</span><p>Couldn't load profile: ${escHtml(e.message)}</p></div>`;
+  }
+}
+
+function openPostDetail(id, data) {
+  const container = $('post-detail-body');
+  container.innerHTML = '';
+  container.appendChild(buildPostCard(id, data));
+  lucide.createIcons();
+  openModal('modal-post-detail');
 }
 
 // ══════════════════════════════════════
