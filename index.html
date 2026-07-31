@@ -384,20 +384,97 @@
     }
     .search-club-row:hover, .search-post-row:hover { background: var(--surface2, rgba(255,255,255,0.055)); }
 
+    /* ── Club card: unread group-message bell (joined clubs only) ── */
+    .club-notif-bell {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(0,0,0,0.35); font-size: 12.5px; cursor: default;
+    }
+    .club-unread-badge {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 16px; height: 16px; padding: 0 3px; border-radius: 999px;
+      background: #ff4444; color: #fff; font-size: 10px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
+      box-shadow: 0 0 0 2px var(--surface, #1e1e2e);
+    }
+
     /* ── Sequential Story Viewer: segmented progress bar + tap zones ── */
     .story-seg-bar {
-      position: absolute; top: 8px; left: 8px; right: 8px; z-index: 5;
+      position: absolute; top: 10px; left: 10px; right: 10px; z-index: 5;
       display: flex; gap: 4px;
     }
     .story-seg-track {
       flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden;
+      cursor: pointer; position: relative;
+    }
+    .story-seg-track::before {
+      /* enlarges the tappable area above/below the thin visual bar without changing its look */
+      content: ''; position: absolute; top: -10px; bottom: -10px; left: 0; right: 0;
     }
     .story-seg-fill { height: 100%; width: 0%; background: #fff; border-radius: 3px; }
     .story-tap-zones {
       position: absolute; inset: 0; z-index: 4; display: flex;
     }
     .story-tap-prev, .story-tap-next { flex: 1; cursor: pointer; }
-    #story-view-content { position: relative; }
+
+    /* ── Big, Instagram-style story viewer ── */
+    #modal-story-view .modal.modal-story {
+      background: #000 !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 18px !important;
+      overflow: hidden !important;
+      position: relative !important;
+      width: min(94vw, 430px) !important;
+      height: min(92vh, 780px) !important;
+      max-width: min(94vw, 430px) !important;
+      max-height: 92vh !important;
+      display: block !important;
+    }
+    #modal-story-view #story-view-content {
+      position: absolute !important; inset: 0 !important;
+      width: 100% !important; height: 100% !important; background: #000; overflow: hidden;
+    }
+    #modal-story-view .story-media {
+      position: absolute !important; top: 14px !important; right: 0 !important; bottom: 0 !important; left: 0 !important;
+      width: 100% !important; height: calc(100% - 14px) !important;
+      object-fit: cover !important; object-position: center center !important;
+      display: block !important; background: #000;
+      border-radius: 14px 14px 0 0 !important;
+    }
+    /* Soft gradients (not a solid black block) so the top progress bar and
+       bottom uploader name stay readable without covering the photo/video */
+    .story-top-gradient, .story-bottom-gradient {
+      position: absolute; left: 0; right: 0; z-index: 2; pointer-events: none;
+    }
+    .story-top-gradient {
+      top: 0; height: 90px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0));
+    }
+    .story-bottom-gradient {
+      bottom: 0; height: 120px;
+      background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+    }
+    #story-viewer-info {
+      position: absolute; bottom: 30px; left: 14px; right: 14px; z-index: 6;
+      display: flex; align-items: center; gap: 8px; color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    #modal-story-view .story-tap-zones { z-index: 3; }
+    #modal-story-view .story-close-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 7;
+      background: rgba(0,0,0,0.35); color: #fff; border: none; border-radius: 50%;
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 15px;
+    }
+    #story-sound-btn { position: relative; z-index: 6; }
+    @media (max-width: 480px) {
+      #modal-story-view .modal.modal-story {
+        width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+        max-width: 100vw !important; max-height: 100dvh !important; border-radius: 0 !important;
+      }
+    }
 
     /* ── Splash screen (logo + name) shown while auth state resolves ── */
     #splash-screen {
@@ -3147,7 +3224,17 @@ function openStoryGroup(uid) {
 
 function clearStoryTimer() {
   if (_storyPlayer.timer) { clearTimeout(_storyPlayer.timer); _storyPlayer.timer = null; }
-  if (_storyPlayer.videoEl) { _storyPlayer.videoEl.onended = null; _storyPlayer.videoEl = null; }
+  if (_storyPlayer.videoEl) {
+    _storyPlayer.videoEl.onended = null;
+    // Fully stop playback/audio so it doesn't keep playing in the background
+    // after we've navigated to the next story.
+    try {
+      _storyPlayer.videoEl.pause();
+      _storyPlayer.videoEl.removeAttribute('src');
+      _storyPlayer.videoEl.load();
+    } catch (e) {}
+    _storyPlayer.videoEl = null;
+  }
 }
 
 function renderStorySegment() {
@@ -3159,17 +3246,18 @@ function renderStorySegment() {
 
   // Build segmented progress bar (one segment per story in this user's group)
   const segHtml = group.stories.map((_, i) => `
-    <div class="story-seg-track">
+    <div class="story-seg-track" data-seg-jump="${i}">
       <div class="story-seg-fill" data-seg="${i}" style="width:${i < _storyPlayer.segIdx ? '100%' : '0%'}"></div>
     </div>`).join('');
 
   const isVid = d.isVideo;
   $('story-view-content').innerHTML = `
-    <div class="story-seg-bar">${segHtml}</div>
     ${isVid
-      ? `<video id="story-vid" src="${d.mediaUrl}" autoplay muted playsinline
-          style="width:100%;max-height:75vh;object-fit:contain;display:block;background:#000"></video>`
-      : `<img src="${d.mediaUrl}" style="width:100%;max-height:75vh;object-fit:contain;display:block"/>`}
+      ? `<video id="story-vid" class="story-media" src="${d.mediaUrl}" autoplay muted playsinline></video>`
+      : `<img class="story-media" src="${d.mediaUrl}"/>`}
+    <div class="story-top-gradient"></div>
+    <div class="story-bottom-gradient"></div>
+    <div class="story-seg-bar">${segHtml}</div>
     <div class="story-tap-zones">
       <div class="story-tap-prev"></div>
       <div class="story-tap-next"></div>
@@ -3182,6 +3270,17 @@ function renderStorySegment() {
     ${isVid ? `<button id="story-sound-btn" style="margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font-size:16px;transition:background .2s">🔊</button>`
             : `<span style="margin-left:auto;font-size:12px;opacity:.7">24h</span>`}`;
 
+  // Top progress bar: tap a segment to jump straight to that story
+  $('story-view-content').querySelectorAll('.story-seg-track').forEach(track => {
+    track.addEventListener('click', e => {
+      e.stopPropagation();
+      const idx = parseInt(track.dataset.segJump, 10);
+      if (Number.isNaN(idx) || idx === _storyPlayer.segIdx) return;
+      _storyPlayer.segIdx = idx;
+      renderStorySegment();
+    });
+  });
+
   // Tap zones: prev / next segment (across groups at the edges)
   $('story-view-content').querySelector('.story-tap-prev').addEventListener('click', () => stepStory(-1));
   $('story-view-content').querySelector('.story-tap-next').addEventListener('click', () => stepStory(1));
@@ -3191,13 +3290,31 @@ function renderStorySegment() {
     _storyPlayer.videoEl = vid;
     // START WITH SOUND ON (muted = false means sound is ON)
     vid.muted = false;
-    $('story-sound-btn').addEventListener('click', e => {
+    const soundBtn = $('story-sound-btn');
+    // Use mousedown+click guards so the tap zones underneath never see this interaction
+    soundBtn.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       vid.muted = !vid.muted;
-      $('story-sound-btn').textContent = vid.muted ? '🔇' : '🔊';
-      $('story-sound-btn').style.background = vid.muted ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.18)';
+      soundBtn.textContent = vid.muted ? '🔇' : '🔊';
+      soundBtn.style.background = vid.muted ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.18)';
     });
-    animateSegFill(_storyPlayer.segIdx, 0); // duration driven by video end, fallback handled below
+    // Animate the top bar over the video's REAL duration (not a fake instant fill).
+    // Falls back to a sensible default if metadata takes too long to load.
+    let _segFillStarted = false;
+    const startSegFill = () => {
+      if (_segFillStarted) return;
+      _segFillStarted = true;
+      const ms = (isFinite(vid.duration) && vid.duration > 0) ? vid.duration * 1000 : 15000;
+      animateSegFill(_storyPlayer.segIdx, ms);
+    };
+    if (vid.readyState >= 1 && isFinite(vid.duration) && vid.duration > 0) {
+      startSegFill();
+    } else {
+      vid.addEventListener('loadedmetadata', startSegFill, { once: true });
+      setTimeout(startSegFill, 800); // fallback if metadata is slow to arrive
+    }
     vid.onended = () => stepStory(1);
     // Safety fallback in case video metadata is slow / video fails silently
     _storyPlayer.timer = setTimeout(() => stepStory(1), 20000);
@@ -3210,7 +3327,11 @@ function renderStorySegment() {
 function animateSegFill(idx, durationMs) {
   const fill = document.querySelector(`.story-seg-fill[data-seg="${idx}"]`);
   if (!fill) return;
+  fill.style.transition = 'none';
   fill.style.width = '0%';
+  // Force a reflow so the browser registers 0% BEFORE we start the transition —
+  // otherwise the two style changes get batched and it jumps straight to 100% (looks like a static white bar).
+  void fill.offsetWidth;
   if (durationMs > 0) {
     requestAnimationFrame(() => {
       fill.style.transition = `width ${durationMs}ms linear`;
@@ -3218,8 +3339,10 @@ function animateSegFill(idx, durationMs) {
     });
   } else {
     // video-driven: just snap to filling immediately, real end comes from onended
-    fill.style.transition = 'width 300ms linear';
-    fill.style.width = '100%';
+    requestAnimationFrame(() => {
+      fill.style.transition = 'width 300ms linear';
+      fill.style.width = '100%';
+    });
   }
 }
 
@@ -3582,6 +3705,67 @@ const DEFAULT_CLUB_SECTIONS = [
 let currentClubSection = null; // { id, name }
 let _clubsUnsub = null;        // active onSnapshot unsubscribe for club-grid
 
+// ── Unread group-message tracking for joined clubs ──────────────────────
+// Each joined club gets a small bell+badge on its card showing how many
+// messages have arrived since the user last opened that club's chat.
+// "Last read" is stored per-club in localStorage; only clubs the user has
+// actually joined get a listener (and therefore a badge).
+const _clubUnreadListeners = {}; // clubId -> { ref, cb }
+const CLUB_LASTREAD_PREFIX = 'cv_club_lastread_';
+
+function getClubLastRead(clubId) {
+  const key = CLUB_LASTREAD_PREFIX + clubId;
+  let v = localStorage.getItem(key);
+  if (v === null) {
+    // First time we've seen this club on this device: don't retroactively
+    // count old messages as unread, only ones that arrive from now on.
+    v = String(Date.now());
+    localStorage.setItem(key, v);
+  }
+  return parseInt(v, 10) || 0;
+}
+
+function markClubRead(clubId) {
+  localStorage.setItem(CLUB_LASTREAD_PREFIX + clubId, String(Date.now()));
+  const badge = document.getElementById(`club-unread-${clubId}`);
+  if (badge) badge.style.display = 'none';
+  // Re-point the listener at the new cutoff so it doesn't keep counting
+  // messages that arrived before this "read" moment.
+  if (_clubUnreadListeners[clubId]) {
+    stopClubUnreadListener(clubId);
+    watchClubUnread(clubId);
+  }
+}
+
+function stopClubUnreadListener(clubId) {
+  const l = _clubUnreadListeners[clubId];
+  if (l) { l.ref.off('value', l.cb); delete _clubUnreadListeners[clubId]; }
+}
+
+function stopAllClubUnreadListeners() {
+  Object.keys(_clubUnreadListeners).forEach(stopClubUnreadListener);
+}
+
+function watchClubUnread(clubId) {
+  if (_clubUnreadListeners[clubId]) return; // already watching
+  const lastRead = getClubLastRead(clubId);
+  const ref = rtdb.ref(`clubChats/${clubId}/messages`).orderByChild('ts').startAfter(lastRead);
+  const cb = snap => {
+    const count = snap.numChildren();
+    const badge = document.getElementById(`club-unread-${clubId}`);
+    if (!badge) return; // card no longer on screen (e.g. switched section)
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : String(count);
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  };
+  ref.on('value', cb);
+  _clubUnreadListeners[clubId] = { ref, cb };
+}
+
+
 function loadClubSections() {
   // Reset back to the sections list whenever the Clubs tab is opened
   $('clubs-list-header').style.display = 'none';
@@ -3590,6 +3774,7 @@ function loadClubSections() {
   $('clubs-sections-header').style.display = '';
   $('club-sections-grid').style.display = '';
   if (_clubsUnsub) { _clubsUnsub(); _clubsUnsub = null; }
+  stopAllClubUnreadListeners();
 
   const grid = $('club-sections-grid');
   grid.innerHTML = '<div class="loading-spinner">Loading sections…</div>';
@@ -3762,6 +3947,7 @@ function renderClubGrid() {
   }
 
   grid.innerHTML = '';
+  stopAllClubUnreadListeners();
   list.forEach(({ id, d }) => {
     const joined = d.members?.includes(currentUser.uid);
     const isStarred = starred.has(id);
@@ -3771,10 +3957,13 @@ function renderClubGrid() {
     card.style.position = 'relative';
     card.innerHTML = `
       ${onlineNow > 0 ? `<div class="club-online-pill" title="Members online right now">🟢 ${onlineNow} online</div>` : ''}
-      <button class="club-star-btn ${isStarred?'starred':''}" data-id="${id}" title="${isStarred?'Unstar this club':'Star this club'}"
-        style="position:absolute;top:8px;right:8px;background:none;color:#fff;border:none;cursor:pointer;font-size:19px;line-height:1;padding:2px;z-index:2;filter:${isStarred?'none':'grayscale(1) opacity(0.55)'}">
-        ${isStarred ? '⭐' : '☆'}
-      </button>
+      <div style="position:absolute;top:6px;right:6px;z-index:2;display:flex;align-items:center;gap:2px">
+        ${joined ? `<div class="club-notif-bell" title="Unread group messages">🔔<span class="club-unread-badge" id="club-unread-${id}" style="display:none">0</span></div>` : ''}
+        <button class="club-star-btn ${isStarred?'starred':''}" data-id="${id}" title="${isStarred?'Unstar this club':'Star this club'}"
+          style="background:none;color:#fff;border:none;cursor:pointer;font-size:19px;line-height:1;padding:2px;filter:${isStarred?'none':'grayscale(1) opacity(0.55)'}">
+          ${isStarred ? '⭐' : '☆'}
+        </button>
+      </div>
       <div class="club-emoji">${d.emoji || '🏛️'}</div>
       <div class="club-name">${escHtml(d.name)} ${d.private ? '<span title="Private club" style="font-size:12px">🔒</span>' : ''}</div>
       <div class="club-desc">${escHtml(d.desc || '')}</div>
@@ -3853,9 +4042,11 @@ function renderClubGrid() {
 
     // Club dashboard on click (only if member, else show info)
     card.addEventListener('click', () => {
+      if (joined) markClubRead(id);
       openClubDashboard(id, { ...d, id });
     });
     grid.appendChild(card);
+    if (joined) watchClubUnread(id);
   });
   lucide.createIcons();
 }
@@ -3928,18 +4119,25 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
     const bannedUids = freshClub.banned || [];
     const moderatorUids = freshClub.moderators || [];
     const isModerator = moderatorUids.includes(currentUser.uid);
-    // Owner and club moderators can both manage members (kick/ban); only the
-    // true owner can promote/demote other moderators.
-    const isPrivileged = isTrueOwner || isModerator;
+    // App moderators (site-wide) can manage club moderators anywhere, on top
+    // of the club's own owner. Only a *plain* club moderator (not the owner,
+    // not an app mod) is restricted from acting on other club moderators.
+    const isAppMod = isCurrentUserAppMod();
+    const canManageMods = isTrueOwner || isAppMod;
+    const restrictedClubMod = isModerator && !canManageMods;
+    // Owner, app moderators, and club moderators can all manage members (kick/ban);
+    // only the true owner or an app moderator can promote/demote other moderators.
+    const isPrivileged = isTrueOwner || isModerator || isAppMod;
 
     const listEl = $('club-members-list');
     listEl.innerHTML = '';
 
     // ── Owner/Moderator: show management header ─────
     if (isPrivileged) {
+      const bannerLabel = isTrueOwner ? '👑 Owner View' : (isAppMod ? '🛠️ App Moderator View' : '🛡️ Moderator View');
       const adminBanner = document.createElement('div');
       adminBanner.style.cssText = 'background:linear-gradient(135deg,#6c47ff22,#ff4ecd22);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px';
-      adminBanner.innerHTML = `<div style="font-weight:700;margin-bottom:2px">${isTrueOwner ? '👑 Owner View' : '🛡️ Moderator View'}</div>
+      adminBanner.innerHTML = `<div style="font-weight:700;margin-bottom:2px">${bannerLabel}</div>
         <div style="color:var(--muted)">Members: <strong>${memberUids.length}</strong> &nbsp;|&nbsp; Banned: <strong style="color:${bannedUids.length>0?'#ff4444':'var(--muted)'}">${bannedUids.length}</strong></div>
         ${bannedUids.length>0?'<div style="font-size:11px;margin-top:4px;color:#ff8888">Scroll down to see banned users</div>':''}`;
       listEl.appendChild(adminBanner);
@@ -3984,11 +4182,12 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
       row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)';
 
       let actionBtns = '';
-      if (isPrivileged && !isAdmin && !isSelf && !(isModerator && isMod)) {
-        // Club moderators can kick/ban regular members, but not other moderators.
+      if (isPrivileged && !isAdmin && !isSelf && !(restrictedClubMod && isMod)) {
+        // Club moderators can kick/ban regular members, but not other moderators
+        // (app moderators and the true owner are exempt from that restriction).
         actionBtns = `
           <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
-            ${isTrueOwner ? `<button class="btn-mod" data-uid="${u.uid}" style="background:${isMod ? 'var(--accent)' : 'var(--surface2)'};border:1px solid ${isMod ? 'var(--accent)' : 'var(--border)'};color:${isMod ? '#fff' : 'var(--text)'};font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="${isMod ? 'Remove moderator' : 'Make moderator'}">${isMod ? '★ Mod' : '☆ Make Mod'}</button>` : ''}
+            ${canManageMods ? `<button class="btn-mod" data-uid="${u.uid}" style="background:${isMod ? 'var(--accent)' : 'var(--surface2)'};border:1px solid ${isMod ? 'var(--accent)' : 'var(--border)'};color:${isMod ? '#fff' : 'var(--text)'};font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="${isMod ? 'Remove moderator' : 'Make moderator'}">${isMod ? '★ Mod' : '☆ Make Mod'}</button>` : ''}
             <button class="btn-kick" data-uid="${u.uid}" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="Remove from club">Kick</button>
             <button class="btn-ban" data-uid="${u.uid}" style="background:#ff000020;border:1px solid #ff000040;color:#ff4444;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer" title="Block from club">Block</button>
           </div>`;
@@ -4007,7 +4206,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
         ${actionBtns}
       `;
 
-      if (isTrueOwner && !isAdmin && !isSelf) {
+      if (canManageMods && !isAdmin && !isSelf) {
         row.querySelector('.btn-mod')?.addEventListener('click', async () => {
           try {
             await db.collection('clubs').doc(clubId).update({
@@ -4021,7 +4220,7 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
         });
       }
 
-      if (isPrivileged && !isAdmin && !isSelf && !(isModerator && isMod)) {
+      if (isPrivileged && !isAdmin && !isSelf && !(restrictedClubMod && isMod)) {
         row.querySelector('.btn-kick')?.addEventListener('click', async () => {
           showConfirmDialog(`Remove ${u.name} from this club?`, async () => {
           try {
@@ -4248,6 +4447,7 @@ function openClubDashboard(clubId, clubData) {
   modal.id = 'modal-club-dashboard';
   const isOwner = clubData.createdBy === currentUser.uid || (clubData.moderators || []).includes(currentUser.uid);
   const isMember = (clubData.members || []).includes(currentUser.uid);
+  const isAppMod = isCurrentUserAppMod();
 
   modal.innerHTML = `
     <div class="modal modal-fullscreen" style="max-width:700px;display:flex;flex-direction:column;height:95vh;padding:0">
@@ -4279,19 +4479,21 @@ function openClubDashboard(clubId, clubData) {
         b.style.background = 'rgba(255,255,255,0.2)'; b.style.color = '#fff'; b.classList.remove('active');
       });
       btn.style.background = '#fff'; btn.style.color = 'var(--accent)'; btn.classList.add('active');
-      renderClubTab(parseInt(btn.dataset.tab), clubId, clubData, isOwner, isMember);
+      renderClubTab(parseInt(btn.dataset.tab), clubId, clubData, isOwner, isMember, isAppMod);
     });
   });
 
   document.getElementById('club-dash-close').addEventListener('click', () => {
     modal.classList.remove('open');
     if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
+    if (isMember) markClubRead(clubId);
     _openClubDashboard = null;
   });
   modal.addEventListener('click', e => {
     if (e.target === modal) {
       modal.classList.remove('open');
       if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
+      if (isMember) markClubRead(clubId);
       _openClubDashboard = null;
     }
   });
@@ -4299,7 +4501,7 @@ function openClubDashboard(clubId, clubData) {
   modal.classList.add('open');
   _openClubDashboard = { id: clubId, members: clubData.members || [] };
   updateOpenClubDashboardOnlineCount();
-  renderClubTab(0, clubId, clubData, isOwner, isMember);
+  renderClubTab(0, clubId, clubData, isOwner, isMember, isAppMod);
 }
 
 let _openClubDashboard = null;
@@ -4311,12 +4513,12 @@ function updateOpenClubDashboardOnlineCount() {
   badge.textContent = onlineNow > 0 ? `🟢 ${onlineNow} online now` : '';
 }
 
-function renderClubTab(tab, clubId, clubData, isOwner, isMember) {
+function renderClubTab(tab, clubId, clubData, isOwner, isMember, isAppMod) {
   const body = document.getElementById('club-dash-body');
   if (!body) return;
 
-  if (tab === 0) renderClubChat(body, clubId, clubData, isMember, isOwner);
-  else if (tab === 1) renderClubAnnouncements(body, clubId, clubData, isOwner);
+  if (tab === 0) renderClubChat(body, clubId, clubData, isMember, isOwner, isAppMod);
+  else if (tab === 1) renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod);
   else if (tab === 2) renderClubEvents(body, clubId, clubData, isOwner);
   else if (tab === 3) renderClubPolls(body, clubId, clubData, isMember);
   else if (tab === 4) renderClubGallery(body, clubId, clubData, isMember, isOwner);
@@ -4327,15 +4529,17 @@ function renderClubTab(tab, clubId, clubData, isOwner, isMember) {
 }
 
 // ── Club Chat Tab ──
-function renderClubChat(body, clubId, clubData, isMember, isPrivileged) {
-  if (!isMember) { body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Join the club to chat 💬</div>'; return; }
+function renderClubChat(body, clubId, clubData, isMember, isPrivileged, isAppMod) {
+  const viewOnly = !isMember && !!isAppMod; // moderator peeking into a club they haven't joined
+  if (!isMember && !viewOnly) { body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Join the club to chat 💬</div>'; return; }
   body.innerHTML = `
     <div style="display:flex;flex-direction:column;height:100%">
+      ${viewOnly ? `<div style="background:#6c47ff22;border-bottom:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:600;padding:8px 14px;text-align:center;flex-shrink:0">🛠️ Viewing as App Moderator — read-only, you haven't joined this club</div>` : ''}
       <div class="chat-messages" id="club-dash-msgs" style="flex:1;overflow-y:auto;padding:12px;min-height:200px;max-height:calc(95vh - 240px)"></div>
-      <div style="padding:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+      ${viewOnly ? '' : `<div style="padding:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
         <input type="text" id="club-dash-input" placeholder="Message the club…" style="flex:1;padding:10px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px"/>
         <button id="club-dash-send" style="background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">➤</button>
-      </div>
+      </div>`}
     </div>`;
 
   if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
@@ -4348,9 +4552,11 @@ function renderClubChat(body, clubId, clubData, isMember, isPrivileged) {
     el.innerHTML = '';
     const sorted = Object.entries(msgs).sort((a,b) => a[1].ts - b[1].ts);
     if (!sorted.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px">No messages yet. Say hi! 👋</div>'; }
-    else sorted.forEach(([k,m]) => el.appendChild(buildClubMsgBubble(m, k, clubId, isPrivileged)));
+    else sorted.forEach(([k,m]) => el.appendChild(buildClubMsgBubble(m, k, clubId, isPrivileged || isAppMod)));
     el.scrollTop = el.scrollHeight;
   });
+
+  if (viewOnly) return; // no composer to wire up
 
   const doSend = () => {
     const inp = document.getElementById('club-dash-input');
@@ -4368,22 +4574,25 @@ function renderClubChat(body, clubId, clubData, isMember, isPrivileged) {
 }
 
 // ── Club Announcements Tab ──
-function renderClubAnnouncements(body, clubId, clubData, isOwner) {
+function renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod) {
+  const canPost = isOwner || isAppMod;
   body.innerHTML = `<div style="padding:16px">
-    ${isOwner ? `<div style="margin-bottom:16px">
+    ${isAppMod && !isOwner ? `<div style="background:#6c47ff22;border:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:12px">🛠️ Posting as App Moderator</div>` : ''}
+    ${canPost ? `<div style="margin-bottom:16px">
       <textarea id="ann-text" rows="3" placeholder="📢 Write an announcement…" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;resize:none"></textarea>
       <button id="ann-submit" style="margin-top:8px;background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Post Announcement</button>
     </div>` : ''}
     <div id="ann-list"><div class="loading-spinner">Loading…</div></div>
   </div>`;
 
-  if (isOwner) {
+  if (canPost) {
     document.getElementById('ann-submit')?.addEventListener('click', async () => {
       const txt = document.getElementById('ann-text')?.value.trim();
       if (!txt) return;
       await db.collection('clubs').doc(clubId).collection('announcements').add({
         text: txt, authorName: currentUserData.name || 'Student', authorAvatar: currentUserData.avatar || '',
         authorProfilePic: currentUserData.profilePic || null,
+        postedByAppMod: isAppMod && !isOwner,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       document.getElementById('ann-text').value = '';
@@ -6039,13 +6248,15 @@ async function openUserProfile(uid) {
       </div>
     `;
 
-    // Action buttons: friend + message + block
+    // Action buttons: friend + message + block (+ app-wide ban for moderators)
     const actionsEl = $('ig-profile-actions');
+    const canBanUser = isCurrentUserAppMod() && !u.banned && !ADMIN_EMAILS.includes((u.email||'').toLowerCase());
     if (!blocked) {
       actionsEl.innerHTML = `
         ${buildFriendBtn(uid, u.name, u.avatar)}
         <button class="ig-profile-msg-btn" id="ig-msg-btn">Message</button>
         <button class="ig-profile-block-btn" id="ig-block-btn">Block</button>
+        ${canBanUser ? `<button class="ig-profile-block-btn" id="ig-appban-btn" style="color:#ff4444;border-color:#ff444460">🛠️ Ban (mod)</button>` : ''}
       `;
       $('ig-msg-btn').addEventListener('click', () => {
         closeModal('modal-user-profile');
@@ -6055,11 +6266,22 @@ async function openUserProfile(uid) {
         blockUser(uid, u.name || 'this user');
         closeModal('modal-user-profile');
       });
+      $('ig-appban-btn')?.addEventListener('click', () => {
+        closeModal('modal-user-profile');
+        banUserFromApp(uid, u.name || 'this user');
+      });
     } else {
-      actionsEl.innerHTML = `<button class="ig-profile-block-btn" id="ig-unblock-btn">Unblock</button>`;
+      actionsEl.innerHTML = `
+        <button class="ig-profile-block-btn" id="ig-unblock-btn">Unblock</button>
+        ${canBanUser ? `<button class="ig-profile-block-btn" id="ig-appban-btn" style="color:#ff4444;border-color:#ff444460">🛠️ Ban (mod)</button>` : ''}
+      `;
       $('ig-unblock-btn').addEventListener('click', async () => {
         await unblockUser(uid);
         openUserProfile(uid);
+      });
+      $('ig-appban-btn')?.addEventListener('click', () => {
+        closeModal('modal-user-profile');
+        banUserFromApp(uid, u.name || 'this user');
       });
     }
 
