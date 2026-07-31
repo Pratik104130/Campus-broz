@@ -166,6 +166,30 @@
       justify-content: center; padding: 0 3px; border: 2px solid var(--bg, #0b0c10);
     }
 
+    /* ── Ludo token move animation ── */
+    .ludo-token {
+      transition: left 0.16s cubic-bezier(.4,.6,.3,1), top 0.16s cubic-bezier(.4,.6,.3,1), transform 0.15s ease;
+    }
+    .ludo-token.hop { animation: ludoHop 0.16s ease; }
+    @keyframes ludoHop {
+      0%   { transform: translateY(0) scale(1); }
+      40%  { transform: translateY(-7px) scale(1.08); }
+      100% { transform: translateY(0) scale(1); }
+    }
+    .ludo-token.captured { animation: ludoCaptured 0.32s ease; }
+    @keyframes ludoCaptured {
+      0%   { transform: scale(1.3); opacity: 1; }
+      60%  { transform: scale(0.3); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 0.95; }
+    }
+    #ludo-dice.rolling { animation: ludoDiceRoll 0.5s ease; }
+    @keyframes ludoDiceRoll {
+      0%   { transform: rotate(0deg) scale(1); }
+      30%  { transform: rotate(120deg) scale(1.15); }
+      60%  { transform: rotate(250deg) scale(0.9); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
     /* ── Instagram-style User Profile Modal ── */
     .ig-profile-modal { max-width: 640px; width: 94%; padding: 0; overflow: hidden; }
     .ig-profile-modal .modal-header { padding: 14px 18px; }
@@ -4633,7 +4657,7 @@ function openClubDashboard(clubId, clubData) {
           <button id="club-dash-close" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>
         </div>
         <div style="display:flex;gap:5px;margin-top:8px;overflow-x:auto;padding-bottom:2px" id="club-tab-bar">
-          ${['💬 Chat','📢 Announce','📅 Events','🗳️ Polls','🖼️ Gallery','📝 Notes','✅ Projects','🏆 Leaderboard','👥 Members'].map((t,i)=>`
+          ${['💬 Chat','📢 Announce','📅 Events','🗳️ Polls','🖼️ Gallery','📝 Notes','✅ Projects','🎮 Games','👥 Members'].map((t,i)=>`
             <button class="club-tab-btn ${i===0?'active':''}" data-tab="${i}" style="white-space:nowrap;padding:5px 10px;border-radius:20px;border:none;cursor:pointer;font-size:11px;font-weight:600;transition:all 0.2s;${i===0?'background:#fff;color:var(--accent)':'background:rgba(255,255,255,0.2);color:#fff'}">${t}</button>
           `).join('')}
         </div>
@@ -4695,7 +4719,7 @@ function renderClubTab(tab, clubId, clubData, isOwner, isMember, isAppMod) {
   else if (tab === 4) renderClubGallery(body, clubId, clubData, isMember, isOwner);
   else if (tab === 5) renderClubNotes(body, clubId, clubData, isMember, isOwner);
   else if (tab === 6) renderClubProjects(body, clubId, clubData, isMember, isOwner);
-  else if (tab === 7) renderClubLeaderboard(body, clubId, clubData);
+  else if (tab === 7) renderClubGames(body, clubId, clubData);
   else if (tab === 8) showClubMembers(clubId, clubData.name, clubData.emoji, clubData.members || [], clubData.createdBy);
 }
 
@@ -5229,47 +5253,812 @@ function loadClubProjects(clubId, isOwner) {
     }).catch(e => { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
 }
 
-// ── Club Leaderboard Tab ──
-function renderClubLeaderboard(body, clubId, clubData) {
-  body.innerHTML = `<div style="padding:16px">
-    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Most active members (by messages sent)</div>
-    <div id="lb-list"><div class="loading-spinner">Loading…</div></div>
-  </div>`;
-  loadClubLeaderboard(clubId, clubData);
+// ══════════════════════════════════════
+// CLUB GAMES — LUDO (online, 4-player rooms)
+// ══════════════════════════════════════
+let ludoRoomsUnsub = null;
+let ludoGameUnsub = null;
+let ludoOfflineCheckInterval = null;
+let _ludoPrevTokens = {}; // roomId -> last known tokens (for move animation)
+const LUDO_OFFLINE_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
+
+const LUDO_COLORS = ['red','green','yellow','blue'];
+const LUDO_COLOR_HEX = { red:'#e74c3c', green:'#2ecc71', yellow:'#f1c40f', blue:'#3498db' };
+// classic 52-cell ring path (row,col) on a 15x15 board
+const LUDO_RING = [
+  [6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],
+  [1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],
+  [8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],
+  [13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0],[6,0]
+];
+const LUDO_START_IDX = { red:0, green:13, yellow:39, blue:26 };
+const LUDO_SAFE_IDX = [0,8,13,21,26,34,39,47];
+const LUDO_HOME_COL = {
+  red:    [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],
+  green:  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
+  blue:   [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],
+  yellow: [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
+};
+const LUDO_BASE_SPOTS = {
+  red:    [[1.5,1.5],[1.5,3.5],[3.5,1.5],[3.5,3.5]],
+  green:  [[1.5,10.5],[1.5,12.5],[3.5,10.5],[3.5,12.5]],
+  yellow: [[10.5,1.5],[10.5,3.5],[12.5,1.5],[12.5,3.5]],
+  blue:   [[10.5,10.5],[10.5,12.5],[12.5,10.5],[12.5,12.5]]
+};
+
+// ── Auto-remove players offline 10+ min from a Ludo room ──
+async function checkLudoOfflinePlayers(roomRef) {
+  try {
+    const snap = await roomRef.get();
+    if (!snap.exists) return;
+    const room = snap.data();
+    if (room.status === 'finished') return;
+    const players = room.players || [];
+    if (!players.length) return;
+    const now = Date.now();
+    const removeUids = [];
+    for (const p of players) {
+      try {
+        const pSnap = await rtdb.ref('presence/' + p.uid).once('value');
+        const pres = pSnap.val();
+        const isOnline = !!pres?.online;
+        const lastSeen = pres?.lastSeen || 0;
+        if (!isOnline && lastSeen && (now - lastSeen) >= LUDO_OFFLINE_LIMIT_MS) {
+          removeUids.push(p.uid);
+        }
+      } catch (e) { /* presence unavailable — skip */ }
+    }
+    if (!removeUids.length) return;
+
+    let removedNames = [];
+    await db.runTransaction(async tx => {
+      const s = await tx.get(roomRef);
+      if (!s.exists) return;
+      const r = s.data();
+      const curPlayers = r.players || [];
+      const newPlayers = curPlayers.filter(p => !removeUids.includes(p.uid));
+      if (newPlayers.length === curPlayers.length) return; // already handled by another client
+
+      removedNames = curPlayers.filter(p => removeUids.includes(p.uid)).map(p => p.name);
+
+      if (!newPlayers.length) { tx.delete(roomRef); return; }
+
+      const update = { players: newPlayers };
+      const removedColors = curPlayers.filter(p => removeUids.includes(p.uid)).map(p => p.color);
+      if (removedColors.includes(r.turnColor)) {
+        const activeColors = LUDO_COLORS.filter(c => newPlayers.some(p => p.color === c));
+        update.turnColor = activeColors[0] || r.turnColor;
+        update.diceValue = null;
+        update.diceRolled = false;
+      }
+      if (newPlayers.length < 2 && r.status === 'playing' && !r.winner) {
+        update.status = 'finished';
+        update.winner = newPlayers[0]?.color || null;
+      }
+      tx.update(roomRef, update);
+    });
+
+    if (removedNames.length && typeof toast === 'function') {
+      toast(`${removedNames.join(', ')} removed — offline 10+ min ⏱️`, 'info');
+    }
+  } catch (e) { console.error('ludo offline check failed', e); }
 }
 
-async function loadClubLeaderboard(clubId, clubData) {
-  const el = document.getElementById('lb-list'); if (!el) return;
+function startLudoOfflineWatch(roomRef) {
+  stopLudoOfflineWatch();
+  checkLudoOfflinePlayers(roomRef); // check immediately on entering the room
+  ludoOfflineCheckInterval = setInterval(() => checkLudoOfflinePlayers(roomRef), 30 * 1000);
+}
+function stopLudoOfflineWatch() {
+  if (ludoOfflineCheckInterval) { clearInterval(ludoOfflineCheckInterval); ludoOfflineCheckInterval = null; }
+}
+
+// ── Ludo token move animation helpers ──
+function ludoPixelForToken(color, idx, pos) {
+  if (pos < 0) {
+    const [br, bc] = LUDO_BASE_SPOTS[color][idx];
+    return { x: bc * 20, y: br * 20 };
+  }
+  const [br, bc] = ludoTokenBoardPos(color, pos);
+  return { x: bc * 20 + 3, y: br * 20 + 3 };
+}
+
+// Animates one token element from fromPos -> toPos, hopping cell-by-cell for a "real" move feel
+function animateLudoTokenEl(el, color, idx, fromPos, toPos) {
+  if (fromPos == null || fromPos === toPos) return;
+  // Captured back to base, or entering from base: single smooth glide + pop
+  if (fromPos < 0 || toPos < 0) {
+    requestAnimationFrame(() => {
+      const { x, y } = ludoPixelForToken(color, idx, toPos);
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.classList.add(toPos < 0 ? 'captured' : 'hop');
+    });
+    return;
+  }
+  let step = fromPos;
+  const stepDelay = 140;
+  function nextStep() {
+    step++;
+    const clamped = Math.min(step, toPos);
+    const { x, y } = ludoPixelForToken(color, idx, clamped);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.classList.remove('hop');
+    void el.offsetWidth; // restart animation
+    el.classList.add('hop');
+    if (step < toPos) setTimeout(nextStep, stepDelay);
+  }
+  setTimeout(nextStep, 20);
+}
+
+function renderClubGames(body, clubId, clubData) {
+  body.innerHTML = `
+    <div style="padding:16px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Play together in real-time 🎮</div>
+      <div class="game-pick-card" id="pick-ludo-btn" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer;margin-bottom:10px">
+        <div style="font-size:34px">🎲</div>
+        <div style="flex:1">
+          <strong style="font-size:15px">Ludo</strong>
+          <div style="font-size:12px;color:var(--muted)">Online · up to 4 players</div>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+      <div class="game-pick-card" id="pick-ttt-btn" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer">
+        <div style="font-size:34px">⭕</div>
+        <div style="flex:1">
+          <strong style="font-size:15px">Tic Tac Toe</strong>
+          <div style="font-size:12px;color:var(--muted)">Online · 2 players · public or private rooms</div>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('pick-ludo-btn').addEventListener('click', () => renderLudoLobby(body, clubId, clubData));
+  document.getElementById('pick-ttt-btn').addEventListener('click', () => renderTTTLobby(body, clubId, clubData));
+}
+
+function renderLudoLobby(body, clubId, clubData) {
+  body.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <button class="btn-icon" id="ludo-back-btn"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:15px">🎲 Ludo Rooms</strong>
+      </div>
+      <button class="btn-primary" id="ludo-create-room-btn" style="margin-bottom:14px">+ Create Room</button>
+      <div id="ludo-room-list"><div class="loading-spinner">Loading rooms…</div></div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('ludo-back-btn').addEventListener('click', () => renderClubGames(body, clubId, clubData));
+  document.getElementById('ludo-create-room-btn').addEventListener('click', () => createLudoRoom(clubId, body, clubData));
+
+  if (ludoRoomsUnsub) { ludoRoomsUnsub(); ludoRoomsUnsub = null; }
+  const listEl = document.getElementById('ludo-room-list');
+  ludoRoomsUnsub = db.collection('clubs').doc(clubId).collection('ludoRooms')
+    .where('status', 'in', ['waiting', 'playing'])
+    .onSnapshot(snap => {
+      if (snap.empty) { listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No active rooms. Start one! 🎲</div>'; return; }
+      const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+      listEl.innerHTML = '';
+      rooms.forEach(r => {
+        const full = (r.players||[]).length >= 4;
+        const inRoom = (r.players||[]).some(p => p.uid === currentUser.uid);
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--surface2)';
+        card.innerHTML = `
+          <div style="font-size:26px">🎲</div>
+          <div style="flex:1">
+            <strong style="font-size:14px">${escHtml(r.hostName||'Room')}'s room</strong>
+            <div style="font-size:12px;color:var(--muted)">${(r.players||[]).length}/4 players · ${r.status === 'playing' ? 'In progress' : 'Waiting'}</div>
+          </div>
+          <button class="btn-sm ludo-join-btn" data-id="${r.id}" ${full && !inRoom ? 'disabled' : ''} style="${full && !inRoom ? 'opacity:.5' : ''}">
+            ${inRoom ? 'Resume' : full ? 'Full' : 'Join'}
+          </button>`;
+        listEl.appendChild(card);
+      });
+      listEl.querySelectorAll('.ludo-join-btn').forEach(btn => {
+        btn.addEventListener('click', () => { if (!btn.disabled) joinLudoRoom(clubId, btn.dataset.id, body, clubData); });
+      });
+    }, e => { listEl.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
+}
+
+async function createLudoRoom(clubId, body, clubData) {
+  const myName = currentUserData.name || currentUser.displayName || 'Player';
+  const roomRef = db.collection('clubs').doc(clubId).collection('ludoRooms').doc();
+  await roomRef.set({
+    host: currentUser.uid,
+    hostName: myName,
+    status: 'waiting',
+    players: [{ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', color: 'red' }],
+    tokens: { red:[-1,-1,-1,-1], green:[-1,-1,-1,-1], yellow:[-1,-1,-1,-1], blue:[-1,-1,-1,-1] },
+    turnColor: 'red',
+    diceValue: null,
+    diceRolled: false,
+    winner: null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  openLudoRoom(clubId, roomRef.id, body, clubData);
+}
+
+async function joinLudoRoom(clubId, roomId, body, clubData) {
+  const roomRef = db.collection('clubs').doc(clubId).collection('ludoRooms').doc(roomId);
   try {
-    // Count messages per user in clubChats
-    const snap = await rtdb.ref(`clubChats/${clubId}/messages`).once('value');
-    const msgs = snap.val() || {};
-    const counts = {};
-    Object.values(msgs).forEach(m => {
-      if (m.uid) counts[m.uid] = (counts[m.uid] || 0) + 1;
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(roomRef);
+      if (!snap.exists) throw new Error('Room no longer exists');
+      const data = snap.data();
+      const players = data.players || [];
+      const already = players.some(p => p.uid === currentUser.uid);
+      if (already) return; // just resuming
+      if (players.length >= 4) throw new Error('This room is full — create your own room instead 🎲');
+      const usedColors = players.map(p => p.color);
+      const nextColor = LUDO_COLORS.find(c => !usedColors.includes(c));
+      const myName = currentUserData.name || currentUser.displayName || 'Player';
+      players.push({ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', color: nextColor });
+      tx.update(roomRef, { players, status: players.length >= 4 ? 'waiting' : data.status });
     });
-    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 15);
-    if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No activity yet 🏆</div>'; return; }
+    openLudoRoom(clubId, roomId, body, clubData);
+  } catch (e) {
+    showToast ? showToast(e.message) : alert(e.message);
+  }
+}
 
-    // Fetch user info
-    const uids = sorted.map(([uid]) => uid);
-    const users = await fetchUsersByUids(uids);
-    const userMap = {};
-    users.forEach(u => { userMap[u.uid] = u; });
+function openLudoRoom(clubId, roomId, body, clubData) {
+  if (ludoRoomsUnsub) { ludoRoomsUnsub(); ludoRoomsUnsub = null; }
+  if (ludoGameUnsub) { ludoGameUnsub(); ludoGameUnsub = null; }
+  const roomRef = db.collection('clubs').doc(clubId).collection('ludoRooms').doc(roomId);
 
-    const medals = ['🥇','🥈','🥉'];
-    el.innerHTML = '';
-    sorted.forEach(([uid, count], idx) => {
-      const u = userMap[uid] || {};
-      const div = document.createElement('div');
-      div.style.cssText = `display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;margin-bottom:8px;${idx<3?'background:var(--surface2);border:1px solid var(--border)':''}`;
-      div.innerHTML = `<div style="font-size:22px;flex-shrink:0;width:30px;text-align:center">${medals[idx]||`${idx+1}`}</div>
-        <div style="flex-shrink:0">${renderAvatarHtml(null, u.profilePic, 26)}</div>
-        <div style="flex:1"><strong style="font-size:14px">${escHtml(u.name||uid.slice(0,8))}</strong><div style="font-size:12px;color:var(--muted)">${count} messages</div></div>
-        <div style="font-size:20px;font-weight:800;color:var(--accent)">${count}</div>`;
-      el.appendChild(div);
+  body.innerHTML = `
+    <div style="padding:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="btn-icon" id="ludo-leave-btn"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:14px" id="ludo-room-title">Ludo Room</strong>
+      </div>
+      <div id="ludo-room-content">Loading…</div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('ludo-leave-btn').addEventListener('click', () => {
+    if (ludoGameUnsub) { ludoGameUnsub(); ludoGameUnsub = null; }
+    stopLudoOfflineWatch();
+    delete _ludoPrevTokens[roomId];
+    renderLudoLobby(body, clubId, clubData);
+  });
+
+  startLudoOfflineWatch(roomRef);
+
+  ludoGameUnsub = roomRef.onSnapshot(snap => {
+    if (!snap.exists) {
+      stopLudoOfflineWatch();
+      delete _ludoPrevTokens[roomId];
+      document.getElementById('ludo-room-content').innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed.</div>';
+      return;
+    }
+    const room = { id: snap.id, ...snap.data() };
+    if (room.status === 'playing' || room.status === 'finished') renderLudoGame(room, roomRef);
+    else renderLudoWaitingRoom(room, roomRef);
+  });
+}
+
+function renderLudoWaitingRoom(room, roomRef) {
+  const content = document.getElementById('ludo-room-content');
+  if (!content) return;
+  const isHost = room.host === currentUser.uid;
+  const players = room.players || [];
+  document.getElementById('ludo-room-title').textContent = `${room.hostName}'s room (${players.length}/4)`;
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      ${LUDO_COLORS.map(color => {
+        const p = players.find(pl => pl.color === color);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="width:16px;height:16px;border-radius:50%;background:${LUDO_COLOR_HEX[color]}"></div>
+          ${p ? `${renderAvatarHtml(null, p.pic, 24)}<strong style="font-size:13px;flex:1">${escHtml(p.name)}</strong>${p.uid===room.host?'<span style="font-size:11px;color:var(--muted)">Host</span>':''}`
+              : `<span style="font-size:13px;color:var(--muted);flex:1">Waiting for player…</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+    ${players.length >= 4 ? '<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Room is full 🎲</div>' : `<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Once 4 players join, no one else can join — they can start their own room.</div>`}
+    ${isHost ? `<button class="btn-primary" id="ludo-start-btn" ${players.length < 2 ? 'disabled' : ''}>${players.length < 2 ? 'Need at least 2 players' : 'Start Game'}</button>` : `<div style="text-align:center;color:var(--muted);font-size:13px">Waiting for host to start…</div>`}
+  `;
+  const startBtn = document.getElementById('ludo-start-btn');
+  if (startBtn) startBtn.addEventListener('click', async () => {
+    const firstColor = LUDO_COLORS.find(c => players.some(p => p.color === c));
+    await roomRef.update({ status: 'playing', turnColor: firstColor });
+  });
+}
+
+function ludoTokenBoardPos(color, pos) {
+  if (pos < 0) return null;
+  if (pos <= 50) return LUDO_RING[(LUDO_START_IDX[color] + pos) % 52];
+  if (pos <= 56) return LUDO_HOME_COL[color][pos - 51];
+  return [7,7];
+}
+
+function renderLudoGame(room, roomRef) {
+  const content = document.getElementById('ludo-room-content');
+  if (!content) return;
+  const players = room.players || [];
+  const me = players.find(p => p.uid === currentUser.uid);
+  document.getElementById('ludo-room-title').textContent = room.winner ? `🎉 ${room.winner.toUpperCase()} wins!` : `${room.turnColor}'s turn`;
+
+  // Build 15x15 cell grid background
+  let cellsHtml = '';
+  for (let r = 0; r < 15; r++) {
+    for (let c = 0; c < 15; c++) {
+      let bg = '#1a1a2e';
+      if (r <= 5 && c <= 5) bg = 'rgba(231,76,60,.18)';
+      else if (r <= 5 && c >= 9) bg = 'rgba(46,204,113,.18)';
+      else if (r >= 9 && c <= 5) bg = 'rgba(241,196,15,.18)';
+      else if (r >= 9 && c >= 9) bg = 'rgba(52,152,219,.18)';
+      else if (r === 7 && c === 7) bg = '#555';
+      cellsHtml += `<div style="position:absolute;left:${c*20}px;top:${r*20}px;width:20px;height:20px;background:${bg};border:1px solid rgba(255,255,255,.05)"></div>`;
+    }
+  }
+  // path cells
+  LUDO_RING.forEach(([r,c], i) => {
+    const safe = LUDO_SAFE_IDX.includes(i);
+    cellsHtml += `<div style="position:absolute;left:${c*20}px;top:${r*20}px;width:20px;height:20px;background:${safe?'rgba(255,255,255,.25)':'rgba(255,255,255,.08)'};border:1px solid rgba(255,255,255,.08);${safe?'font-size:11px;display:flex;align-items:center;justify-content:center':''}">${safe?'★':''}</div>`;
+  });
+  LUDO_COLORS.forEach(color => {
+    LUDO_HOME_COL[color].forEach(([r,c]) => {
+      cellsHtml += `<div style="position:absolute;left:${c*20}px;top:${r*20}px;width:20px;height:20px;background:${LUDO_COLOR_HEX[color]};opacity:.5"></div>`;
     });
-  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; }
+  });
+
+  // tokens — render each at its PREVIOUS known position (if any), then animate
+  // to the new position afterwards so moves look like real step-by-step hops
+  // instead of teleporting.
+  const tokens = room.tokens || {};
+  const prevTokens = _ludoPrevTokens[room.id] || null;
+  let tokensHtml = '';
+  const movable = getLudoMovableTokens(room, me?.color);
+  const pendingAnimations = []; // {color, idx, from, to}
+  LUDO_COLORS.forEach(color => {
+    (tokens[color] || []).forEach((pos, idx) => {
+      const prevPos = prevTokens ? prevTokens[color]?.[idx] : pos;
+      const startPos = (prevPos === undefined || prevPos === null) ? pos : prevPos;
+      const { x, y } = ludoPixelForToken(color, idx, startPos);
+      if (startPos !== pos) pendingAnimations.push({ color, idx, from: startPos, to: pos });
+      const canMove = movable.includes(color+'-'+idx);
+      tokensHtml += `<div class="ludo-token" data-color="${color}" data-idx="${idx}" style="position:absolute;left:${x}px;top:${y}px;width:14px;height:14px;border-radius:50%;background:${LUDO_COLOR_HEX[color]};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5);${canMove?'cursor:pointer;transform:scale(1.25);z-index:5;outline:2px solid #fff':'opacity:.95'}"></div>`;
+    });
+  });
+  _ludoPrevTokens[room.id] = JSON.parse(JSON.stringify(tokens));
+
+  content.innerHTML = `
+    <div style="display:flex;justify-content:center;margin-bottom:14px">
+      <div style="position:relative;width:300px;height:300px;background:#111;border-radius:8px;overflow:hidden">${cellsHtml}${tokensHtml}</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+        ${players.map(p => `<span style="font-size:11px;padding:3px 8px;border-radius:20px;background:${LUDO_COLOR_HEX[p.color]};color:#000;font-weight:700;${room.turnColor===p.color?'outline:2px solid #fff':''}">${escHtml(p.name)}</span>`).join('')}
+      </div>
+    </div>
+    ${room.winner ? `<div style="text-align:center;padding:14px;font-size:15px">🏆 <strong>${escHtml(players.find(p=>p.color===room.winner)?.name||room.winner)}</strong> won the game!</div>`
+    : `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div id="ludo-dice" style="width:56px;height:56px;border-radius:12px;background:#fff;color:#111;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">${room.diceValue || '?'}</div>
+        <button class="btn-primary" id="ludo-roll-btn" ${(me && me.color===room.turnColor && !room.diceRolled) ? '' : 'disabled'} style="width:160px">
+          ${me && me.color===room.turnColor ? (room.diceRolled ? 'Move a token' : 'Roll Dice') : `Waiting for ${room.turnColor}…`}
+        </button>
+      </div>`}
+  `;
+  if (window.lucide) lucide.createIcons();
+
+  const rollBtn = document.getElementById('ludo-roll-btn');
+  if (rollBtn) rollBtn.addEventListener('click', () => ludoRollDice(roomRef, room));
+
+  const diceEl = document.getElementById('ludo-dice');
+  if (diceEl && room.diceValue) { diceEl.classList.remove('rolling'); void diceEl.offsetWidth; diceEl.classList.add('rolling'); }
+
+  content.querySelectorAll('.ludo-token').forEach(el => {
+    el.addEventListener('click', () => {
+      const color = el.dataset.color, idx = parseInt(el.dataset.idx, 10);
+      if (movable.includes(color+'-'+idx)) ludoMoveToken(roomRef, room, color, idx);
+    });
+    // Kick off the hop-by-hop animation for any token whose position changed
+    const color = el.dataset.color, idx = parseInt(el.dataset.idx, 10);
+    const anim = pendingAnimations.find(a => a.color === color && a.idx === idx);
+    if (anim) animateLudoTokenEl(el, color, idx, anim.from, anim.to);
+  });
+}
+
+function getLudoMovableTokens(room, myColor) {
+  if (!room || !myColor || room.turnColor !== myColor || !room.diceRolled || !room.diceValue) return [];
+  const dice = room.diceValue;
+  const tokens = (room.tokens || {})[myColor] || [];
+  const movable = [];
+  tokens.forEach((pos, idx) => {
+    if (pos === -1) { if (dice === 6) movable.push(myColor+'-'+idx); }
+    else if (pos + dice <= 57) movable.push(myColor+'-'+idx);
+  });
+  return movable;
+}
+
+async function ludoRollDice(roomRef, room) {
+  const dice = Math.floor(Math.random() * 6) + 1;
+  await roomRef.update({ diceValue: dice, diceRolled: true });
+  // auto-pass turn if nothing can move
+  setTimeout(async () => {
+    const snap = await roomRef.get();
+    const r = snap.data();
+    if (!r || r.turnColor !== room.turnColor || !r.diceRolled) return;
+    const movable = getLudoMovableTokens(r, r.turnColor);
+    if (movable.length === 0) await ludoPassTurn(roomRef, r);
+  }, 300);
+}
+
+async function ludoPassTurn(roomRef, room) {
+  const players = room.players || [];
+  const activeColors = LUDO_COLORS.filter(c => players.some(p => p.color === c));
+  const curIdx = activeColors.indexOf(room.turnColor);
+  const next = activeColors[(curIdx + 1) % activeColors.length];
+  await roomRef.update({ turnColor: next, diceValue: null, diceRolled: false });
+}
+
+async function ludoMoveToken(roomRef, room, color, idx) {
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(roomRef);
+      const r = snap.data();
+      if (!r || r.turnColor !== color || !r.diceRolled) return;
+      const dice = r.diceValue;
+      const tokens = JSON.parse(JSON.stringify(r.tokens));
+      let pos = tokens[color][idx];
+      let extraTurn = false;
+      if (pos === -1) {
+        if (dice !== 6) return;
+        pos = 0;
+        extraTurn = true;
+      } else {
+        pos = pos + dice;
+        if (pos > 57) return;
+        if (dice === 6) extraTurn = true;
+      }
+      tokens[color][idx] = pos;
+      // capture check (only on shared ring, not safe cells, not own color)
+      if (pos >= 0 && pos <= 50) {
+        const ringIdx = (LUDO_START_IDX[color] + pos) % 52;
+        if (!LUDO_SAFE_IDX.includes(ringIdx)) {
+          LUDO_COLORS.forEach(oc => {
+            if (oc === color) return;
+            tokens[oc] = tokens[oc].map(op => {
+              if (op >= 0 && op <= 50 && (LUDO_START_IDX[oc] + op) % 52 === ringIdx) { extraTurn = true; return -1; }
+              return op;
+            });
+          });
+        }
+      }
+      const won = tokens[color].every(p => p === 57);
+      const update = { tokens };
+      if (won) {
+        update.winner = color;
+        update.status = 'finished';
+      } else if (extraTurn) {
+        update.diceValue = null;
+        update.diceRolled = false;
+      } else {
+        const players = r.players || [];
+        const activeColors = LUDO_COLORS.filter(c => players.some(p => p.color === c));
+        const curIdx = activeColors.indexOf(color);
+        update.turnColor = activeColors[(curIdx + 1) % activeColors.length];
+        update.diceValue = null;
+        update.diceRolled = false;
+      }
+      tx.update(roomRef, update);
+    });
+  } catch (e) { console.error('ludo move failed', e); }
+}
+
+// ══════════════════════════════════════
+// CLUB GAMES — TIC TAC TOE (online, 2-player rooms, public or password-protected private)
+// ══════════════════════════════════════
+let tttRoomsUnsub = null;
+let tttGameUnsub = null;
+const TTT_WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function renderTTTLobby(body, clubId, clubData) {
+  body.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <button class="btn-icon" id="ttt-back-btn"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:15px">⭕ Tic Tac Toe Rooms</strong>
+      </div>
+      <button class="btn-primary" id="ttt-create-room-btn" style="margin-bottom:12px">+ Create Room</button>
+      <div id="ttt-create-form" style="display:none;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);margin-bottom:14px">
+        <input id="ttt-room-name" type="text" placeholder="Room name (optional)" style="width:100%;margin-bottom:10px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;box-sizing:border-box" />
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button type="button" class="ttt-visibility-btn active" data-v="public" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">🌍 Public</button>
+          <button type="button" class="ttt-visibility-btn" data-v="private" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer">🔒 Private</button>
+        </div>
+        <input id="ttt-room-password" type="password" placeholder="Set a password" style="display:none;width:100%;margin-bottom:10px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;box-sizing:border-box" />
+        <button class="btn-primary" id="ttt-confirm-create-btn" style="width:100%">Create Room</button>
+      </div>
+      <div id="ttt-room-list"><div class="loading-spinner">Loading rooms…</div></div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('ttt-back-btn').addEventListener('click', () => renderClubGames(body, clubId, clubData));
+
+  const createForm = document.getElementById('ttt-create-form');
+  document.getElementById('ttt-create-room-btn').addEventListener('click', () => {
+    createForm.style.display = createForm.style.display === 'none' ? 'block' : 'none';
+  });
+
+  let selectedVisibility = 'public';
+  const visBtns = createForm.querySelectorAll('.ttt-visibility-btn');
+  const pwInput = document.getElementById('ttt-room-password');
+  visBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedVisibility = btn.dataset.v;
+      visBtns.forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('active', active);
+        b.style.background = active ? 'var(--accent)' : 'transparent';
+        b.style.color = active ? '#fff' : 'var(--muted)';
+        b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+      });
+      pwInput.style.display = selectedVisibility === 'private' ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('ttt-confirm-create-btn').addEventListener('click', async () => {
+    const name = document.getElementById('ttt-room-name').value.trim();
+    const password = pwInput.value;
+    if (selectedVisibility === 'private' && !password) {
+      toast('Set a password for your private room', 'error');
+      return;
+    }
+    await createTTTRoom(clubId, body, clubData, { name, isPrivate: selectedVisibility === 'private', password });
+  });
+
+  if (tttRoomsUnsub) { tttRoomsUnsub(); tttRoomsUnsub = null; }
+  const listEl = document.getElementById('ttt-room-list');
+  tttRoomsUnsub = db.collection('clubs').doc(clubId).collection('tttRooms')
+    .where('status', 'in', ['waiting', 'playing'])
+    .onSnapshot(snap => {
+      if (snap.empty) { listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No active rooms. Start one! ⭕</div>'; return; }
+      const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+      listEl.innerHTML = '';
+      rooms.forEach(r => {
+        const full = (r.players||[]).length >= 2;
+        const inRoom = (r.players||[]).some(p => p.uid === currentUser.uid);
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--surface2)';
+        card.innerHTML = `
+          <div style="font-size:26px">${r.isPrivate ? '🔒' : '⭕'}</div>
+          <div style="flex:1">
+            <strong style="font-size:14px">${escHtml(r.name || (r.hostName + "'s room"))}</strong>
+            <div style="font-size:12px;color:var(--muted)">${(r.players||[]).length}/2 players · ${r.status === 'playing' ? 'In progress' : 'Waiting'} · ${r.isPrivate ? 'Private' : 'Public'}</div>
+          </div>
+          <button class="btn-sm ttt-join-btn" data-id="${r.id}" ${full && !inRoom ? 'disabled' : ''} style="${full && !inRoom ? 'opacity:.5' : ''}">
+            ${inRoom ? 'Resume' : full ? 'Full' : 'Join'}
+          </button>`;
+        listEl.appendChild(card);
+      });
+      listEl.querySelectorAll('.ttt-join-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          const room = rooms.find(r => r.id === btn.dataset.id);
+          const inRoom = (room.players||[]).some(p => p.uid === currentUser.uid);
+          if (room.isPrivate && !inRoom) {
+            promptTTTPassword(room, () => joinTTTRoom(clubId, room.id, body, clubData));
+          } else {
+            joinTTTRoom(clubId, room.id, body, clubData);
+          }
+        });
+      });
+    }, e => { listEl.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
+}
+
+function promptTTTPassword(room, onSuccess) {
+  const overlay = document.createElement('div');
+  overlay.className = 'cv-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="cv-confirm-box">
+      <div class="cv-confirm-msg">🔒 "${escHtml(room.name || 'This room')}" is private<br><span style="font-weight:400;font-size:13px;color:var(--muted)">Enter the password to join</span></div>
+      <input id="ttt-pw-input" type="password" placeholder="Password" style="width:100%;margin-bottom:14px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box" />
+      <div class="cv-confirm-actions">
+        <button class="cv-confirm-cancel" id="ttt-pw-cancel">Cancel</button>
+        <button class="cv-confirm-ok" id="ttt-pw-ok" style="background:var(--accent)">Join</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+  const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 180); };
+  overlay.querySelector('#ttt-pw-cancel').addEventListener('click', close);
+  const input = overlay.querySelector('#ttt-pw-input');
+  const submit = () => {
+    if (input.value === room.password) {
+      close();
+      onSuccess();
+    } else {
+      toast('Incorrect password', 'error');
+      input.value = '';
+      input.focus();
+    }
+  };
+  overlay.querySelector('#ttt-pw-ok').addEventListener('click', submit);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  setTimeout(() => input.focus(), 50);
+}
+
+async function createTTTRoom(clubId, body, clubData, opts) {
+  const myName = currentUserData.name || currentUser.displayName || 'Player';
+  const roomRef = db.collection('clubs').doc(clubId).collection('tttRooms').doc();
+  await roomRef.set({
+    host: currentUser.uid,
+    hostName: myName,
+    name: opts.name || '',
+    isPrivate: !!opts.isPrivate,
+    password: opts.isPrivate ? opts.password : null,
+    status: 'waiting',
+    players: [{ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', symbol: 'X' }],
+    board: Array(9).fill(null),
+    turn: 'X',
+    winner: null,
+    winLine: null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  const form = document.getElementById('ttt-create-form');
+  if (form) form.style.display = 'none';
+  openTTTRoom(clubId, roomRef.id, body, clubData);
+}
+
+async function joinTTTRoom(clubId, roomId, body, clubData) {
+  const roomRef = db.collection('clubs').doc(clubId).collection('tttRooms').doc(roomId);
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(roomRef);
+      if (!snap.exists) throw new Error('Room no longer exists');
+      const data = snap.data();
+      const players = data.players || [];
+      const already = players.some(p => p.uid === currentUser.uid);
+      if (already) return; // just resuming
+      if (players.length >= 2) throw new Error('This room is full — create your own room instead ⭕');
+      const usedSymbols = players.map(p => p.symbol);
+      const nextSymbol = usedSymbols.includes('X') ? 'O' : 'X';
+      const myName = currentUserData.name || currentUser.displayName || 'Player';
+      players.push({ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', symbol: nextSymbol });
+      tx.update(roomRef, { players, status: players.length >= 2 ? 'playing' : data.status });
+    });
+    openTTTRoom(clubId, roomId, body, clubData);
+  } catch (e) {
+    typeof toast === 'function' ? toast(e.message, 'error') : alert(e.message);
+  }
+}
+
+function openTTTRoom(clubId, roomId, body, clubData) {
+  if (tttRoomsUnsub) { tttRoomsUnsub(); tttRoomsUnsub = null; }
+  if (tttGameUnsub) { tttGameUnsub(); tttGameUnsub = null; }
+  const roomRef = db.collection('clubs').doc(clubId).collection('tttRooms').doc(roomId);
+
+  body.innerHTML = `
+    <div style="padding:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="btn-icon" id="ttt-leave-btn"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:14px" id="ttt-room-title">Tic Tac Toe Room</strong>
+      </div>
+      <div id="ttt-room-content">Loading…</div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('ttt-leave-btn').addEventListener('click', () => {
+    if (tttGameUnsub) { tttGameUnsub(); tttGameUnsub = null; }
+    renderTTTLobby(body, clubId, clubData);
+  });
+
+  tttGameUnsub = roomRef.onSnapshot(snap => {
+    if (!snap.exists) {
+      const c = document.getElementById('ttt-room-content');
+      if (c) c.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed.</div>';
+      return;
+    }
+    const room = { id: snap.id, ...snap.data() };
+    if ((room.players||[]).length < 2) renderTTTWaitingRoom(room, roomRef);
+    else renderTTTGame(room, roomRef);
+  });
+}
+
+function renderTTTWaitingRoom(room, roomRef) {
+  const content = document.getElementById('ttt-room-content');
+  if (!content) return;
+  const players = room.players || [];
+  const titleEl = document.getElementById('ttt-room-title');
+  if (titleEl) titleEl.textContent = `${room.name || room.hostName + "'s room"} (${players.length}/2)`;
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      ${['X','O'].map(symbol => {
+        const p = players.find(pl => pl.symbol === symbol);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:${symbol==='X'?'#6c63ff':'#ff4ecd'}">${symbol}</div>
+          ${p ? `${renderAvatarHtml(null, p.pic, 24)}<strong style="font-size:13px;flex:1">${escHtml(p.name)}</strong>${p.uid===room.host?'<span style="font-size:11px;color:var(--muted)">Host</span>':''}`
+              : `<span style="font-size:13px;color:var(--muted);flex:1">Waiting for player…</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+    ${room.isPrivate ? `<div style="text-align:center;font-size:12px;color:var(--muted)">🔒 Private room — share the password with a friend to let them join.</div>`
+                      : `<div style="text-align:center;font-size:12px;color:var(--muted)">🌍 Public room — anyone in the club can join.</div>`}
+  `;
+}
+
+function checkTTTWinner(board) {
+  for (const line of TTT_WIN_LINES) {
+    const [a,b,c] = line;
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) return { symbol: board[a], line };
+  }
+  if (board.every(c => c)) return { symbol: 'draw', line: null };
+  return null;
+}
+
+function renderTTTGame(room, roomRef) {
+  const content = document.getElementById('ttt-room-content');
+  if (!content) return;
+  const players = room.players || [];
+  const me = players.find(p => p.uid === currentUser.uid);
+  const opponent = players.find(p => p.uid !== currentUser.uid);
+  const titleEl = document.getElementById('ttt-room-title');
+  if (titleEl) titleEl.textContent = room.name || `${room.hostName}'s room`;
+
+  const board = room.board || Array(9).fill(null);
+  const result = room.winner ? { symbol: room.winner, line: room.winLine } : null;
+  const isMyTurn = !!(me && !result && room.turn === me.symbol);
+
+  let statusText;
+  if (result?.symbol === 'draw') statusText = "🤝 It's a draw!";
+  else if (result) {
+    const winnerName = players.find(p => p.symbol === result.symbol)?.name || result.symbol;
+    statusText = result.symbol === me?.symbol ? '🎉 You win!' : `🎉 ${escHtml(winnerName)} wins!`;
+  }
+  else if (!opponent) statusText = 'Waiting for opponent…';
+  else statusText = isMyTurn ? 'Your turn' : `${escHtml(opponent.name)}'s turn`;
+
+  content.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px">
+      <div>${me ? `You are <strong style="color:${me.symbol==='X'?'#6c63ff':'#ff4ecd'}">${me.symbol}</strong>` : ''}</div>
+      <div style="font-weight:700">${statusText}</div>
+    </div>
+    <div id="ttt-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:270px;max-width:100%;margin:0 auto 16px">
+      ${board.map((cell, i) => {
+        const winning = result?.line?.includes(i);
+        return `<div class="ttt-cell" data-i="${i}" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;border-radius:10px;background:${winning ? 'rgba(46,204,113,.25)' : 'var(--surface2)'};border:1px solid var(--border);color:${cell==='X'?'#6c63ff':'#ff4ecd'};cursor:${(!cell && isMyTurn) ? 'pointer' : 'default'}">${cell || ''}</div>`;
+      }).join('')}
+    </div>
+    ${result && room.host === currentUser.uid ? `<button class="btn-primary" id="ttt-rematch-btn" style="width:100%">Play Again</button>` : ''}
+    ${result && room.host !== currentUser.uid ? `<div style="text-align:center;color:var(--muted);font-size:13px">Waiting for host to start a rematch…</div>` : ''}
+  `;
+
+  if (isMyTurn) {
+    content.querySelectorAll('.ttt-cell').forEach(cellEl => {
+      const i = Number(cellEl.dataset.i);
+      if (!board[i]) cellEl.addEventListener('click', () => makeTTTMove(roomRef, i, me.symbol));
+    });
+  }
+
+  const rematchBtn = document.getElementById('ttt-rematch-btn');
+  if (rematchBtn) rematchBtn.addEventListener('click', async () => {
+    await roomRef.update({ board: Array(9).fill(null), winner: null, winLine: null, turn: room.turn === 'X' ? 'O' : 'X' });
+  });
+}
+
+async function makeTTTMove(roomRef, i, symbol) {
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(roomRef);
+      if (!snap.exists) return;
+      const r = snap.data();
+      if (r.winner) return;
+      if (r.turn !== symbol) return;
+      const board = (r.board || Array(9).fill(null)).slice();
+      if (board[i]) return;
+      board[i] = symbol;
+      const result = checkTTTWinner(board);
+      const update = { board };
+      if (result) {
+        update.winner = result.symbol;
+        update.winLine = result.line || null;
+      } else {
+        update.turn = symbol === 'X' ? 'O' : 'X';
+      }
+      tx.update(roomRef, update);
+    });
+  } catch (e) { console.error('ttt move failed', e); }
 }
 
 // ══════════════════════════════════════
