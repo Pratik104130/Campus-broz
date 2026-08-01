@@ -7,6 +7,109 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <style>
+    /* ── Admin-granted "Elite" profile frame ──────────────────────────
+       A cosmetic, admin-only perk ("customize profile lobby") that can be
+       granted to specific users from admin.html. Stored on the user doc as
+       profileFrame: 'gold' (or absent/null for no frame). Applied to both
+       the user's own profile card and the profile modal shown to others. */
+    .frame-elite-gold {
+      position: relative;
+      border-radius: 22px;
+      border: 1.5px solid #d9b34d !important;
+      box-shadow:
+        0 0 0 4px rgba(217,179,77,0.12),
+        0 0 26px rgba(217,179,77,0.38),
+        inset 0 0 0 1px rgba(217,179,77,0.35);
+    }
+    .frame-elite-gold::after {
+      content: '';
+      position: absolute; inset: -14px;
+      border-radius: 30px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(217,179,77,0.25), rgba(217,179,77,0) 70%);
+      pointer-events: none; z-index: -1;
+    }
+    .corner-vine {
+      display: none;
+      position: absolute; width: 62px; height: 62px;
+      background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMTYwIj4KPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDliMzRkIiBzdHJva2Utd2lkdGg9IjIuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjk1Ij4KPHBhdGggZD0iTTYsNiBDNDYsNCAzMCw0MiAxMCw1OCBDLTYsNzAgMjYsODYgNDYsNzAgQzYwLDU4IDQyLDUwIDM0LDYyIEMyNiw3NCA0Niw4MCA1NCw2NiIvPgo8cGF0aCBkPSJNNiw2IEM0OCwxMCA5MiwtMiAxMTgsMTggQzEzOCwzMiAxMjIsNTQgMTA0LDQ0IEM5MCwzNiAxMDAsMjAgMTE2LDI2Ii8+CjxwYXRoIGQ9Ik02LDYgQzEwLDI2IDQsNDYgMTYsNjIiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSI1NCIgY3k9IjY2IiByPSIzLjQiIGZpbGw9IiNmMmQ0ODgiLz4KPGNpcmNsZSBjeD0iMTE2IiBjeT0iMjYiIHI9IjMiIGZpbGw9IiNmMmQ0ODgiLz4KPGNpcmNsZSBjeD0iMzQiIGN5PSI2MiIgcj0iMi40IiBmaWxsPSIjZjJkNDg4Ii8+CjxjaXJjbGUgY3g9IjYiIGN5PSI2IiByPSIzLjYiIGZpbGw9IiNmMmQ0ODgiLz4KPC9nPgo8L3N2Zz4=");
+      background-repeat: no-repeat; background-size: contain;
+      pointer-events: none; opacity: 0.9; z-index: 3;
+    }
+    .frame-elite-gold .corner-vine { display: block; }
+    .corner-vine-tl { top: 4px; left: 4px; }
+    .corner-vine-tr { top: 4px; right: 4px; transform: scaleX(-1); }
+    .corner-vine-bl { bottom: 4px; left: 4px; transform: scaleY(-1); }
+    .corner-vine-br { bottom: 4px; right: 4px; transform: scale(-1,-1); }
+    .frame-lights {
+      display: none;
+      position: absolute; left: 14px; right: 14px; bottom: 6px; height: 12px;
+      background-image: radial-gradient(circle, rgba(245,214,127,0.95) 0 2.5px, rgba(245,214,127,0) 7px);
+      background-size: 22px 12px; background-repeat: repeat-x; background-position: center;
+      filter: blur(1.5px);
+      pointer-events: none; z-index: 2;
+    }
+    .frame-elite-gold .frame-lights { display: block; }
+    .frame-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 4px 12px; border-radius: 999px; margin: 8px auto 2px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
+    .frame-tag-gold {
+      background: linear-gradient(135deg, #f9e6a8, #d4a437);
+      color: #3a2a05;
+      box-shadow: 0 2px 8px rgba(212,164,55,0.4);
+    }
+
+    /* ── Admin-granted "Eagle" profile frame (black wings + dark background) ──
+       A second cosmetic, admin-only perk, granted from admin.html alongside
+       the gold frame. Stored on the user doc as profileFrame: 'eagle'.
+       Gives a black background to the profile card, a classy black + white
+       pinstripe border, a pair of layered black eagle-wing feathers flanking
+       the avatar, and a small eagle badge. */
+    .frame-elite-eagle {
+      position: relative;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #0d0d0f 0%, #000000 100%) !important;
+      border: none !important;
+      box-shadow:
+        0 0 0 2px #000,
+        0 0 0 5px #f2f2f2,
+        0 0 0 7px #000,
+        0 12px 34px rgba(0,0,0,0.55),
+        inset 0 0 0 1px rgba(255,255,255,0.07);
+    }
+    .frame-elite-eagle::after {
+      content: '';
+      position: absolute; inset: -16px;
+      border-radius: 30px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.5), rgba(0,0,0,0) 70%);
+      pointer-events: none; z-index: -1;
+    }
+    .wing-eagle {
+      display: none;
+      position: absolute; top: 48%; width: 108px; height: 108px;
+      background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMTAgMjEwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImZnIiB4MT0iMCUiIHkxPSIxMDAlIiB4Mj0iNjAlIiB5Mj0iMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMzYTNhM2QiLz48c3RvcCBvZmZzZXQ9IjU1JSIgc3RvcC1jb2xvcj0iIzE0MTQxNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzAwMDAwMCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0gMTYuMCwxODQuMCBDIDI0LjEsMTYzLjYgMjIuMywxMjkuNyAyMi4xLDExNC4zIEMgMTguMiwxMjkuNCA5LjAsMTYzLjcgMTYuMCwxODQuMCBaIiBmaWxsPSIjMWMxYzFlIiBvcGFjaXR5PSIwLjkiLz48cGF0aCBkPSJNIDE2LjAsMTg0LjAgQyAzMC42LDE2Ny42IDQwLjUsMTM1LjIgNDUuNiwxMjAuNiBDIDM2LjcsMTMzLjQgMTYuNCwxNjIuNiAxNi4wLDE4NC4wIFoiIGZpbGw9IiMxYzFjMWUiIG9wYWNpdHk9IjAuOSIvPjxwYXRoIGQ9Ik0gMTYuMCwxODQuMCBDIDM1LjMsMTczLjYgNTUuNywxNDYuNSA2NS41LDEzNC41IEMgNTIuOCwxNDMuNSAyMy43LDE2NC4wIDE2LjAsMTg0LjAgWiIgZmlsbD0iIzFjMWMxZSIgb3BhY2l0eT0iMC45Ii8+PHBhdGggZD0iTSAxNi4wLDE4NC4wIEMgMzcuNywxODAuOCA2Ni4yLDE2Mi40IDc5LjQsMTU0LjQgQyA2NC40LDE1OC42IDMwLjEsMTY3LjggMTYuMCwxODQuMCBaIiBmaWxsPSIjMWMxYzFlIiBvcGFjaXR5PSIwLjkiLz48cGF0aCBkPSJNIDE2LjAsMTg0LjAgQyAzNy44LDE4Ni42IDcwLjAsMTc2LjEgODQuOSwxNzEuOCBDIDY5LjMsMTcxLjkgMzMuOCwxNzIuMCAxNi4wLDE4NC4wIFoiIGZpbGw9IiMxYzFjMWUiIG9wYWNpdHk9IjAuOSIvPjxwYXRoIGQ9Ik0gMTYuMCwxODQuMCBDIDIwLjEsMTQ1LjQgMTMuOSw4NC4yIDExLjUsNTYuMSBDIDEwLjMsODQuMyA3LjIsMTQ4LjQgMTYuMCwxODQuMCBaIiBmaWxsPSJ1cmwoI2ZnKSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjAuNiIvPjxwYXRoIGQ9Ik0gMTYuMCwxODQuMCBDIDMwLjEsMTQwLjIgMzguMSw2Ny41IDQyLjQsMzQuMyBDIDM0LjAsNjYuOCAxNC44LDE0MC42IDE2LjAsMTg0LjAgWiIgZmlsbD0idXJsKCNmZykiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIwLjYiLz48cGF0aCBkPSJNIDE2LjAsMTg0LjAgQyA0Mi4xLDEzOC45IDY4LjAsNjAuMyA4MC40LDI0LjUgQyA2My40LDU4LjUgMjQuNiwxMzUuNSAxNi4wLDE4NC4wIFoiIGZpbGw9InVybCgjZmcpIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMC42Ii8+PHBhdGggZD0iTSAxNi4wLDE4NC4wIEMgNTQuNywxNDMuMCAxMDAuOSw2Ni4zIDEyMi43LDMxLjYgQyA5Ni40LDYzLjIgMzYuNiwxMzQuOSAxNi4wLDE4NC4wIFoiIGZpbGw9InVybCgjZmcpIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMC42Ii8+PHBhdGggZD0iTSAxNi4wLDE4NC4wIEMgNjMuNywxNTEuOCAxMjcuNSw4Ni4zIDE1Ny4yLDU2LjkgQyAxMjMuOSw4Mi40IDQ4LjIsMTQwLjIgMTYuMCwxODQuMCBaIiBmaWxsPSJ1cmwoI2ZnKSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjAuNiIvPjxwYXRoIGQ9Ik0gMTYuMCwxODQuMCBDIDY2LjcsMTY0LjEgMTM5LjcsMTE3LjUgMTczLjQsOTYuNyBDIDEzNy40LDExMy4zIDU1LjMsMTUwLjkgMTYuMCwxODQuMCBaIiBmaWxsPSJ1cmwoI2ZnKSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjAuNiIvPjxwYXRoIGQ9Ik0gMTYuMCwxODQuMCBDIDYzLjcsMTc1LjggMTM1LjgsMTQ5LjAgMTY5LjAsMTM3LjIgQyAxMzQuNiwxNDUuMSA1Ni40LDE2Mi45IDE2LjAsMTg0LjAgWiIgZmlsbD0idXJsKCNmZykiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIwLjYiLz48cGF0aCBkPSJNIDE2LjAsMTg0LjAgQyA1NC43LDE4NC44IDExNS40LDE3NC44IDE0My4zLDE3MC42IEMgMTE1LjEsMTcxLjYgNTAuOSwxNzMuNiAxNi4wLDE4NC4wIFoiIGZpbGw9InVybCgjZmcpIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMC42Ii8+PGxpbmUgeDE9IjE2IiB5MT0iMTg0IiB4Mj0iMTEuOCIgeTI9IjYzLjgiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjIyKSIgc3Ryb2tlLXdpZHRoPSIwLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNiIgeTE9IjE4NCIgeDI9IjQwLjgiIHkyPSI0My4zIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yMikiIHN0cm9rZS13aWR0aD0iMC44IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMTYiIHkxPSIxODQiIHgyPSI3Ni42IiB5Mj0iMzQuMSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMjIpIiBzdHJva2Utd2lkdGg9IjAuOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTg0IiB4Mj0iMTE2LjMiIHkyPSI0MC44IiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yMikiIHN0cm9rZS13aWR0aD0iMC44IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMTYiIHkxPSIxODQiIHgyPSIxNDguNyIgeTI9IjY0LjUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjIyKSIgc3Ryb2tlLXdpZHRoPSIwLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNiIgeTE9IjE4NCIgeDI9IjE2NC4wIiB5Mj0iMTAyLjAiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjIyKSIgc3Ryb2tlLXdpZHRoPSIwLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNiIgeTE9IjE4NCIgeDI9IjE1OS44IiB5Mj0iMTQwLjAiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjIyKSIgc3Ryb2tlLXdpZHRoPSIwLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNiIgeTE9IjE4NCIgeDI9IjEzNS43IiB5Mj0iMTcxLjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjIyKSIgc3Ryb2tlLXdpZHRoPSIwLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTg0IiByPSIxMSIgZmlsbD0iIzBhMGEwYiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTg0IiByPSIxMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIiBzdHJva2Utd2lkdGg9IjAuOCIvPjwvc3ZnPg==");
+      background-repeat: no-repeat; background-size: contain; background-position: center;
+      pointer-events: none; opacity: 0.97; z-index: 1;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7));
+    }
+    .frame-elite-eagle .wing-eagle { display: block; }
+    .wing-eagle-left  { right: 90%; transform: translateY(-50%) scaleX(-1); }
+    .wing-eagle-right { left: 90%; transform: translateY(-50%); }
+    .eagle-badge {
+      display: none;
+      position: absolute; right: -2px; bottom: -2px; width: 26px; height: 26px;
+      border-radius: 50%; background: #000;
+      border: 2px solid #f2f2f2; align-items: center; justify-content: center;
+      font-size: 13px; z-index: 4; box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .frame-elite-eagle .eagle-badge { display: flex; }
+    .frame-tag-eagle {
+      background: #000;
+      color: #fff;
+      border: 1px solid #f2f2f2;
+    }
     /* ── Forgot Password ── */
     .forgot-pw-wrap { text-align: right; margin: -4px 0 10px; }
     .forgot-pw-btn {
@@ -993,12 +1096,21 @@ opacity: .4;
     <!-- ── PROFILE ── -->
     <section id="view-profile" class="view">
       <div class="profile-banner"></div>
-      <div class="profile-card">
+      <div class="profile-card" id="profile-card">
+        <span class="corner-vine corner-vine-tl"></span>
+        <span class="corner-vine corner-vine-tr"></span>
+        <span class="corner-vine corner-vine-bl"></span>
+        <span class="corner-vine corner-vine-br"></span>
+        <span class="frame-lights"></span>
         <div class="profile-avatar-wrap">
+          <span class="wing-eagle wing-eagle-left"></span>
+          <span class="wing-eagle wing-eagle-right"></span>
           <div class="profile-avatar" id="profile-avatar-display"><img src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"/></div>
           <span class="presence-dot online" id="profile-presence-dot" title="Online"></span>
           <button class="avatar-edit-btn" id="avatar-edit-btn"><i data-lucide="camera"></i></button>
+          <span class="eagle-badge" title="Eagle Profile">🦅</span>
         </div>
+        <div class="frame-tag" id="profile-frame-tag" style="display:none"></div>
         <h2 id="profile-name">Loading…</h2>
         <p id="profile-username" class="muted">@username</p>
         <p id="profile-college" class="muted">🎓 College</p>
@@ -1231,7 +1343,12 @@ opacity: .4;
 
 <!-- Instagram-style User Profile Modal -->
 <div class="modal-overlay" id="modal-user-profile">
-  <div class="modal ig-profile-modal">
+  <div class="modal ig-profile-modal" id="ig-profile-modal-card">
+    <span class="corner-vine corner-vine-tl"></span>
+    <span class="corner-vine corner-vine-tr"></span>
+    <span class="corner-vine corner-vine-bl"></span>
+    <span class="corner-vine corner-vine-br"></span>
+    <span class="frame-lights"></span>
     <div class="modal-header">
       <h3 id="ig-profile-username-header">Profile</h3>
       <button class="modal-close" data-modal="modal-user-profile">✕</button>
@@ -5753,7 +5870,78 @@ async function ludoMoveToken(roomRef, room, color, idx) {
 // ══════════════════════════════════════
 let tttRoomsUnsub = null;
 let tttGameUnsub = null;
+let tttOfflineCheckInterval = null;
 const TTT_WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const TTT_OFFLINE_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
+
+// ── Auto-close room if host offline 2+ min; auto-remove other players offline 2+ min ──
+async function checkTTTOfflinePlayers(roomRef) {
+  try {
+    const snap = await roomRef.get();
+    if (!snap.exists) return;
+    const room = snap.data();
+    const players = room.players || [];
+    if (!players.length) return;
+    const now = Date.now();
+
+    // Host offline 2+ min → close (delete) the whole room
+    const hostPlayer = players.find(p => p.uid === room.host);
+    if (hostPlayer) {
+      try {
+        const pSnap = await rtdb.ref('presence/' + hostPlayer.uid).once('value');
+        const pres = pSnap.val();
+        const isOnline = !!pres?.online;
+        const lastSeen = pres?.lastSeen || 0;
+        if (!isOnline && lastSeen && (now - lastSeen) >= TTT_OFFLINE_LIMIT_MS) {
+          await roomRef.delete();
+          if (typeof toast === 'function') toast('Room closed — host offline 2+ min ⏱️', 'info');
+          return;
+        }
+      } catch (e) { /* presence unavailable — skip */ }
+    }
+
+    // Non-host player offline 2+ min → remove them, reopen room for a new challenger
+    const removeUids = [];
+    for (const p of players) {
+      if (p.uid === room.host) continue;
+      try {
+        const pSnap = await rtdb.ref('presence/' + p.uid).once('value');
+        const pres = pSnap.val();
+        const isOnline = !!pres?.online;
+        const lastSeen = pres?.lastSeen || 0;
+        if (!isOnline && lastSeen && (now - lastSeen) >= TTT_OFFLINE_LIMIT_MS) removeUids.push(p.uid);
+      } catch (e) { /* presence unavailable — skip */ }
+    }
+    if (!removeUids.length) return;
+
+    let removedNames = [];
+    await db.runTransaction(async tx => {
+      const s = await tx.get(roomRef);
+      if (!s.exists) return;
+      const r = s.data();
+      const curPlayers = r.players || [];
+      const newPlayers = curPlayers.filter(p => !removeUids.includes(p.uid));
+      if (newPlayers.length === curPlayers.length) return; // already handled elsewhere
+      removedNames = curPlayers.filter(p => removeUids.includes(p.uid)).map(p => p.name);
+      tx.update(roomRef, {
+        players: newPlayers, status: 'waiting',
+        board: Array(9).fill(null), turn: 'X', winner: null, winLine: null
+      });
+    });
+    if (removedNames.length && typeof toast === 'function') {
+      toast(`${removedNames.join(', ')} removed — offline 2+ min ⏱️`, 'info');
+    }
+  } catch (e) { console.error('ttt offline check failed', e); }
+}
+
+function startTTTOfflineWatch(roomRef) {
+  stopTTTOfflineWatch();
+  checkTTTOfflinePlayers(roomRef); // check immediately on entering the room
+  tttOfflineCheckInterval = setInterval(() => checkTTTOfflinePlayers(roomRef), 30 * 1000);
+}
+function stopTTTOfflineWatch() {
+  if (tttOfflineCheckInterval) { clearInterval(tttOfflineCheckInterval); tttOfflineCheckInterval = null; }
+}
 
 function renderTTTLobby(body, clubId, clubData) {
   body.innerHTML = `
@@ -5941,13 +6129,17 @@ function openTTTRoom(clubId, roomId, body, clubData) {
   if (window.lucide) lucide.createIcons();
   document.getElementById('ttt-leave-btn').addEventListener('click', () => {
     if (tttGameUnsub) { tttGameUnsub(); tttGameUnsub = null; }
+    stopTTTOfflineWatch();
     renderTTTLobby(body, clubId, clubData);
   });
 
+  startTTTOfflineWatch(roomRef);
+
   tttGameUnsub = roomRef.onSnapshot(snap => {
     if (!snap.exists) {
+      stopTTTOfflineWatch();
       const c = document.getElementById('ttt-room-content');
-      if (c) c.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed.</div>';
+      if (c) c.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed — host was offline too long.</div>';
       return;
     }
     const room = { id: snap.id, ...snap.data() };
@@ -5960,6 +6152,7 @@ function renderTTTWaitingRoom(room, roomRef) {
   const content = document.getElementById('ttt-room-content');
   if (!content) return;
   const players = room.players || [];
+  const isHost = room.host === currentUser.uid;
   const titleEl = document.getElementById('ttt-room-title');
   if (titleEl) titleEl.textContent = `${room.name || room.hostName + "'s room"} (${players.length}/2)`;
   content.innerHTML = `
@@ -5973,9 +6166,12 @@ function renderTTTWaitingRoom(room, roomRef) {
         </div>`;
       }).join('')}
     </div>
-    ${room.isPrivate ? `<div style="text-align:center;font-size:12px;color:var(--muted)">🔒 Private room — share the password with a friend to let them join.</div>`
-                      : `<div style="text-align:center;font-size:12px;color:var(--muted)">🌍 Public room — anyone in the club can join.</div>`}
+    ${room.isPrivate ? `<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:${isHost?'14px':'0'}">🔒 Private room — share the password with a friend to let them join.</div>`
+                      : `<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:${isHost?'14px':'0'}">🌍 Public room — anyone in the club can join.</div>`}
+    ${isHost ? `<button class="btn-danger" id="ttt-delete-room-btn" style="width:100%;background:var(--danger,#ef4444);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">🗑️ Delete Room</button>` : ''}
   `;
+  const delBtn = document.getElementById('ttt-delete-room-btn');
+  if (delBtn) delBtn.addEventListener('click', () => confirmDeleteTTTRoom(roomRef));
 }
 
 function checkTTTWinner(board) {
@@ -6020,8 +6216,9 @@ function renderTTTGame(room, roomRef) {
         return `<div class="ttt-cell" data-i="${i}" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;border-radius:10px;background:${winning ? 'rgba(46,204,113,.25)' : 'var(--surface2)'};border:1px solid var(--border);color:${cell==='X'?'#6c63ff':'#ff4ecd'};cursor:${(!cell && isMyTurn) ? 'pointer' : 'default'}">${cell || ''}</div>`;
       }).join('')}
     </div>
-    ${result && room.host === currentUser.uid ? `<button class="btn-primary" id="ttt-rematch-btn" style="width:100%">Play Again</button>` : ''}
-    ${result && room.host !== currentUser.uid ? `<div style="text-align:center;color:var(--muted);font-size:13px">Waiting for host to start a rematch…</div>` : ''}
+    ${result && room.host === currentUser.uid ? `<button class="btn-primary" id="ttt-rematch-btn" style="width:100%;margin-bottom:8px">Play Again</button>` : ''}
+    ${result && room.host !== currentUser.uid ? `<div style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:8px">Waiting for host to start a rematch…</div>` : ''}
+    ${room.host === currentUser.uid ? `<button id="ttt-delete-room-btn" style="width:100%;background:var(--danger,#ef4444);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">🗑️ Delete Room</button>` : ''}
   `;
 
   if (isMyTurn) {
@@ -6034,6 +6231,21 @@ function renderTTTGame(room, roomRef) {
   const rematchBtn = document.getElementById('ttt-rematch-btn');
   if (rematchBtn) rematchBtn.addEventListener('click', async () => {
     await roomRef.update({ board: Array(9).fill(null), winner: null, winLine: null, turn: room.turn === 'X' ? 'O' : 'X' });
+  });
+
+  const delBtn = document.getElementById('ttt-delete-room-btn');
+  if (delBtn) delBtn.addEventListener('click', () => confirmDeleteTTTRoom(roomRef));
+}
+
+function confirmDeleteTTTRoom(roomRef) {
+  showConfirmDialog('Delete this room? This ends the game for both players.', async () => {
+    try {
+      stopTTTOfflineWatch();
+      await roomRef.delete();
+      if (typeof toast === 'function') toast('Room deleted', 'success');
+    } catch (e) {
+      if (typeof toast === 'function') toast(e.message, 'error'); else alert(e.message);
+    }
   });
 }
 
@@ -6569,6 +6781,34 @@ function renderProfileSocialLinks(userData) {
   lucide.createIcons();
 }
 
+// Admin-grantable custom profile frame ("customize profile lobby" perk).
+// Only admin.html can set userData.profileFrame — regular users can't self-grant it.
+// Supports 'gold' (Elite gold frame) and 'eagle' (black wings + dark background).
+function applyProfileFrame(cardEl, tagEl, frame) {
+  if (!cardEl) return;
+  cardEl.classList.remove('frame-elite-gold', 'frame-elite-eagle');
+  if (tagEl) {
+    tagEl.classList.remove('frame-tag-gold', 'frame-tag-eagle');
+    tagEl.style.display = 'none';
+    tagEl.textContent = '';
+  }
+  if (frame === 'gold') {
+    cardEl.classList.add('frame-elite-gold');
+    if (tagEl) {
+      tagEl.classList.add('frame-tag-gold');
+      tagEl.textContent = '👑 Elite Profile';
+      tagEl.style.display = 'inline-flex';
+    }
+  } else if (frame === 'eagle') {
+    cardEl.classList.add('frame-elite-eagle');
+    if (tagEl) {
+      tagEl.classList.add('frame-tag-eagle');
+      tagEl.textContent = '🦅 Eagle Profile';
+      tagEl.style.display = 'inline-flex';
+    }
+  }
+}
+
 function loadProfile() {
   if (!currentUserData) return;
   $('profile-name').textContent = currentUserData.name || 'Student';
@@ -6581,6 +6821,7 @@ function loadProfile() {
   renderProfileYearBranch(currentUserData);
   renderProfileSkills(currentUserData);
   renderProfileSocialLinks(currentUserData);
+  applyProfileFrame($('profile-card'), $('profile-frame-tag'), currentUserData.profileFrame);
   // You're always "online" while looking at your own profile
   const dot = $('profile-presence-dot');
   if (dot) { dot.classList.add('online'); dot.title = 'Online'; }
@@ -6595,6 +6836,7 @@ function loadProfile() {
     if (!snap.exists) return;
     const fresh = snap.data();
     currentUserData = { ...currentUserData, ...fresh };
+    applyProfileFrame($('profile-card'), $('profile-frame-tag'), currentUserData.profileFrame);
 
     // Count posts directly from collection for accuracy
     db.collection('posts').where('uid','==',currentUser.uid).get().then(postsSnap => {
@@ -7161,6 +7403,7 @@ async function openUserProfile(uid) {
     const blocked = isBlocked(uid);
 
     $('ig-profile-username-header').textContent = '@' + (u.username || 'user');
+    applyProfileFrame($('ig-profile-modal-card'), null, u.profileFrame);
 
     const badgesHtml = computeBadgeList(u).map(b => `<span class="badge-chip">${escHtml(b)}</span>`).join('');
     const skillsHtml = (u.skills || []).map(s => `<span class="skill-chip">${escHtml(s)}</span>`).join('');
@@ -7169,10 +7412,15 @@ async function openUserProfile(uid) {
     body.innerHTML = `
       <div class="ig-profile-top">
         <div class="ig-profile-avatar-wrap">
+          <span class="wing-eagle wing-eagle-left"></span>
+          <span class="wing-eagle wing-eagle-right"></span>
           <div class="ig-profile-avatar"><img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}"/></div>
           <span class="ig-profile-presence-dot" id="ig-presence-${uid}"></span>
+          <span class="eagle-badge" title="Eagle Profile">🦅</span>
         </div>
         <div class="ig-profile-info">
+          ${u.profileFrame === 'gold' ? `<div class="frame-tag frame-tag-gold" style="margin:0 0 4px">👑 Elite Profile</div>` : ''}
+          ${u.profileFrame === 'eagle' ? `<div class="frame-tag frame-tag-eagle" style="margin:0 0 4px">🦅 Eagle Profile</div>` : ''}
           <div class="ig-profile-name-row"><h2>${escHtml(u.name || 'Student')}</h2></div>
           <p class="ig-profile-username">@${escHtml(u.username || 'user')}</p>
           <p class="ig-profile-meta-line">🎓 ${escHtml(u.college || '')}</p>
