@@ -5836,7 +5836,7 @@ function renderClubGames(body, clubId, clubData) {
         </div>
         <i data-lucide="chevron-right"></i>
       </div>
-      <div class="game-pick-card" id="pick-ttt-btn" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer">
+      <div class="game-pick-card" id="pick-ttt-btn" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer;margin-bottom:10px">
         <div style="font-size:34px">⭕</div>
         <div style="flex:1">
           <strong style="font-size:15px">Tic Tac Toe</strong>
@@ -5844,10 +5844,19 @@ function renderClubGames(body, clubId, clubData) {
         </div>
         <i data-lucide="chevron-right"></i>
       </div>
+      <div class="game-pick-card" id="pick-chess-btn" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer">
+        <div style="font-size:34px">♟️</div>
+        <div style="flex:1">
+          <strong style="font-size:15px">Multiplayer Chess</strong>
+          <div style="font-size:12px;color:var(--muted)">Online · vs Friends · vs AI · Local · ranked</div>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
     </div>`;
   if (window.lucide) lucide.createIcons();
   document.getElementById('pick-ludo-btn').addEventListener('click', () => renderLudoLobby(body, clubId, clubData));
   document.getElementById('pick-ttt-btn').addEventListener('click', () => renderTTTLobby(body, clubId, clubData));
+  document.getElementById('pick-chess-btn').addEventListener('click', () => renderChessHome(body, clubId, clubData));
 }
 
 function renderLudoLobby(body, clubId, clubData) {
@@ -6596,6 +6605,1113 @@ async function makeTTTMove(roomRef, i, symbol) {
       tx.update(roomRef, update);
     });
   } catch (e) { console.error('ttt move failed', e); }
+}
+
+// ══════════════════════════════════════
+// CLUB GAMES — MULTIPLAYER CHESS (online rooms, vs AI, local offline, ranked)
+// ══════════════════════════════════════
+let chessRoomsUnsub = null;
+let chessGameUnsub = null;
+let chessOfflineCheckInterval = null;
+let chessClockInterval = null;
+let chessLocalState = null;       // local/offline & vs-AI board state
+let chessLocalMeta = null;        // { mode:'local'|'ai', aiLevel, aiColor, history:[], captured:{w:[],b:[]}, flipped, undoStack:[] }
+let chessSelectedSq = null;
+let chessLegalTargets = [];
+let chessLastMoveCountSeen = -1;   // tracks room.moveHistory.length to trigger a sound only once per new move
+let chessLastResultSeen;           // tracks room.result to trigger a sound once when the game ends
+let chessLastActivePlayerCount = -1; // tracks opponent joining to play a "game start" sound
+
+const CHESS_OFFLINE_LIMIT_MS = 2 * 60 * 1000;
+const CHESS_TIME_CONTROLS = {
+  bullet:  { label: 'Bullet · 1 min',  ms: 60 * 1000 },
+  blitz:   { label: 'Blitz · 3 min',   ms: 3 * 60 * 1000 },
+  rapid:   { label: 'Rapid · 10 min',  ms: 10 * 60 * 1000 },
+  classic: { label: 'Classic · 30 min',ms: 30 * 60 * 1000 },
+  unlimited:{ label: 'Unlimited',      ms: null }
+};
+const CHESS_UNICODE = {
+  wK:'♔', wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
+  bK:'♚', bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟'
+};
+const CHESS_RANK_TIERS = [
+  { max: 800,  name: 'Bronze',       icon: '🥉' },
+  { max: 1100, name: 'Silver',       icon: '🥈' },
+  { max: 1400, name: 'Gold',         icon: '🥇' },
+  { max: 1700, name: 'Platinum',     icon: '💎' },
+  { max: 2000, name: 'Diamond',      icon: '💠' },
+  { max: 2300, name: 'Master',       icon: '👑' },
+  { max: Infinity, name: 'Grandmaster', icon: '🏆' }
+];
+function chessTierForElo(elo){ return CHESS_RANK_TIERS.find(t => elo <= t.max) || CHESS_RANK_TIERS[CHESS_RANK_TIERS.length-1]; }
+
+// ── Sound effects (Web Audio synth — no external files needed) + mobile vibration ──
+let chessAudioCtx = null;
+let chessSoundOn = true;
+function chessGetAudioCtx(){
+  if (!chessAudioCtx) {
+    try { chessAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { chessAudioCtx = null; }
+  }
+  return chessAudioCtx;
+}
+function chessBeep(ctx, freq, start, dur, gain, waveType){
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = waveType || 'sine';
+  osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+  g.gain.setValueAtTime(0, ctx.currentTime + start);
+  g.gain.linearRampToValueAtTime(gain, ctx.currentTime + start + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(ctx.currentTime + start);
+  osc.stop(ctx.currentTime + start + dur + 0.03);
+}
+function chessPlaySound(type){
+  if (!chessSoundOn) return;
+  try {
+    const ctx = chessGetAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    switch (type) {
+      case 'move': chessBeep(ctx, 520, 0, 0.09, 0.14); break;
+      case 'capture': chessBeep(ctx, 300, 0, 0.08, 0.18); chessBeep(ctx, 190, 0.05, 0.1, 0.16); break;
+      case 'castle': chessBeep(ctx, 460, 0, 0.07, 0.13); chessBeep(ctx, 600, 0.07, 0.08, 0.13); break;
+      case 'check': chessBeep(ctx, 740, 0, 0.09, 0.2, 'triangle'); chessBeep(ctx, 920, 0.09, 0.11, 0.2, 'triangle'); break;
+      case 'checkmate': chessBeep(ctx, 880, 0, 0.13, 0.22, 'triangle'); chessBeep(ctx, 660, 0.14, 0.13, 0.22, 'triangle'); chessBeep(ctx, 440, 0.28, 0.22, 0.22, 'triangle'); break;
+      case 'draw': chessBeep(ctx, 440, 0, 0.16, 0.15); chessBeep(ctx, 440, 0.2, 0.16, 0.15); break;
+      case 'lose': chessBeep(ctx, 380, 0, 0.14, 0.16, 'sawtooth'); chessBeep(ctx, 260, 0.16, 0.24, 0.16, 'sawtooth'); break;
+      case 'start': chessBeep(ctx, 440, 0, 0.08, 0.15); chessBeep(ctx, 660, 0.09, 0.12, 0.15); break;
+      case 'select': chessBeep(ctx, 700, 0, 0.05, 0.09); break;
+      case 'notify': chessBeep(ctx, 650, 0, 0.07, 0.12); break;
+      case 'tick': chessBeep(ctx, 900, 0, 0.04, 0.08); break;
+    }
+  } catch (e) { /* audio unavailable — fail silently */ }
+}
+function chessVibrate(pattern){
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+// Given a move + the game status right after it, play the single most relevant sound/vibration.
+function chessSoundForMove(move, statusAfter){
+  if (statusAfter?.status === 'checkmate') { chessPlaySound('checkmate'); chessVibrate([80,60,80,60,160]); return; }
+  if (statusAfter?.status === 'stalemate' || statusAfter?.status === 'draw') { chessPlaySound('draw'); chessVibrate([60,60,60]); return; }
+  if (statusAfter?.status === 'check') { chessPlaySound('check'); chessVibrate([50,40,50]); return; }
+  if (move?.castle) { chessPlaySound('castle'); chessVibrate(40); return; }
+  if (move?.capture) { chessPlaySound('capture'); chessVibrate([30,30,60]); return; }
+  chessPlaySound('move'); chessVibrate(25);
+}
+
+// ── Core rules engine (pure) ──
+function chessInitialState(){
+  const back = ['R','N','B','Q','K','B','N','R'];
+  const board = Array(64).fill(null);
+  for (let f = 0; f < 8; f++) {
+    board[f] = 'b' + back[f];
+    board[8 + f] = 'bP';
+    board[48 + f] = 'wP';
+    board[56 + f] = 'w' + back[f];
+  }
+  return { board, turn: 'w', castling: { wK:true, wQ:true, bK:true, bQ:true }, ep: null, halfmove: 0, fullmove: 1, history: [] };
+}
+function chessSqName(i){ return 'abcdefgh'[i % 8] + (8 - Math.floor(i / 8)); }
+function chessInBoard(r, f){ return r >= 0 && r < 8 && f >= 0 && f < 8; }
+function chessColor(p){ return p ? p[0] : null; }
+function chessType(p){ return p ? p[1] : null; }
+const CHESS_DIRS = {
+  B: [[-1,-1],[-1,1],[1,-1],[1,1]],
+  R: [[-1,0],[1,0],[0,-1],[0,1]],
+  Q: [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]
+};
+const CHESS_KNIGHT_D = [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]];
+const CHESS_KING_D = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+function chessPseudoMoves(state, color){
+  const { board } = state;
+  const moves = [];
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (!p || chessColor(p) !== color) continue;
+    const type = chessType(p);
+    const r = Math.floor(i / 8), f = i % 8;
+    if (type === 'P') {
+      const dir = color === 'w' ? -1 : 1;
+      const startRank = color === 'w' ? 6 : 1;
+      const promoRank = color === 'w' ? 0 : 7;
+      const oneR = r + dir;
+      if (chessInBoard(oneR, f) && !board[oneR * 8 + f]) {
+        const to = oneR * 8 + f;
+        if (oneR === promoRank) ['Q','R','B','N'].forEach(pr => moves.push({ from:i, to, piece:p, promotion:pr }));
+        else {
+          moves.push({ from:i, to, piece:p });
+          if (r === startRank) {
+            const twoR = r + 2 * dir;
+            if (!board[twoR * 8 + f]) moves.push({ from:i, to: twoR * 8 + f, piece:p, double:true });
+          }
+        }
+      }
+      for (const df of [-1, 1]) {
+        const cr = r + dir, cf = f + df;
+        if (!chessInBoard(cr, cf)) continue;
+        const to = cr * 8 + cf, target = board[to];
+        if (target && chessColor(target) !== color) {
+          if (cr === promoRank) ['Q','R','B','N'].forEach(pr => moves.push({ from:i, to, piece:p, capture:true, promotion:pr }));
+          else moves.push({ from:i, to, piece:p, capture:true });
+        } else if (!target && state.ep === to) {
+          moves.push({ from:i, to, piece:p, capture:true, enpassant:true });
+        }
+      }
+    } else if (type === 'N') {
+      for (const [dr, df] of CHESS_KNIGHT_D) {
+        const nr = r + dr, nf = f + df;
+        if (!chessInBoard(nr, nf)) continue;
+        const to = nr * 8 + nf, target = board[to];
+        if (!target || chessColor(target) !== color) moves.push({ from:i, to, piece:p, capture: !!target });
+      }
+    } else if (type === 'K') {
+      for (const [dr, df] of CHESS_KING_D) {
+        const nr = r + dr, nf = f + df;
+        if (!chessInBoard(nr, nf)) continue;
+        const to = nr * 8 + nf, target = board[to];
+        if (!target || chessColor(target) !== color) moves.push({ from:i, to, piece:p, capture: !!target });
+      }
+      const rank = color === 'w' ? 7 : 0;
+      if (i === rank * 8 + 4) {
+        const rights = state.castling;
+        const kside = color === 'w' ? rights.wK : rights.bK;
+        const qside = color === 'w' ? rights.wQ : rights.bQ;
+        if (kside && !board[rank*8+5] && !board[rank*8+6] && board[rank*8+7] === color+'R') moves.push({ from:i, to: rank*8+6, piece:p, castle:'K' });
+        if (qside && !board[rank*8+3] && !board[rank*8+2] && !board[rank*8+1] && board[rank*8+0] === color+'R') moves.push({ from:i, to: rank*8+2, piece:p, castle:'Q' });
+      }
+    } else {
+      for (const [dr, df] of CHESS_DIRS[type]) {
+        let nr = r + dr, nf = f + df;
+        while (chessInBoard(nr, nf)) {
+          const to = nr * 8 + nf, target = board[to];
+          if (!target) moves.push({ from:i, to, piece:p });
+          else { if (chessColor(target) !== color) moves.push({ from:i, to, piece:p, capture:true }); break; }
+          nr += dr; nf += df;
+        }
+      }
+    }
+  }
+  return moves;
+}
+function chessIsAttacked(board, sq, bySide){
+  const r0 = Math.floor(sq / 8), f0 = sq % 8;
+  for (const df of [-1, 1]) {
+    const pr = r0 + (bySide === 'w' ? 1 : -1), pf = f0 + df;
+    if (chessInBoard(pr, pf) && board[pr*8+pf] === bySide+'P') return true;
+  }
+  for (const [dr, df] of CHESS_KNIGHT_D) {
+    const nr = r0+dr, nf = f0+df;
+    if (chessInBoard(nr, nf) && board[nr*8+nf] === bySide+'N') return true;
+  }
+  for (const [dr, df] of CHESS_KING_D) {
+    const nr = r0+dr, nf = f0+df;
+    if (chessInBoard(nr, nf) && board[nr*8+nf] === bySide+'K') return true;
+  }
+  for (const [dr, df] of CHESS_DIRS.B) {
+    let nr=r0+dr, nf=f0+df;
+    while (chessInBoard(nr, nf)) {
+      const t = board[nr*8+nf];
+      if (t) { if (chessColor(t) === bySide && (chessType(t)==='B'||chessType(t)==='Q')) return true; break; }
+      nr+=dr; nf+=df;
+    }
+  }
+  for (const [dr, df] of CHESS_DIRS.R) {
+    let nr=r0+dr, nf=f0+df;
+    while (chessInBoard(nr, nf)) {
+      const t = board[nr*8+nf];
+      if (t) { if (chessColor(t) === bySide && (chessType(t)==='R'||chessType(t)==='Q')) return true; break; }
+      nr+=dr; nf+=df;
+    }
+  }
+  return false;
+}
+function chessFindKing(board, color){ return board.indexOf(color+'K'); }
+function chessPositionKey(s){ return s.board.map(p=>p||'-').join('') + '|' + s.turn + '|' + JSON.stringify(s.castling) + '|' + (s.ep ?? '-'); }
+function chessApplyMove(state, move){
+  const board = state.board.slice();
+  const color = chessColor(move.piece);
+  const opp = color === 'w' ? 'b' : 'w';
+  let newEp = null;
+  let halfmove = state.halfmove + 1;
+  const castling = { ...state.castling };
+  if (chessType(move.piece) === 'P' || move.capture) halfmove = 0;
+  if (move.enpassant) {
+    const capR = color === 'w' ? Math.floor(move.to/8)+1 : Math.floor(move.to/8)-1;
+    board[capR*8 + (move.to%8)] = null;
+  }
+  board[move.to] = move.promotion ? color + move.promotion : move.piece;
+  board[move.from] = null;
+  if (move.castle) {
+    const rank = color === 'w' ? 7 : 0;
+    if (move.castle === 'K') { board[rank*8+5] = board[rank*8+7]; board[rank*8+7] = null; }
+    else { board[rank*8+3] = board[rank*8+0]; board[rank*8+0] = null; }
+  }
+  if (move.double) newEp = (move.from + move.to) / 2;
+  if (chessType(move.piece) === 'K') { if (color==='w'){castling.wK=false;castling.wQ=false;} else {castling.bK=false;castling.bQ=false;} }
+  const rookSquares = { 0:'bQ', 7:'bK', 56:'wQ', 63:'wK' };
+  if (rookSquares[move.from]) castling[rookSquares[move.from]] = false;
+  if (rookSquares[move.to]) castling[rookSquares[move.to]] = false;
+  const newState = { board, turn: opp, castling, ep: newEp, halfmove, fullmove: color==='b' ? state.fullmove+1 : state.fullmove, history: state.history.concat([chessPositionKey({board,turn:opp,castling,ep:newEp})]) };
+  return newState;
+}
+function chessLegalMoves(state, color){
+  const pseudo = chessPseudoMoves(state, color);
+  const legal = [];
+  for (const m of pseudo) {
+    if (m.castle) {
+      const rank = color === 'w' ? 7 : 0;
+      const opp = color === 'w' ? 'b' : 'w';
+      if (chessIsAttacked(state.board, rank*8+4, opp)) continue;
+      const passSq = m.castle === 'K' ? rank*8+5 : rank*8+3;
+      if (chessIsAttacked(state.board, passSq, opp)) continue;
+      if (chessIsAttacked(state.board, m.to, opp)) continue;
+    }
+    const next = chessApplyMove(state, m);
+    const kingSq = chessFindKing(next.board, color);
+    if (!chessIsAttacked(next.board, kingSq, color==='w'?'b':'w')) legal.push(m);
+  }
+  return legal;
+}
+function chessInCheck(state, color){
+  const kingSq = chessFindKing(state.board, color);
+  return chessIsAttacked(state.board, kingSq, color==='w'?'b':'w');
+}
+function chessGameStatus(state){
+  const color = state.turn;
+  const moves = chessLegalMoves(state, color);
+  const check = chessInCheck(state, color);
+  if (moves.length === 0) {
+    if (check) return { status:'checkmate', winner: color==='w'?'b':'w' };
+    return { status:'stalemate' };
+  }
+  if (state.halfmove >= 100) return { status:'draw', reason:'Fifty-move rule' };
+  if (state.history.length) {
+    const key = state.history[state.history.length-1];
+    if (state.history.filter(k=>k===key).length >= 3) return { status:'draw', reason:'Threefold repetition' };
+  }
+  return { status: check ? 'check' : 'playing' };
+}
+function chessMoveLabel(state, move, statusAfter){
+  const type = chessType(move.piece);
+  if (move.castle === 'K') return statusAfter?.status==='checkmate' ? 'O-O#' : (statusAfter?.status==='check' ? 'O-O+' : 'O-O');
+  if (move.castle === 'Q') return statusAfter?.status==='checkmate' ? 'O-O-O#' : (statusAfter?.status==='check' ? 'O-O-O+' : 'O-O-O');
+  const letter = type === 'P' ? '' : type;
+  const cap = (move.capture) ? (type==='P' ? chessSqName(move.from)[0]+'x' : 'x') : '';
+  let s = letter + cap + chessSqName(move.to);
+  if (move.promotion) s += '=' + move.promotion;
+  if (statusAfter?.status === 'checkmate') s += '#';
+  else if (statusAfter?.status === 'check') s += '+';
+  return s;
+}
+// Simple material + mobility evaluation for AI
+const CHESS_VALUES = { P:100, N:320, B:330, R:500, Q:900, K:0 };
+function chessEvaluate(state, forColor){
+  let score = 0;
+  for (const p of state.board) { if (!p) continue; const v = CHESS_VALUES[chessType(p)]; score += chessColor(p)===forColor ? v : -v; }
+  return score;
+}
+function chessAIMove(state, level){
+  const color = state.turn;
+  const moves = chessLegalMoves(state, color);
+  if (!moves.length) return null;
+  if (level === 'easy') {
+    // mostly random, slight preference for captures
+    const captures = moves.filter(m=>m.capture);
+    if (captures.length && Math.random() < 0.4) return captures[Math.floor(Math.random()*captures.length)];
+    return moves[Math.floor(Math.random()*moves.length)];
+  }
+  if (level === 'medium') {
+    // 1-ply: pick best immediate material result with small randomness
+    let best = [], bestScore = -Infinity;
+    for (const m of moves) {
+      const next = chessApplyMove(state, m);
+      const score = chessEvaluate(next, color) + Math.random()*40;
+      if (score > bestScore) { bestScore = score; best = [m]; } else if (score === bestScore) best.push(m);
+    }
+    return best[Math.floor(Math.random()*best.length)];
+  }
+  // hard: 2-ply minimax
+  function minimax(st, depth, maximizing, forColor){
+    const status = chessGameStatus(st);
+    if (status.status === 'checkmate') return maximizing ? -100000+depth : 100000-depth;
+    if (status.status === 'stalemate' || status.status==='draw') return 0;
+    if (depth === 0) return chessEvaluate(st, forColor);
+    const mvs = chessLegalMoves(st, st.turn);
+    let val = maximizing ? -Infinity : Infinity;
+    for (const m of mvs) {
+      const next = chessApplyMove(st, m);
+      const s = minimax(next, depth-1, !maximizing, forColor);
+      val = maximizing ? Math.max(val, s) : Math.min(val, s);
+    }
+    return val;
+  }
+  let best = null, bestScore = -Infinity;
+  for (const m of moves) {
+    const next = chessApplyMove(state, m);
+    const score = minimax(next, 2, false, color) + Math.random()*5;
+    if (score > bestScore) { bestScore = score; best = m; }
+  }
+  return best;
+}
+
+// ── UI: entry point ──
+function renderChessHome(body, clubId, clubData){
+  const myStats = (currentUserData.chessStats) || { elo:1000, played:0, wins:0, losses:0, draws:0, streak:0, bestStreak:0 };
+  const tier = chessTierForElo(myStats.elo);
+  body.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <button class="btn-icon" id="chess-back-btn"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:15px">♟️ Multiplayer Chess</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(108,99,255,.18),rgba(255,78,205,.10));border:1px solid var(--border);margin-bottom:16px">
+        <div style="font-size:30px">${tier.icon}</div>
+        <div style="flex:1">
+          <strong style="font-size:14px">${tier.name}</strong> · <span style="color:var(--muted);font-size:13px">${myStats.elo} Elo</span>
+          <div style="font-size:12px;color:var(--muted)">${myStats.played} games · ${myStats.wins}W-${myStats.losses}L-${myStats.draws}D · 🔥 streak ${myStats.streak}</div>
+        </div>
+      </div>
+      <div class="game-pick-card" id="chess-pick-online" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer;margin-bottom:10px">
+        <div style="font-size:28px">🌍</div>
+        <div style="flex:1"><strong style="font-size:14px">Play Online</strong><div style="font-size:12px;color:var(--muted)">Rooms, friend codes & spectate</div></div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+      <div class="game-pick-card" id="chess-pick-ai" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer;margin-bottom:10px">
+        <div style="font-size:28px">🤖</div>
+        <div style="flex:1"><strong style="font-size:14px">Play vs AI</strong><div style="font-size:12px;color:var(--muted)">Easy · Medium · Hard, with hints</div></div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+      <div class="game-pick-card" id="chess-pick-local" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer">
+        <div style="font-size:28px">📱</div>
+        <div style="flex:1"><strong style="font-size:14px">Local (Pass & Play)</strong><div style="font-size:12px;color:var(--muted)">Two players, one device · undo enabled</div></div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('chess-back-btn').addEventListener('click', () => renderClubGames(body, clubId, clubData));
+  document.getElementById('chess-pick-online').addEventListener('click', () => renderChessLobby(body, clubId, clubData));
+  document.getElementById('chess-pick-ai').addEventListener('click', () => renderChessAISetup(body, clubId, clubData));
+  document.getElementById('chess-pick-local').addEventListener('click', () => startChessLocal(body, clubId, clubData, 'local', null));
+}
+
+// ── Offline auto-close watch (mirrors Ludo/TTT pattern) ──
+async function checkChessOfflinePlayers(roomRef){
+  try {
+    const snap = await roomRef.get();
+    if (!snap.exists) return;
+    const room = snap.data();
+    const players = (room.players || []).filter(p => !p.spectator);
+    if (!players.length) return;
+    const now = Date.now();
+    const hostPlayer = players.find(p => p.uid === room.host);
+    if (hostPlayer) {
+      try {
+        const pSnap = await rtdb.ref('presence/' + hostPlayer.uid).once('value');
+        const pres = pSnap.val();
+        const isOnline = !!pres?.online;
+        const lastSeen = pres?.lastSeen || 0;
+        if (!isOnline && lastSeen && (now - lastSeen) >= CHESS_OFFLINE_LIMIT_MS) {
+          await roomRef.delete();
+          if (typeof toast === 'function') toast('Room closed — host offline 2+ min ⏱️', 'info');
+          return;
+        }
+      } catch (e) {}
+    }
+  } catch (e) { console.error('chess offline check failed', e); }
+}
+function startChessOfflineWatch(roomRef){
+  stopChessOfflineWatch();
+  checkChessOfflinePlayers(roomRef);
+  chessOfflineCheckInterval = setInterval(() => checkChessOfflinePlayers(roomRef), 30 * 1000);
+}
+function stopChessOfflineWatch(){ if (chessOfflineCheckInterval) { clearInterval(chessOfflineCheckInterval); chessOfflineCheckInterval = null; } }
+function stopChessClock(){ if (chessClockInterval) { clearInterval(chessClockInterval); chessClockInterval = null; } }
+
+// ── Lobby: room list, create, join by code ──
+function renderChessLobby(body, clubId, clubData){
+  body.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <button class="btn-icon" id="chess-lobby-back"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:15px">🌍 Chess Rooms</strong>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn-primary" id="chess-create-room-btn" style="flex:1">+ Create Room</button>
+        <button id="chess-join-code-btn" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-weight:600;font-size:13px;cursor:pointer">🔑 Join by Code</button>
+      </div>
+      <div id="chess-create-form" style="display:none;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);margin-bottom:14px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Time Control</div>
+        <select id="chess-time-control" style="width:100%;margin-bottom:10px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px">
+          ${Object.entries(CHESS_TIME_CONTROLS).map(([k,v]) => `<option value="${k}" ${k==='rapid'?'selected':''}>${v.label}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button type="button" class="chess-vis-btn active" data-v="public" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">🌍 Public</button>
+          <button type="button" class="chess-vis-btn" data-v="private" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer">🔒 Private (code)</button>
+        </div>
+        <button class="btn-primary" id="chess-confirm-create-btn" style="width:100%">Create Room</button>
+      </div>
+      <div id="chess-room-list"><div class="loading-spinner">Loading rooms…</div></div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('chess-lobby-back').addEventListener('click', () => renderChessHome(body, clubId, clubData));
+
+  const createForm = document.getElementById('chess-create-form');
+  document.getElementById('chess-create-room-btn').addEventListener('click', () => { createForm.style.display = createForm.style.display === 'none' ? 'block' : 'none'; });
+  let visibility = 'public';
+  createForm.querySelectorAll('.chess-vis-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      visibility = btn.dataset.v;
+      createForm.querySelectorAll('.chess-vis-btn').forEach(b => {
+        const on = b === btn;
+        b.classList.toggle('active', on);
+        b.style.background = on ? 'var(--accent)' : 'transparent';
+        b.style.color = on ? '#fff' : 'var(--muted)';
+        b.style.borderColor = on ? 'var(--accent)' : 'var(--border)';
+      });
+    });
+  });
+  document.getElementById('chess-confirm-create-btn').addEventListener('click', () => {
+    const timeControl = document.getElementById('chess-time-control').value;
+    createChessRoom(clubId, body, clubData, { timeControl, isPrivate: visibility === 'private' });
+  });
+  document.getElementById('chess-join-code-btn').addEventListener('click', () => {
+    ask_user_for_chess_code(clubId, body, clubData);
+  });
+
+  if (chessRoomsUnsub) { chessRoomsUnsub(); chessRoomsUnsub = null; }
+  const listEl = document.getElementById('chess-room-list');
+  chessRoomsUnsub = db.collection('clubs').doc(clubId).collection('chessRooms')
+    .where('status', 'in', ['waiting', 'playing'])
+    .where('isPrivate', '==', false)
+    .onSnapshot(snap => {
+      if (snap.empty) { listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No public rooms right now. Start one! ♟️</div>'; return; }
+      const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+      listEl.innerHTML = '';
+      rooms.forEach(r => {
+        const players = (r.players || []).filter(p => !p.spectator);
+        const full = players.length >= 2;
+        const inRoom = (r.players || []).some(p => p.uid === currentUser.uid);
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--surface2)';
+        card.innerHTML = `
+          <div style="font-size:26px">♟️</div>
+          <div style="flex:1">
+            <strong style="font-size:14px">${escHtml(r.hostName||'Room')}'s room</strong>
+            <div style="font-size:12px;color:var(--muted)">${CHESS_TIME_CONTROLS[r.timeControl]?.label||'Rapid'} · ${players.length}/2 · ${r.status==='playing'?'In progress':'Waiting'}</div>
+          </div>
+          <button class="btn-sm chess-join-btn" data-id="${r.id}" style="${full && !inRoom ? 'opacity:.7' : ''}">
+            ${inRoom ? 'Resume' : full ? '👀 Spectate' : 'Join'}
+          </button>`;
+        listEl.appendChild(card);
+      });
+      listEl.querySelectorAll('.chess-join-btn').forEach(btn => {
+        btn.addEventListener('click', () => joinChessRoom(clubId, btn.dataset.id, body, clubData));
+      });
+    }, e => { listEl.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
+}
+
+function ask_user_for_chess_code(clubId, body, clubData){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10100;align-items:center;justify-content:center;background:rgba(0,0,0,.5)';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:16px;padding:20px;width:280px;max-width:90vw">
+      <h3 style="margin:0 0 12px;font-size:15px">🔑 Join by Room Code</h3>
+      <input id="chess-code-input" type="text" placeholder="e.g. 7QK2LZ" style="width:100%;margin-bottom:14px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box;text-transform:uppercase" />
+      <div style="display:flex;gap:8px">
+        <button id="chess-code-cancel" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">Cancel</button>
+        <button id="chess-code-ok" style="flex:1;padding:9px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:600;cursor:pointer">Join</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('#chess-code-cancel').addEventListener('click', close);
+  overlay.querySelector('#chess-code-ok').addEventListener('click', async () => {
+    const code = overlay.querySelector('#chess-code-input').value.trim().toUpperCase();
+    if (!code) return;
+    close();
+    try {
+      const snap = await db.collection('clubs').doc(clubId).collection('chessRooms').where('roomCode', '==', code).limit(1).get();
+      if (snap.empty) { if (typeof toast === 'function') toast('No room found with that code', 'error'); return; }
+      joinChessRoom(clubId, snap.docs[0].id, body, clubData);
+    } catch (e) { if (typeof toast === 'function') toast(e.message, 'error'); }
+  });
+}
+
+async function createChessRoom(clubId, body, clubData, opts){
+  const myName = currentUserData.name || currentUser.displayName || 'Player';
+  const roomRef = db.collection('clubs').doc(clubId).collection('chessRooms').doc();
+  const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const state = chessInitialState();
+  const tc = CHESS_TIME_CONTROLS[opts.timeControl] || CHESS_TIME_CONTROLS.rapid;
+  await roomRef.set({
+    host: currentUser.uid, hostName: myName,
+    roomCode, isPrivate: !!opts.isPrivate, timeControl: opts.timeControl || 'rapid',
+    status: 'waiting',
+    players: [{ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', color: 'w', elo: currentUserData.chessStats?.elo || 1000 }],
+    board: state.board, turn: state.turn, castling: state.castling, ep: state.ep, halfmove: state.halfmove, fullmove: state.fullmove, posHistory: [],
+    moveHistory: [], captured: { w: [], b: [] },
+    clocks: { w: tc.ms, b: tc.ms }, lastMoveAt: null,
+    result: null, drawOffer: null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  const form = document.getElementById('chess-create-form');
+  if (form) form.style.display = 'none';
+  openChessRoom(clubId, roomRef.id, body, clubData);
+}
+
+async function joinChessRoom(clubId, roomId, body, clubData){
+  const roomRef = db.collection('clubs').doc(clubId).collection('chessRooms').doc(roomId);
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(roomRef);
+      if (!snap.exists) throw new Error('Room no longer exists');
+      const data = snap.data();
+      const players = data.players || [];
+      const already = players.some(p => p.uid === currentUser.uid);
+      if (already) return;
+      const activePlayers = players.filter(p => !p.spectator);
+      const myName = currentUserData.name || currentUser.displayName || 'Player';
+      if (activePlayers.length >= 2) {
+        // join as spectator
+        players.push({ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', spectator: true });
+        tx.update(roomRef, { players });
+        return;
+      }
+      const usedColors = activePlayers.map(p => p.color);
+      const nextColor = usedColors.includes('w') ? 'b' : 'w';
+      players.push({ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', color: nextColor, elo: currentUserData.chessStats?.elo || 1000 });
+      tx.update(roomRef, { players, status: 'playing', lastMoveAt: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+    openChessRoom(clubId, roomId, body, clubData);
+  } catch (e) {
+    typeof toast === 'function' ? toast(e.message, 'error') : alert(e.message);
+  }
+}
+
+function openChessRoom(clubId, roomId, body, clubData){
+  if (chessRoomsUnsub) { chessRoomsUnsub(); chessRoomsUnsub = null; }
+  if (chessGameUnsub) { chessGameUnsub(); chessGameUnsub = null; }
+  stopChessClock();
+  chessSelectedSq = null; chessLegalTargets = [];
+  chessLastMoveCountSeen = -1; chessLastResultSeen = undefined; chessLastActivePlayerCount = -1;
+  const roomRef = db.collection('clubs').doc(clubId).collection('chessRooms').doc(roomId);
+
+  body.innerHTML = `
+    <div style="padding:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="btn-icon" id="chess-leave-btn"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:14px;flex:1" id="chess-room-title">Chess Room</strong>
+        <button class="btn-icon" id="chess-sound-toggle" title="Toggle sound"><i data-lucide="${chessSoundOn ? 'volume-2' : 'volume-x'}"></i></button>
+      </div>
+      <div id="chess-voice-bar"></div>
+      <div id="chess-room-content">Loading…</div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  if (typeof initVoiceBar === 'function') {
+    initVoiceBar(document.getElementById('chess-voice-bar'), roomRef, currentUser.uid, currentUserData.name || currentUser.displayName || 'Player', currentUserData.profilePic || '');
+  }
+  document.getElementById('chess-sound-toggle').addEventListener('click', (e) => {
+    chessSoundOn = !chessSoundOn;
+    if (chessSoundOn) chessPlaySound('select');
+    e.currentTarget.innerHTML = `<i data-lucide="${chessSoundOn ? 'volume-2' : 'volume-x'}"></i>`;
+    if (window.lucide) lucide.createIcons();
+  });
+  document.getElementById('chess-leave-btn').addEventListener('click', () => {
+    if (chessGameUnsub) { chessGameUnsub(); chessGameUnsub = null; }
+    stopChessOfflineWatch(); stopChessClock();
+    if (typeof destroyVoiceBar === 'function') destroyVoiceBar();
+    renderChessLobby(body, clubId, clubData);
+  });
+
+  startChessOfflineWatch(roomRef);
+
+  chessGameUnsub = roomRef.onSnapshot(snap => {
+    if (!snap.exists) {
+      stopChessOfflineWatch(); stopChessClock();
+      if (typeof destroyVoiceBar === 'function') destroyVoiceBar();
+      const c = document.getElementById('chess-room-content');
+      if (c) c.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed.</div>';
+      return;
+    }
+    const room = { id: snap.id, ...snap.data() };
+    const activePlayers = (room.players || []).filter(p => !p.spectator);
+    if (activePlayers.length < 2) renderChessWaitingRoom(room, roomRef);
+    else renderChessOnlineGame(room, roomRef);
+  });
+}
+
+function renderChessWaitingRoom(room, roomRef){
+  const content = document.getElementById('chess-room-content');
+  if (!content) return;
+  const players = (room.players || []).filter(p => !p.spectator);
+  const isHost = room.host === currentUser.uid;
+  const titleEl = document.getElementById('chess-room-title');
+  if (titleEl) titleEl.textContent = `${room.hostName}'s room (${players.length}/2)`;
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      ${['w','b'].map(color => {
+        const p = players.find(pl => pl.color === color);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="font-size:20px">${color==='w'?'♔':'♚'}</div>
+          ${p ? `${renderAvatarHtml(null, p.pic, 24)}<strong style="font-size:13px;flex:1">${escHtml(p.name)}</strong>${p.uid===room.host?'<span style="font-size:11px;color:var(--muted)">Host</span>':''}`
+              : `<span style="font-size:13px;color:var(--muted);flex:1">Waiting for player…</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+    ${room.isPrivate ? `<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px">🔒 Private room — share code <strong style="letter-spacing:1px">${room.roomCode}</strong> with a friend.</div>`
+                      : `<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px">🌍 Public room · code <strong>${room.roomCode}</strong> · ${CHESS_TIME_CONTROLS[room.timeControl]?.label}</div>`}
+    ${isHost ? `<button class="btn-danger" id="chess-delete-room-btn" style="width:100%;background:var(--danger,#ef4444);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">🗑️ Delete Room</button>` : ''}
+  `;
+  const delBtn = document.getElementById('chess-delete-room-btn');
+  if (delBtn) delBtn.addEventListener('click', () => confirmDeleteChessRoom(roomRef));
+}
+
+function confirmDeleteChessRoom(roomRef){
+  showConfirmDialog('Delete this room? This ends the game for everyone.', async () => {
+    try {
+      stopChessOfflineWatch();
+      await roomRef.delete();
+      if (typeof toast === 'function') toast('Room deleted', 'success');
+    } catch (e) { typeof toast === 'function' ? toast(e.message, 'error') : alert(e.message); }
+  });
+}
+
+// ── Board rendering (shared by online + local + AI) ──
+function chessBoardHtml(state, opts){
+  const { flipped, selected, targets, lastMove, interactive, statusInfo } = opts;
+  const order = flipped ? [...Array(64).keys()].reverse() : [...Array(64).keys()];
+  const inCheckSq = (statusInfo && (statusInfo.status === 'check' || statusInfo.status === 'checkmate')) ? chessFindKing(state.board, state.turn) : null;
+  // Fixed row+column tracks (grid-template-rows was previously missing, so empty
+  // squares collapsed to min-content height — that's what caused the squashed columns).
+  let html = `<div class="chess-board" style="display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(92vw,360px);height:min(92vw,360px);margin:0 auto 14px;border-radius:10px;overflow:hidden;border:2px solid var(--border);box-sizing:border-box">`;
+  for (const i of order) {
+    const r = Math.floor(i / 8), f = i % 8;
+    const light = (r + f) % 2 === 0;
+    const piece = state.board[i];
+    const isSel = selected === i;
+    const isTarget = targets.includes(i);
+    const isLast = lastMove && (lastMove.from === i || lastMove.to === i);
+    const isCheck = inCheckSq === i;
+    let bg = light ? '#EBECD0' : '#779556';
+    if (isCheck) bg = '#ef4444';
+    else if (isSel) bg = '#f6f669';
+    else if (isLast) bg = light ? '#f4f68a' : '#b9ca43';
+    // Explicit per-side color + stroke so pieces stay visually distinct even on
+    // systems whose font renders the outline/filled chess glyphs identically.
+    const pieceStyle = piece
+      ? (chessColor(piece) === 'w'
+          ? 'color:#fbfbf8;-webkit-text-stroke:1.3px #232323;text-stroke:1.3px #232323;text-shadow:0 1px 2px rgba(0,0,0,.55)'
+          : 'color:#161616;-webkit-text-stroke:1.3px #f2f2f2;text-stroke:1.3px #f2f2f2;text-shadow:0 1px 2px rgba(0,0,0,.35)')
+      : '';
+    html += `<div class="chess-sq" data-i="${i}" style="position:relative;width:100%;height:100%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:min(9vw,34px);line-height:1;cursor:${interactive?'pointer':'default'};user-select:none;-webkit-user-select:none">
+      ${piece ? `<span style="font-family:'Segoe UI Symbol','Noto Sans Symbols',Arial,sans-serif;font-variant-emoji:text;${pieceStyle}">${CHESS_UNICODE[piece]}</span>` : ''}
+      ${isTarget ? `<div style="position:absolute;width:${piece?'100%':'32%'};height:${piece?'100%':'32%'};border-radius:${piece?'0':'50%'};${piece?'box-shadow:inset 0 0 0 3px rgba(0,0,0,.35)':'background:rgba(0,0,0,.28)'}"></div>` : ''}
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+function chessCapturedHtml(captured){
+  const val = { P:1,N:3,B:3,R:5,Q:9 };
+  const sum = arr => arr.reduce((s,p)=>s+(val[p]||0),0);
+  const wCap = captured.w || [], bCap = captured.b || [];
+  const diff = sum(wCap) - sum(bCap);
+  return `
+    <div style="display:flex;justify-content:space-between;font-size:18px;padding:0 2px">
+      <div>${bCap.map(p=>CHESS_UNICODE['b'+p]||'').join('')} ${diff>0?`<small style="font-size:11px;color:var(--muted)">+${diff}</small>`:''}</div>
+      <div>${wCap.map(p=>CHESS_UNICODE['w'+p]||'').join('')} ${diff<0?`<small style="font-size:11px;color:var(--muted)">+${-diff}</small>`:''}</div>
+    </div>`;
+}
+function chessFmtClock(ms){
+  if (ms == null) return '∞';
+  const s = Math.max(0, Math.ceil(ms/1000));
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+
+// ── Online game render ──
+function renderChessOnlineGame(room, roomRef){
+  const content = document.getElementById('chess-room-content');
+  if (!content) return;
+  stopChessClock();
+  const players = (room.players || []).filter(p => !p.spectator);
+  const me = players.find(p => p.uid === currentUser.uid);
+  const isSpectator = !me;
+  const opponent = players.find(p => p.uid !== currentUser.uid);
+  const titleEl = document.getElementById('chess-room-title');
+  if (titleEl) titleEl.textContent = isSpectator ? `👀 Spectating ${room.hostName}'s room` : (room.hostName + "'s room");
+
+  const state = { board: room.board, turn: room.turn, castling: room.castling, ep: room.ep, halfmove: room.halfmove, fullmove: room.fullmove, history: room.posHistory || [] };
+  const statusInfo = room.result ? { status: room.result.type } : chessGameStatus(state);
+  const myColor = me ? me.color : null;
+  const isMyTurn = !isSpectator && !room.result && state.turn === myColor;
+  const flipped = myColor === 'b';
+  const lastMove = room.moveHistory && room.moveHistory.length ? room.moveHistory[room.moveHistory.length-1].move : null;
+
+  // ── Sound/vibration triggers — fire once per change, driven off the live snapshot so
+  // both players (and spectators) hear the same move/result at the same time. ──
+  const activeCount = players.length;
+  if (chessLastActivePlayerCount !== -1 && activeCount > chessLastActivePlayerCount) chessPlaySound('start');
+  chessLastActivePlayerCount = activeCount;
+
+  const moveCount = (room.moveHistory || []).length;
+  if (chessLastMoveCountSeen !== -1 && moveCount > chessLastMoveCountSeen) {
+    const lastLabel = room.moveHistory[moveCount-1].label || '';
+    if (statusInfo.status === 'checkmate') chessPlaySound('checkmate');
+    else if (statusInfo.status === 'check') chessPlaySound('check');
+    else if (lastLabel.includes('x')) chessPlaySound('capture');
+    else if (lastLabel.startsWith('O-O')) chessPlaySound('castle');
+    else chessPlaySound('move');
+    chessVibrate(lastLabel.includes('x') ? [30,30,60] : 25);
+  }
+  chessLastMoveCountSeen = moveCount;
+
+  if (chessLastResultSeen === null && room.result && room.result.type !== 'checkmate') {
+    // resign / timeout / draw-agreement don't come with a move, so handle them separately
+    chessPlaySound(room.result.winner ? (room.result.winner === myColor ? 'checkmate' : 'lose') : 'draw');
+    chessVibrate(room.result.winner === myColor ? [80,60,80,60,160] : [60,60,60]);
+  }
+  chessLastResultSeen = room.result ? room.result.type : null;
+
+  let statusText;
+  if (room.result) {
+    if (room.result.type === 'checkmate') statusText = `🏆 Checkmate — ${escHtml(players.find(p=>p.color===room.result.winner)?.name || (room.result.winner==='w'?'White':'Black'))} wins!`;
+    else if (room.result.type === 'resign') statusText = `🏳️ ${escHtml(players.find(p=>p.color!==room.result.winner)?.name||'Opponent')} resigned — ${escHtml(players.find(p=>p.color===room.result.winner)?.name||'Winner')} wins!`;
+    else if (room.result.type === 'timeout') statusText = `⏱️ Timeout — ${escHtml(players.find(p=>p.color===room.result.winner)?.name||'Winner')} wins!`;
+    else if (room.result.type === 'stalemate') statusText = '🤝 Draw — Stalemate';
+    else statusText = `🤝 Draw — ${room.result.reason || 'agreement'}`;
+  } else if (!opponent) statusText = 'Waiting for opponent…';
+  else if (statusInfo.status === 'check') statusText = isMyTurn ? '⚠️ You are in check!' : `⚠️ ${escHtml(opponent.name)} is in check`;
+  else statusText = isSpectator ? `${state.turn==='w'?'White':'Black'} to move` : (isMyTurn ? 'Your turn' : `${escHtml(opponent.name)}'s turn`);
+
+  const myClockColor = myColor || 'w';
+  const oppClockColor = myColor === 'w' ? 'b' : 'w';
+
+  content.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px">
+      <div>${opponent ? `${renderAvatarHtml(null, opponent.pic, 22)} ${escHtml(opponent.name)}` : ''}</div>
+      <div id="chess-clock-opp" style="font-weight:700;font-variant-numeric:tabular-nums">${chessFmtClock(room.clocks?.[flipped?myClockColor:oppClockColor])}</div>
+    </div>
+    <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:6px">${statusText}</div>
+    <div id="chess-captured-top">${chessCapturedHtml(room.captured || {w:[],b:[]})}</div>
+    ${chessBoardHtml(state, { flipped, selected: chessSelectedSq, targets: chessLegalTargets, lastMove, interactive: isMyTurn, statusInfo })}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px">
+      <div>${me ? `${renderAvatarHtml(null, me.pic, 22)} ${escHtml(me.name)} (You)` : 'Spectator'}</div>
+      <div id="chess-clock-me" style="font-weight:700;font-variant-numeric:tabular-nums">${chessFmtClock(room.clocks?.[flipped?oppClockColor:myClockColor])}</div>
+    </div>
+    <div id="chess-move-history" style="max-height:90px;overflow-y:auto;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px">
+      ${(room.moveHistory||[]).map((m,idx) => `<span>${idx%2===0?Math.floor(idx/2+1)+'.':''} ${m.label}</span>`).join('') || 'No moves yet'}
+    </div>
+    ${!isSpectator && !room.result && opponent ? `
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button id="chess-resign-btn" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--danger,#ef4444);border-radius:10px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">🏳️ Resign</button>
+      <button id="chess-draw-btn" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">${room.drawOffer && room.drawOffer!==myColor ? '🤝 Accept Draw' : '🤝 Offer Draw'}</button>
+    </div>` : ''}
+    ${room.result && room.host === currentUser.uid ? `<button class="btn-primary" id="chess-rematch-btn" style="width:100%;margin-bottom:8px">🔁 Rematch</button>` : ''}
+    ${room.result && room.host !== currentUser.uid ? `<div style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:8px">Waiting for host to start a rematch…</div>` : ''}
+    ${room.host === currentUser.uid ? `<button id="chess-delete-room-btn" style="width:100%;background:var(--danger,#ef4444);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">🗑️ Delete Room</button>` : ''}
+  `;
+
+  chessAttachBoardHandlers(content, state, statusInfo, isMyTurn, (from, to, promotion) => {
+    makeChessOnlineMove(roomRef, room, from, to, promotion);
+  });
+
+  const resignBtn = document.getElementById('chess-resign-btn');
+  if (resignBtn) resignBtn.addEventListener('click', () => {
+    showConfirmDialog('Resign this game?', async () => {
+      await roomRef.update({ result: { type:'resign', winner: myColor==='w'?'b':'w' } });
+      chessSettleOnlineResult(roomRef, room, myColor==='w'?'b':'w');
+    });
+  });
+  const drawBtn = document.getElementById('chess-draw-btn');
+  if (drawBtn) drawBtn.addEventListener('click', async () => {
+    if (room.drawOffer && room.drawOffer !== myColor) {
+      await roomRef.update({ result: { type:'agreement' }, drawOffer: null });
+      chessSettleOnlineResult(roomRef, room, null);
+    } else {
+      await roomRef.update({ drawOffer: myColor });
+      if (typeof toast === 'function') toast('Draw offer sent', 'info');
+    }
+  });
+  const rematchBtn = document.getElementById('chess-rematch-btn');
+  if (rematchBtn) rematchBtn.addEventListener('click', async () => {
+    const fresh = chessInitialState();
+    const swapped = players.map(p => ({ ...p, color: p.color === 'w' ? 'b' : 'w' }));
+    const tc = CHESS_TIME_CONTROLS[room.timeControl] || CHESS_TIME_CONTROLS.rapid;
+    await roomRef.update({
+      players: swapped.concat((room.players||[]).filter(p=>p.spectator)),
+      board: fresh.board, turn: fresh.turn, castling: fresh.castling, ep: fresh.ep, halfmove: fresh.halfmove, fullmove: fresh.fullmove, posHistory: [],
+      moveHistory: [], captured: { w: [], b: [] }, clocks: { w: tc.ms, b: tc.ms }, lastMoveAt: firebase.firestore.FieldValue.serverTimestamp(),
+      result: null, drawOffer: null
+    });
+  });
+  const delBtn = document.getElementById('chess-delete-room-btn');
+  if (delBtn) delBtn.addEventListener('click', () => confirmDeleteChessRoom(roomRef));
+
+  // live clock countdown (visual only; authoritative deduction happens on move / timeout report)
+  if (!room.result && opponent && room.clocks?.[state.turn] != null) {
+    chessClockInterval = setInterval(() => {
+      const elEl = state.turn === myClockColor ? document.getElementById('chess-clock-me') : document.getElementById('chess-clock-opp');
+      if (!elEl) return;
+      const lastMs = room.lastMoveAt?.toMillis?.() || Date.now();
+      const remaining = room.clocks[state.turn] - (Date.now() - lastMs);
+      elEl.textContent = chessFmtClock(remaining);
+      if (remaining <= 0 && !room._timeoutReported) {
+        room._timeoutReported = true;
+        roomRef.update({ result: { type:'timeout', winner: state.turn==='w'?'b':'w' } }).then(()=>{
+          chessSettleOnlineResult(roomRef, room, state.turn==='w'?'b':'w');
+        });
+      }
+    }, 500);
+  }
+}
+
+function chessAttachBoardHandlers(content, state, statusInfo, interactive, onMove){
+  if (!interactive) return;
+  content.querySelectorAll('.chess-sq').forEach(sqEl => {
+    sqEl.addEventListener('click', () => {
+      const i = Number(sqEl.dataset.i);
+      const piece = state.board[i];
+      if (chessSelectedSq === null) {
+        if (piece && chessColor(piece) === state.turn) {
+          chessSelectedSq = i;
+          chessLegalTargets = chessLegalMoves(state, state.turn).filter(m => m.from === i).map(m => m.to);
+          chessPlaySound('select');
+          chessRefreshCurrentBoard();
+        }
+      } else {
+        if (i === chessSelectedSq) { chessSelectedSq = null; chessLegalTargets = []; chessRefreshCurrentBoard(); return; }
+        const movesFromSel = chessLegalMoves(state, state.turn).filter(m => m.from === chessSelectedSq && m.to === i);
+        if (movesFromSel.length) {
+          const from = chessSelectedSq;
+          chessSelectedSq = null; chessLegalTargets = [];
+          if (movesFromSel.length > 1) {
+            chessShowPromotionPicker(chessColor(state.board[from]), (promo) => onMove(from, i, promo));
+          } else {
+            onMove(from, i, movesFromSel[0].promotion || null);
+          }
+        } else if (piece && chessColor(piece) === state.turn) {
+          chessSelectedSq = i;
+          chessLegalTargets = chessLegalMoves(state, state.turn).filter(m => m.from === i).map(m => m.to);
+          chessRefreshCurrentBoard();
+        } else {
+          chessSelectedSq = null; chessLegalTargets = [];
+          chessRefreshCurrentBoard();
+        }
+      }
+    });
+  });
+}
+// hook set by whichever mode is active, so selection clicks can re-render without a full re-fetch
+let chessRefreshCurrentBoard = () => {};
+
+function chessShowPromotionPicker(color, cb){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10100;align-items:center;justify-content:center;background:rgba(0,0,0,.5)';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:16px;padding:18px;text-align:center">
+      <div style="font-size:13px;margin-bottom:10px;color:var(--muted)">Promote pawn to:</div>
+      <div style="display:flex;gap:10px">
+        ${['Q','R','B','N'].map(p => `<button class="chess-promo-btn" data-p="${p}" style="font-size:30px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:52px;height:52px;cursor:pointer">${CHESS_UNICODE[color+p]}</button>`).join('')}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('.chess-promo-btn').forEach(btn => {
+    btn.addEventListener('click', () => { overlay.remove(); cb(btn.dataset.p); });
+  });
+}
+
+async function makeChessOnlineMove(roomRef, room, from, to, promotion){
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(roomRef);
+      if (!snap.exists) return;
+      const r = snap.data();
+      if (r.result) return;
+      const state = { board: r.board, turn: r.turn, castling: r.castling, ep: r.ep, halfmove: r.halfmove, fullmove: r.fullmove, history: r.posHistory || [] };
+      const me = (r.players||[]).find(p => p.uid === currentUser.uid);
+      if (!me || me.color !== state.turn) return;
+      const legal = chessLegalMoves(state, state.turn);
+      const move = legal.find(m => m.from === from && m.to === to && (m.promotion||null) === (promotion||null));
+      if (!move) return;
+      const capturedPiece = move.enpassant ? (state.turn==='w'?'bP':'wP') : state.board[to];
+      const next = chessApplyMove(state, move);
+      const statusAfter = chessGameStatus(next);
+      const label = chessMoveLabel(state, move, statusAfter);
+      const captured = { w: (r.captured?.w||[]).slice(), b: (r.captured?.b||[]).slice() };
+      if (capturedPiece) captured[chessColor(capturedPiece)].push(chessType(capturedPiece));
+
+      const now = Date.now();
+      const lastMs = r.lastMoveAt?.toMillis?.() || now;
+      const clocks = { ...(r.clocks||{}) };
+      if (clocks[state.turn] != null) clocks[state.turn] = Math.max(0, clocks[state.turn] - (now - lastMs));
+
+      const update = {
+        board: next.board, turn: next.turn, castling: next.castling, ep: next.ep, halfmove: next.halfmove, fullmove: next.fullmove,
+        posHistory: next.history.slice(-50),
+        moveHistory: (r.moveHistory||[]).concat([{ label, move: { from, to } }]),
+        captured, clocks, lastMoveAt: firebase.firestore.FieldValue.serverTimestamp(), drawOffer: null
+      };
+      if (statusAfter.status === 'checkmate') update.result = { type:'checkmate', winner: statusAfter.winner };
+      else if (statusAfter.status === 'stalemate') update.result = { type:'stalemate' };
+      else if (statusAfter.status === 'draw') update.result = { type:'draw', reason: statusAfter.reason };
+      tx.update(roomRef, update);
+    });
+  } catch (e) { console.error('chess move failed', e); }
+}
+
+async function chessSettleOnlineResult(roomRef, room, winnerColor){
+  // simple Elo + stats update for both active players, best-effort (not transactional across users)
+  try {
+    const players = (room.players||[]).filter(p=>!p.spectator);
+    const me = players.find(p=>p.uid===currentUser.uid);
+    if (!me) return;
+    const stats = currentUserData.chessStats || { elo:1000, played:0, wins:0, losses:0, draws:0, streak:0, bestStreak:0 };
+    const won = winnerColor === me.color;
+    const draw = winnerColor === null;
+    const delta = draw ? 0 : (won ? 12 : -10);
+    const newStats = {
+      elo: Math.max(100, stats.elo + delta),
+      played: stats.played + 1,
+      wins: stats.wins + (won ? 1 : 0),
+      losses: stats.losses + (!won && !draw ? 1 : 0),
+      draws: stats.draws + (draw ? 1 : 0),
+      streak: won ? (stats.streak + 1) : 0,
+      bestStreak: won ? Math.max(stats.bestStreak, stats.streak + 1) : stats.bestStreak
+    };
+    currentUserData.chessStats = newStats;
+    await db.collection('users').doc(currentUser.uid).update({ chessStats: newStats, xp: firebase.firestore.FieldValue.increment(draw?10:(won?30:5)) });
+  } catch (e) { console.error('chess stats update failed', e); }
+}
+
+// ── Local (pass & play) + vs AI mode ──
+function startChessLocal(body, clubId, clubData, mode, aiLevel){
+  stopChessClock();
+  chessSelectedSq = null; chessLegalTargets = [];
+  chessLocalState = chessInitialState();
+  chessLocalMeta = { mode, aiLevel, aiColor: 'b', flipped: false, undoStack: [], captured: { w: [], b: [] }, moveHistory: [] };
+  chessPlaySound('start');
+  body.innerHTML = `
+    <div style="padding:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="btn-icon" id="chess-local-back"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:14px">${mode==='ai' ? '🤖 vs AI ('+aiLevel+')' : '📱 Local Pass & Play'}</strong>
+        <div style="flex:1"></div>
+        <button class="btn-icon" id="chess-flip-btn" title="Flip board"><i data-lucide="repeat"></i></button>
+        <button class="btn-icon" id="chess-undo-btn" title="Undo"><i data-lucide="undo-2"></i></button>
+        <button class="btn-icon" id="chess-sound-toggle" title="Toggle sound"><i data-lucide="${chessSoundOn ? 'volume-2' : 'volume-x'}"></i></button>
+      </div>
+      <div id="chess-local-content"></div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('chess-local-back').addEventListener('click', () => {
+    if (mode === 'ai') renderChessAISetup(body, clubId, clubData); else renderChessHome(body, clubId, clubData);
+  });
+  document.getElementById('chess-flip-btn').addEventListener('click', () => { chessLocalMeta.flipped = !chessLocalMeta.flipped; renderChessLocalGame(body, clubId, clubData); });
+  document.getElementById('chess-undo-btn').addEventListener('click', () => chessUndoLocal(body, clubId, clubData));
+  document.getElementById('chess-sound-toggle').addEventListener('click', (e) => {
+    chessSoundOn = !chessSoundOn;
+    if (chessSoundOn) chessPlaySound('select');
+    e.currentTarget.innerHTML = `<i data-lucide="${chessSoundOn ? 'volume-2' : 'volume-x'}"></i>`;
+    if (window.lucide) lucide.createIcons();
+  });
+  renderChessLocalGame(body, clubId, clubData);
+}
+
+function renderChessAISetup(body, clubId, clubData){
+  body.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <button class="btn-icon" id="chess-ai-back"><i data-lucide="arrow-left"></i></button>
+        <strong style="font-size:15px">🤖 Play vs AI</strong>
+      </div>
+      ${['easy','medium','hard'].map(l => `
+        <div class="game-pick-card chess-ai-level" data-l="${l}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);cursor:pointer;margin-bottom:10px">
+          <div style="font-size:28px">${l==='easy'?'🌱':l==='medium'?'⚔️':'🔥'}</div>
+          <div style="flex:1"><strong style="font-size:14px;text-transform:capitalize">${l}</strong><div style="font-size:12px;color:var(--muted)">${l==='easy'?'Great for beginners':l==='medium'?'A fair challenge':'Plays to win'}</div></div>
+          <i data-lucide="chevron-right"></i>
+        </div>`).join('')}
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  document.getElementById('chess-ai-back').addEventListener('click', () => renderChessHome(body, clubId, clubData));
+  document.querySelectorAll('.chess-ai-level').forEach(el => {
+    el.addEventListener('click', () => startChessLocal(body, clubId, clubData, 'ai', el.dataset.l));
+  });
+}
+
+function chessUndoLocal(body, clubId, clubData){
+  if (!chessLocalMeta.undoStack.length) return;
+  const steps = (chessLocalMeta.mode === 'ai') ? Math.min(2, chessLocalMeta.undoStack.length) : 1;
+  for (let k = 0; k < steps; k++) {
+    const prev = chessLocalMeta.undoStack.pop();
+    chessLocalState = prev.state;
+    chessLocalMeta.captured = prev.captured;
+    chessLocalMeta.moveHistory = prev.moveHistory;
+  }
+  chessSelectedSq = null; chessLegalTargets = [];
+  renderChessLocalGame(body, clubId, clubData);
+}
+
+function renderChessLocalGame(body, clubId, clubData){
+  const content = document.getElementById('chess-local-content');
+  if (!content) return;
+  const state = chessLocalState;
+  const statusInfo = chessGameStatus(state);
+  const isAI = chessLocalMeta.mode === 'ai';
+  const interactive = statusInfo.status !== 'checkmate' && statusInfo.status !== 'stalemate' && !(isAI && state.turn === chessLocalMeta.aiColor);
+  const lastMove = chessLocalMeta.moveHistory.length ? chessLocalMeta.moveHistory[chessLocalMeta.moveHistory.length-1].move : null;
+
+  let statusText;
+  if (statusInfo.status === 'checkmate') statusText = `🏆 Checkmate — ${state.turn==='w'?'Black':'White'} wins!`;
+  else if (statusInfo.status === 'stalemate') statusText = '🤝 Stalemate — Draw';
+  else if (statusInfo.status === 'draw') statusText = `🤝 Draw — ${statusInfo.reason}`;
+  else if (statusInfo.status === 'check') statusText = `⚠️ ${state.turn==='w'?'White':'Black'} is in check!`;
+  else statusText = isAI ? (state.turn === chessLocalMeta.aiColor ? '🤖 AI is thinking…' : 'Your turn') : `${state.turn==='w'?'White':'Black'} to move`;
+
+  content.innerHTML = `
+    <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:6px">${statusText}</div>
+    ${chessCapturedHtml(chessLocalMeta.captured)}
+    ${chessBoardHtml(state, { flipped: chessLocalMeta.flipped, selected: chessSelectedSq, targets: chessLegalTargets, lastMove, interactive, statusInfo })}
+    <div style="max-height:90px;overflow-y:auto;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px">
+      ${chessLocalMeta.moveHistory.map((m,idx) => `<span>${idx%2===0?Math.floor(idx/2+1)+'.':''} ${m.label}</span>`).join('') || 'No moves yet'}
+    </div>
+    ${(statusInfo.status==='checkmate'||statusInfo.status==='stalemate'||statusInfo.status==='draw') ? `<button class="btn-primary" id="chess-local-newgame" style="width:100%">🔁 New Game</button>` : ''}
+  `;
+  if (window.lucide) lucide.createIcons();
+  chessRefreshCurrentBoard = () => renderChessLocalGame(body, clubId, clubData);
+  chessAttachBoardHandlers(content, state, statusInfo, interactive, (from, to, promotion) => {
+    chessMakeLocalMove(from, to, promotion, body, clubId, clubData);
+  });
+  const newGameBtn = document.getElementById('chess-local-newgame');
+  if (newGameBtn) newGameBtn.addEventListener('click', () => startChessLocal(body, clubId, clubData, chessLocalMeta.mode, chessLocalMeta.aiLevel));
+
+  // AI's turn
+  if (isAI && state.turn === chessLocalMeta.aiColor && statusInfo.status !== 'checkmate' && statusInfo.status !== 'stalemate' && statusInfo.status !== 'draw') {
+    setTimeout(() => {
+      const move = chessAIMove(state, chessLocalMeta.aiLevel);
+      if (move) chessMakeLocalMove(move.from, move.to, move.promotion || null, body, clubId, clubData);
+    }, 500);
+  }
+}
+
+function chessMakeLocalMove(from, to, promotion, body, clubId, clubData){
+  const state = chessLocalState;
+  const legal = chessLegalMoves(state, state.turn);
+  const move = legal.find(m => m.from === from && m.to === to && (m.promotion||null) === (promotion||null));
+  if (!move) return;
+  chessLocalMeta.undoStack.push({ state, captured: { w: chessLocalMeta.captured.w.slice(), b: chessLocalMeta.captured.b.slice() }, moveHistory: chessLocalMeta.moveHistory.slice() });
+  const capturedPiece = move.enpassant ? (state.turn==='w'?'bP':'wP') : state.board[to];
+  const next = chessApplyMove(state, move);
+  const statusAfter = chessGameStatus(next);
+  const label = chessMoveLabel(state, move, statusAfter);
+  if (capturedPiece) chessLocalMeta.captured[chessColor(capturedPiece)].push(chessType(capturedPiece));
+  chessLocalMeta.moveHistory.push({ label, move: { from, to } });
+  chessLocalState = next;
+  chessSelectedSq = null; chessLegalTargets = [];
+  chessSoundForMove(move, statusAfter);
+  renderChessLocalGame(body, clubId, clubData);
 }
 
 // ══════════════════════════════════════
