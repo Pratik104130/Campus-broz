@@ -750,6 +750,44 @@ opacity: .4;
       flex: 1; min-width: 0; background: none !important; border: none !important;
       outline: none !important; color: var(--text, #fff); font-size: 13px; box-shadow: none !important;
     }
+
+    /* ── Game voice chat (mic) bar — Ludo / Tic Tac Toe rooms ── */
+    .voice-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 9px 10px; margin-bottom: 12px; border-radius: 14px;
+      background: var(--surface2, rgba(255,255,255,0.05)); border: 1px solid var(--border, rgba(255,255,255,0.09));
+    }
+    .voice-bar-avatars { display: flex; align-items: center; gap: 9px; flex: 1; flex-wrap: wrap; min-width: 0; }
+    .voice-avatar-wrap { position: relative; width: 34px; height: 34px; flex-shrink: 0; }
+    .voice-avatar-wrap img, .voice-avatar-wrap .avatar-fallback { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; display: block; }
+    .voice-speaking-ring {
+      position: absolute; inset: -3px; border-radius: 50%; border: 2px solid #3ddc73;
+      opacity: 0; transition: opacity .12s; pointer-events: none;
+    }
+    .voice-avatar-wrap.speaking .voice-speaking-ring { opacity: 1; }
+    .voice-avatar-wrap.speaking { animation: voicePulse 1.1s infinite; border-radius: 50%; }
+    @keyframes voicePulse {
+      0%   { box-shadow: 0 0 0 0 rgba(61,220,115,.45); }
+      70%  { box-shadow: 0 0 0 7px rgba(61,220,115,0); }
+      100% { box-shadow: 0 0 0 0 rgba(61,220,115,0); }
+    }
+    .voice-mute-badge {
+      position: absolute; right: -3px; bottom: -3px; width: 15px; height: 15px; border-radius: 50%;
+      background: var(--danger, #e5484d); display: none; align-items: center; justify-content: center;
+      font-size: 8px; line-height: 1; border: 1.5px solid var(--surface2, #1c1c1e);
+    }
+    .voice-avatar-wrap.muted .voice-mute-badge { display: flex; }
+    .voice-bar-empty { font-size: 12px; color: var(--muted, #888); }
+    .voice-bar-btn {
+      display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 10px;
+      border: 1px solid var(--border, rgba(255,255,255,0.09)); background: var(--surface, #16161c);
+      font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--text, #fff); flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .voice-bar-btn.join { background: var(--accent, #6c63ff); color: #fff; border-color: var(--accent, #6c63ff); }
+    .voice-bar-btn.leave, .voice-bar-btn.muted {
+      background: rgba(229,72,77,.14); color: var(--danger, #e5484d); border-color: rgba(229,72,77,.3);
+    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <!-- Firebase -->
@@ -2546,6 +2584,7 @@ function switchView(view) {
 document.querySelectorAll('.modal-close').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('story-vid')?.pause();
+    if (btn.dataset.modal === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
     closeModal(btn.dataset.modal);
   });
 });
@@ -2553,6 +2592,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
     if (e.target === overlay) {
       document.getElementById('story-vid')?.pause();
+      if (overlay.id === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
       overlay.classList.remove('open');
     }
   });
@@ -4828,6 +4868,7 @@ function updateOpenClubDashboardOnlineCount() {
 function renderClubTab(tab, clubId, clubData, isOwner, isMember, isAppMod) {
   const body = document.getElementById('club-dash-body');
   if (!body) return;
+  if (tab !== 7 && typeof destroyVoiceBar === 'function') destroyVoiceBar(); // leaving Games tab — hang up the mic
 
   if (tab === 0) renderClubChat(body, clubId, clubData, isMember, isOwner, isAppMod);
   else if (tab === 1) renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod);
@@ -5371,6 +5412,280 @@ function loadClubProjects(clubId, isOwner) {
 }
 
 // ══════════════════════════════════════
+// CLUB GAMES — VOICE CHAT (mic) — real-time WebRTC voice for whoever's in a
+// Ludo/TTT room together. Mesh topology: every participant connects directly
+// to every other participant, signaled through Firestore (no extra server
+// needed). Anyone in the room can join the mic, mute/unmute themselves, and
+// see a green speaking ring + a mute badge on everyone else — like a real
+// game voice lobby.
+// ══════════════════════════════════════
+const VOICE_RTC_CONFIG = { iceServers: [
+  { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }
+]};
+const VOICE_SPEAKING_THRESHOLD = 0.02;
+let activeVoiceChat = null; // the live voice session for whichever room is currently open
+
+// Deterministic offer/answer role split so both sides agree who initiates,
+// without needing to coordinate who clicked "join" first.
+function voicePairRoles(myUid, otherUid) {
+  const initiator = myUid > otherUid ? myUid : otherUid;
+  const receiver  = myUid > otherUid ? otherUid : myUid;
+  return { initiator, receiver, amInitiator: myUid === initiator, pairId: `${receiver}_${initiator}` };
+}
+
+// Mount a fresh voice bar for `roomRef` inside `containerEl`. Safe to call
+// repeatedly — tears down any previous session first. Joining the mic itself
+// is opt-in (button in the bar), so opening a room never grabs the mic.
+function initVoiceBar(containerEl, roomRef, myUid, myName, myPic) {
+  destroyVoiceBar();
+  if (!containerEl) return;
+  const vc = {
+    roomRef, myUid, myName, myPic,
+    localStream: null, muted: false, joined: false,
+    peers: {},              // otherUid -> { pc, audioEl, unsubSignal, unsubCand, analyser, dataArr, speaking }
+    participants: {},       // otherUid -> { uid, name, pic, muted }
+    participantsUnsub: null,
+    audioCtx: null, localAnalyser: null, localDataArr: null, localSpeaking: false,
+    rafId: null,
+    containerEl
+  };
+  activeVoiceChat = vc;
+  voiceRenderBar(vc);
+  vc.participantsUnsub = roomRef.collection('voice').onSnapshot(snap => {
+    const seen = new Set();
+    snap.docs.forEach(d => {
+      seen.add(d.id);
+      vc.participants[d.id] = { uid: d.id, ...d.data() };
+      if (vc.joined && d.id !== myUid && !vc.peers[d.id]) voiceConnectPeer(vc, d.id);
+    });
+    Object.keys(vc.participants).forEach(uid => {
+      if (!seen.has(uid)) {
+        delete vc.participants[uid];
+        if (vc.peers[uid]) voiceCleanupPeer(vc, uid);
+      }
+    });
+    voiceRenderBar(vc);
+  });
+}
+
+// Tear down whatever voice session is currently active (leaves the mic,
+// closes all peer connections, stops listening). Call this whenever the
+// user backs out of a room / the room closes / they open a different room.
+function destroyVoiceBar() {
+  const vc = activeVoiceChat;
+  if (!vc) return;
+  voiceLeaveMic(vc);
+  if (vc.participantsUnsub) vc.participantsUnsub();
+  activeVoiceChat = null;
+}
+
+async function voiceJoinMic(vc) {
+  if (vc.joined) return;
+  try {
+    vc.localStream = await navigator.mediaDevices.getUserMedia({ audio: {
+      echoCancellation: true, noiseSuppression: true, autoGainControl: true
+    }});
+  } catch (e) {
+    if (typeof toast === 'function') toast('Mic access denied — allow microphone permission to talk 🎙️', 'error');
+    return;
+  }
+  vc.joined = true;
+  vc.muted = false;
+  voiceSetupLocalMeter(vc);
+  await vc.roomRef.collection('voice').doc(vc.myUid).set({
+    uid: vc.myUid, name: vc.myName, pic: vc.myPic || '', muted: false,
+    joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  Object.keys(vc.participants).forEach(uid => {
+    if (uid !== vc.myUid && !vc.peers[uid]) voiceConnectPeer(vc, uid);
+  });
+  voiceRenderBar(vc);
+}
+
+function voiceLeaveMic(vc) {
+  if (!vc) return;
+  Object.keys(vc.peers).forEach(uid => voiceCleanupPeer(vc, uid));
+  if (vc.localStream) { vc.localStream.getTracks().forEach(t => t.stop()); vc.localStream = null; }
+  if (vc.audioCtx) { try { vc.audioCtx.close(); } catch(e){} vc.audioCtx = null; }
+  if (vc.rafId) { cancelAnimationFrame(vc.rafId); vc.rafId = null; }
+  if (vc.joined) {
+    vc.roomRef.collection('voice').doc(vc.myUid).delete().catch(()=>{});
+    // Best-effort cleanup of signaling docs I was party to (their candidate
+    // subcollections are left behind — harmless clutter, not worth a Cloud
+    // Function just to sweep them for a game room).
+    vc.roomRef.collection('voiceSignals').get().then(snap => {
+      snap.docs.forEach(d => { if (d.id.includes(vc.myUid)) d.ref.delete().catch(()=>{}); });
+    }).catch(()=>{});
+  }
+  vc.joined = false;
+  voiceRenderBar(vc);
+}
+
+function voiceToggleMute(vc) {
+  if (!vc.joined) return;
+  vc.muted = !vc.muted;
+  if (vc.localStream) vc.localStream.getAudioTracks().forEach(t => t.enabled = !vc.muted);
+  vc.roomRef.collection('voice').doc(vc.myUid).update({ muted: vc.muted }).catch(()=>{});
+  voiceRenderBar(vc);
+}
+
+function voiceSetupLocalMeter(vc) {
+  try {
+    vc.audioCtx = vc.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const src = vc.audioCtx.createMediaStreamSource(vc.localStream);
+    const analyser = vc.audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    src.connect(analyser);
+    vc.localAnalyser = analyser;
+    vc.localDataArr = new Uint8Array(analyser.frequencyBinCount);
+    voiceStartMeterLoop(vc);
+  } catch (e) { /* speaking-indicator unavailable — mic still works fine without it */ }
+}
+
+// Lightweight per-frame loudness check (no full re-render — just toggles a
+// CSS class) so "who's talking" updates smoothly without hammering the DOM.
+function voiceStartMeterLoop(vc) {
+  if (vc.rafId) return;
+  const tick = () => {
+    if (!vc.joined) { vc.rafId = null; return; }
+    if (vc.localAnalyser) {
+      const loud = !vc.muted && voiceIsLoud(vc.localAnalyser, vc.localDataArr);
+      if (loud !== vc.localSpeaking) { vc.localSpeaking = loud; voiceUpdateSpeakingDom(vc, vc.myUid, loud); }
+    }
+    Object.entries(vc.peers).forEach(([uid, p]) => {
+      if (!p.analyser) return;
+      const loud = voiceIsLoud(p.analyser, p.dataArr);
+      if (loud !== p.speaking) { p.speaking = loud; voiceUpdateSpeakingDom(vc, uid, loud); }
+    });
+    vc.rafId = requestAnimationFrame(tick);
+  };
+  vc.rafId = requestAnimationFrame(tick);
+}
+
+function voiceIsLoud(analyser, dataArr) {
+  analyser.getByteTimeDomainData(dataArr);
+  let sum = 0;
+  for (let i = 0; i < dataArr.length; i++) { const v = (dataArr[i] - 128) / 128; sum += v * v; }
+  return Math.sqrt(sum / dataArr.length) > VOICE_SPEAKING_THRESHOLD;
+}
+
+function voiceUpdateSpeakingDom(vc, uid, speaking) {
+  const el = vc.containerEl?.querySelector(`.voice-avatar-wrap[data-uid="${uid}"]`);
+  if (el) el.classList.toggle('speaking', speaking);
+}
+
+async function voiceConnectPeer(vc, otherUid) {
+  if (vc.peers[otherUid] || otherUid === vc.myUid) return;
+  const roles = voicePairRoles(vc.myUid, otherUid);
+  const pc = new RTCPeerConnection(VOICE_RTC_CONFIG);
+  const peer = { pc, audioEl: null, analyser: null, dataArr: null, speaking: false, unsubSignal: null, unsubCand: null };
+  vc.peers[otherUid] = peer;
+
+  if (vc.localStream) vc.localStream.getTracks().forEach(t => pc.addTrack(t, vc.localStream));
+
+  pc.ontrack = (ev) => {
+    const audioEl = document.createElement('audio');
+    audioEl.autoplay = true;
+    audioEl.srcObject = ev.streams[0];
+    audioEl.dataset.voicePeer = otherUid;
+    document.body.appendChild(audioEl);
+    peer.audioEl = audioEl;
+    try {
+      const ctx = vc.audioCtx || (vc.audioCtx = new (window.AudioContext || window.webkitAudioContext)());
+      const src = ctx.createMediaStreamSource(ev.streams[0]);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      src.connect(analyser);
+      peer.analyser = analyser;
+      peer.dataArr = new Uint8Array(analyser.frequencyBinCount);
+      voiceStartMeterLoop(vc);
+    } catch (e) { /* audio still plays, just no speaking ring for this peer */ }
+  };
+
+  const signalRef = vc.roomRef.collection('voiceSignals').doc(roles.pairId);
+  const myCandCol = signalRef.collection(roles.amInitiator ? 'candidatesInitiator' : 'candidatesReceiver');
+  const theirCandCol = signalRef.collection(roles.amInitiator ? 'candidatesReceiver' : 'candidatesInitiator');
+
+  pc.onicecandidate = (ev) => { if (ev.candidate) myCandCol.add(ev.candidate.toJSON()).catch(()=>{}); };
+
+  peer.unsubCand = theirCandCol.onSnapshot(snap => {
+    snap.docChanges().forEach(ch => {
+      if (ch.type === 'added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{});
+    });
+  });
+
+  if (roles.amInitiator) {
+    peer.unsubSignal = signalRef.onSnapshot(async doc => {
+      const data = doc.data();
+      if (data?.answer && pc.signalingState === 'have-local-offer') {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      }
+    });
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await signalRef.set({ offer: { sdp: offer.sdp, type: offer.type } }, { merge: true });
+  } else {
+    peer.unsubSignal = signalRef.onSnapshot(async doc => {
+      const data = doc.data();
+      if (data?.offer && !pc.currentRemoteDescription) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await signalRef.set({ answer: { sdp: answer.sdp, type: answer.type } }, { merge: true });
+      }
+    });
+  }
+
+  voiceRenderBar(vc);
+}
+
+function voiceCleanupPeer(vc, uid) {
+  const p = vc.peers[uid];
+  if (!p) return;
+  if (p.unsubSignal) p.unsubSignal();
+  if (p.unsubCand) p.unsubCand();
+  if (p.pc) { try { p.pc.close(); } catch(e){} }
+  if (p.audioEl) p.audioEl.remove();
+  delete vc.peers[uid];
+  voiceRenderBar(vc);
+}
+
+function voiceRenderBar(vc) {
+  if (!vc || !vc.containerEl) return;
+  const others = Object.values(vc.participants);
+  const html = `
+    <div class="voice-bar">
+      <div class="voice-bar-avatars">
+        ${others.length ? others.map(p => `
+          <div class="voice-avatar-wrap${p.muted ? ' muted' : ''}" data-uid="${p.uid}" title="${escHtml(p.name||'Player')}${p.muted ? ' (muted)' : ''}">
+            <span class="voice-speaking-ring"></span>
+            ${renderAvatarHtml(null, p.pic, 34)}
+            <span class="voice-mute-badge">🔇</span>
+          </div>
+        `).join('') : '<span class="voice-bar-empty">🎙️ No one\'s on mic yet — be the first to talk</span>'}
+      </div>
+      ${vc.joined
+        ? `<button class="voice-bar-btn${vc.muted ? ' muted' : ''}" id="voice-mute-btn">${vc.muted ? '🔇 Unmute' : '🎙️ Mute'}</button>
+           <button class="voice-bar-btn leave" id="voice-leave-btn">Leave Mic</button>`
+        : `<button class="voice-bar-btn join" id="voice-join-btn">🎙️ Join Voice</button>`}
+    </div>`;
+  vc.containerEl.innerHTML = html;
+  const joinBtn = vc.containerEl.querySelector('#voice-join-btn');
+  if (joinBtn) joinBtn.addEventListener('click', () => voiceJoinMic(vc));
+  const muteBtn = vc.containerEl.querySelector('#voice-mute-btn');
+  if (muteBtn) muteBtn.addEventListener('click', () => voiceToggleMute(vc));
+  const leaveBtn = vc.containerEl.querySelector('#voice-leave-btn');
+  if (leaveBtn) leaveBtn.addEventListener('click', () => voiceLeaveMic(vc));
+  // Re-apply live speaking state after the bar redraws (redraws happen when
+  // participants join/leave/mute — not on every meter tick).
+  Object.entries(vc.peers).forEach(([uid, p]) => { if (p.speaking) voiceUpdateSpeakingDom(vc, uid, true); });
+  if (vc.localSpeaking) voiceUpdateSpeakingDom(vc, vc.myUid, true);
+}
+
+// Clean up the mic if the tab/window closes without a proper "leave".
+window.addEventListener('beforeunload', () => { if (activeVoiceChat) voiceLeaveMic(activeVoiceChat); });
+
+// ══════════════════════════════════════
 // CLUB GAMES — LUDO (online, 4-player rooms)
 // ══════════════════════════════════════
 let ludoRoomsUnsub = null;
@@ -5631,12 +5946,16 @@ function openLudoRoom(clubId, roomId, body, clubData) {
         <button class="btn-icon" id="ludo-leave-btn"><i data-lucide="arrow-left"></i></button>
         <strong style="font-size:14px" id="ludo-room-title">Ludo Room</strong>
       </div>
+      <div id="ludo-voice-bar"></div>
       <div id="ludo-room-content">Loading…</div>
     </div>`;
   if (window.lucide) lucide.createIcons();
+  initVoiceBar(document.getElementById('ludo-voice-bar'), roomRef, currentUser.uid,
+    currentUserData.name || currentUser.displayName || 'Player', currentUserData.profilePic || '');
   document.getElementById('ludo-leave-btn').addEventListener('click', () => {
     if (ludoGameUnsub) { ludoGameUnsub(); ludoGameUnsub = null; }
     stopLudoOfflineWatch();
+    destroyVoiceBar();
     delete _ludoPrevTokens[roomId];
     renderLudoLobby(body, clubId, clubData);
   });
@@ -5646,6 +5965,7 @@ function openLudoRoom(clubId, roomId, body, clubData) {
   ludoGameUnsub = roomRef.onSnapshot(snap => {
     if (!snap.exists) {
       stopLudoOfflineWatch();
+      destroyVoiceBar();
       delete _ludoPrevTokens[roomId];
       document.getElementById('ludo-room-content').innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed.</div>';
       return;
@@ -6124,12 +6444,16 @@ function openTTTRoom(clubId, roomId, body, clubData) {
         <button class="btn-icon" id="ttt-leave-btn"><i data-lucide="arrow-left"></i></button>
         <strong style="font-size:14px" id="ttt-room-title">Tic Tac Toe Room</strong>
       </div>
+      <div id="ttt-voice-bar"></div>
       <div id="ttt-room-content">Loading…</div>
     </div>`;
   if (window.lucide) lucide.createIcons();
+  initVoiceBar(document.getElementById('ttt-voice-bar'), roomRef, currentUser.uid,
+    currentUserData.name || currentUser.displayName || 'Player', currentUserData.profilePic || '');
   document.getElementById('ttt-leave-btn').addEventListener('click', () => {
     if (tttGameUnsub) { tttGameUnsub(); tttGameUnsub = null; }
     stopTTTOfflineWatch();
+    destroyVoiceBar();
     renderTTTLobby(body, clubId, clubData);
   });
 
@@ -6138,6 +6462,7 @@ function openTTTRoom(clubId, roomId, body, clubData) {
   tttGameUnsub = roomRef.onSnapshot(snap => {
     if (!snap.exists) {
       stopTTTOfflineWatch();
+      destroyVoiceBar();
       const c = document.getElementById('ttt-room-content');
       if (c) c.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed — host was offline too long.</div>';
       return;
