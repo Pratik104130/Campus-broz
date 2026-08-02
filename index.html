@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <style>
+  
     /* ── Club Dashboard: header + scrollable tab bar (upgraded UI) ── */
     .club-dash-header {
       position: relative;
@@ -200,7 +201,7 @@
 
     /* ── Custom Confirm Dialog ── */
     .cv-confirm-overlay {
-      position: fixed; inset: 0; z-index: 9999;
+      position: fixed; inset: 0; z-index: 100002 !important;
       background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center;
       opacity: 0; transition: opacity 0.18s;
@@ -629,6 +630,13 @@
        equal z-index that makes it render ON TOP, hiding the members list
        entirely even though it loaded fine. Force members above it. */
     #modal-club-members { z-index: 10050 !important; }
+
+    /* Same DOM-order stacking issue as above: the gallery photo lightbox
+       is a static modal declared early in <body>, so once the club
+       dashboard (re-appended on every open) is showing, the lightbox
+       image opened on top of it renders BEHIND the dashboard's header/tab
+       bar instead of above it. Force it to the very top. */
+    #modal-gallery-image { z-index: 100001 !important; }
 
     /* ── Club card: unread group-message bell (joined clubs only) ── */
     .club-notif-bell {
@@ -1563,6 +1571,14 @@ opacity: .4;
       <button class="modal-close" data-modal="modal-post-detail">✕</button>
     </div>
     <div id="post-detail-body"></div>
+  </div>
+</div>
+
+<!-- Gallery Image Lightbox -->
+<div class="modal-overlay" id="modal-gallery-image">
+  <div class="modal" style="max-width:520px;background:transparent;box-shadow:none;padding:0;position:relative">
+    <button class="modal-close" data-modal="modal-gallery-image" style="position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,0.6);color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center">✕</button>
+    <img id="gallery-image-full" src="" style="width:100%;max-height:80vh;object-fit:contain;border-radius:12px;display:block"/>
   </div>
 </div>
 
@@ -5559,7 +5575,7 @@ function renderClubGallery(body, clubId, clubData, isMember, isPrivileged) {
       </label>
       <span style="font-size:12px;color:var(--muted)">Share moments with the club</span>
     </div>` : ''}
-    <div id="gallery-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"><div class="loading-spinner" style="grid-column:1/-1">Loading…</div></div>
+    <div id="gallery-grid" style="display:grid;grid-template-columns:1fr;gap:12px"><div class="loading-spinner" style="grid-column:1/-1">Loading…</div></div>
   </div>`;
 
   if (isMember) {
@@ -5591,13 +5607,14 @@ function loadClubGallery(clubId, isPrivileged) {
         const d = doc.data();
         const canDelete = d.uid === currentUser.uid || isPrivileged;
         const tile = document.createElement('div');
-        tile.style.cssText = 'position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface2)';
-        tile.innerHTML = `<img src="${d.url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
+        tile.style.cssText = 'position:relative;width:100%;height:220px;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface2)';
+        tile.innerHTML = `<img src="${d.url}" style="width:100%;height:220px;object-fit:cover;display:block" loading="lazy"/>
           ${canDelete ? `<button class="gallery-delete-btn" title="Delete photo" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
           <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px;font-size:11px;color:#fff">${escHtml(d.uploaderName||'')}</div>`;
         tile.addEventListener('click', (e) => {
           if (e.target.closest('.gallery-delete-btn')) return;
-          window.open(d.url, '_blank');
+          document.getElementById('gallery-image-full').src = d.url;
+          openModal('modal-gallery-image');
         });
         if (canDelete) {
           tile.querySelector('.gallery-delete-btn')?.addEventListener('click', (e) => {
