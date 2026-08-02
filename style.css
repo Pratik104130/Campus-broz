@@ -887,13 +887,13 @@ border-radius: var(--radius) var(--radius) 0 0; }
 .loading-spinner { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
 
 .toast {
-  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateZ(0);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 10px 20px;
   font-size: 14px;
-  z-index: 999;
+  z-index: 1000000;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
@@ -1198,6 +1198,31 @@ border-radius: var(--radius) var(--radius) 0 0; }
 }
 .post-delete-btn:hover { background: rgba(239,68,68,0.1); }
 .post-delete-btn i { width: 12px; height: 12px; }
+
+/* ══════════════════════════════════
+   BLOCK / BAN BUTTONS ON POSTS (non-owner posts)
+══════════════════════════════════ */
+.post-block-btn, .post-ban-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex-shrink: 0;
+  border-radius: 50%; border: none; cursor: pointer;
+  margin-left: auto;
+  background: var(--surface2, rgba(255,255,255,0.06));
+  color: var(--muted, #9a9aa8);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+.post-block-btn i, .post-ban-btn i { width: 15px; height: 15px; }
+.post-block-btn:hover {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+}
+.post-block-btn:active, .post-ban-btn:active { transform: scale(0.92); }
+.post-ban-btn {
+  margin-left: 6px;
+  background: rgba(255,0,0,0.09);
+  color: #ff4444;
+}
+.post-ban-btn:hover { background: rgba(255,0,0,0.2); }
 
 /* ══════════════════════════════════
    CLUB MEMBERS MODAL
