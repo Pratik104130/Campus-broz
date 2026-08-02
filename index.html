@@ -5607,8 +5607,8 @@ function loadClubGallery(clubId, isPrivileged) {
         const d = doc.data();
         const canDelete = d.uid === currentUser.uid || isPrivileged;
         const tile = document.createElement('div');
-        tile.style.cssText = 'position:relative;width:100%;height:220px;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface2)';
-        tile.innerHTML = `<img src="${d.url}" style="width:100%;height:220px;object-fit:cover;display:block" loading="lazy"/>
+        tile.style.cssText = 'position:relative;width:100%;height:150px;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface2)';
+        tile.innerHTML = `<img src="${d.url}" style="width:100%;height:150px;object-fit:cover;display:block" loading="lazy"/>
           ${canDelete ? `<button class="gallery-delete-btn" title="Delete photo" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
           <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px;font-size:11px;color:#fff">${escHtml(d.uploaderName||'')}</div>`;
         tile.addEventListener('click', (e) => {
@@ -6481,13 +6481,13 @@ function renderLudoLobby(body, clubId, clubData) {
     </div>`;
   if (window.lucide) lucide.createIcons();
   document.getElementById('ludo-back-btn').addEventListener('click', () => renderClubGames(body, clubId, clubData));
-  document.getElementById('ludo-create-room-btn').addEventListener('click', () => createLudoRoom(clubId, body, clubData));
+  document.getElementById('ludo-create-room-btn').addEventListener('click', () => { ludoAudioCtx(); createLudoRoom(clubId, body, clubData); });
   document.getElementById('ludo-vs-ai-btn').addEventListener('click', () => {
     const picker = document.getElementById('ludo-ai-picker');
     picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
   });
   document.querySelectorAll('.ludo-ai-count-btn').forEach(btn => {
-    btn.addEventListener('click', () => createLudoRoomVsAI(clubId, body, clubData, parseInt(btn.dataset.n, 10)));
+    btn.addEventListener('click', () => { ludoAudioCtx(); createLudoRoomVsAI(clubId, body, clubData, parseInt(btn.dataset.n, 10)); });
   });
 
   if (ludoRoomsUnsub) { ludoRoomsUnsub(); ludoRoomsUnsub = null; }
@@ -6516,7 +6516,7 @@ function renderLudoLobby(body, clubId, clubData) {
         listEl.appendChild(card);
       });
       listEl.querySelectorAll('.ludo-join-btn').forEach(btn => {
-        btn.addEventListener('click', () => { if (!btn.disabled) joinLudoRoom(clubId, btn.dataset.id, body, clubData); });
+        btn.addEventListener('click', () => { if (!btn.disabled) { ludoAudioCtx(); joinLudoRoom(clubId, btn.dataset.id, body, clubData); } });
       });
     }, e => { listEl.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
 }
@@ -6677,6 +6677,7 @@ function renderLudoWaitingRoom(room, roomRef) {
   `;
   const startBtn = document.getElementById('ludo-start-btn');
   if (startBtn) startBtn.addEventListener('click', async () => {
+    ludoAudioCtx();
     const firstColor = LUDO_COLORS.find(c => players.some(p => p.color === c));
     await roomRef.update({ status: 'playing', turnColor: firstColor });
   });
@@ -6780,7 +6781,7 @@ function renderLudoGame(room, roomRef) {
   if (window.lucide) lucide.createIcons();
 
   const rollBtn = document.getElementById('ludo-roll-btn');
-  if (rollBtn) rollBtn.addEventListener('click', () => ludoRollDice(roomRef, room));
+  if (rollBtn) rollBtn.addEventListener('click', () => { ludoAudioCtx(); ludoRollDice(roomRef, room); });
 
   const diceEl = document.getElementById('ludo-dice');
   if (diceEl && room.diceValue) { diceEl.classList.remove('rolling'); void diceEl.offsetWidth; diceEl.classList.add('rolling'); }
@@ -6788,7 +6789,7 @@ function renderLudoGame(room, roomRef) {
   content.querySelectorAll('.ludo-token').forEach(el => {
     el.addEventListener('click', () => {
       const color = el.dataset.color, idx = parseInt(el.dataset.idx, 10);
-      if (movable.includes(color+'-'+idx)) ludoMoveToken(roomRef, room, color, idx);
+      if (movable.includes(color+'-'+idx)) { ludoAudioCtx(); ludoMoveToken(roomRef, room, color, idx); }
     });
     // Kick off the hop-by-hop animation for any token whose position changed
     const color = el.dataset.color, idx = parseInt(el.dataset.idx, 10);
