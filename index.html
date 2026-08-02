@@ -5921,6 +5921,7 @@ async function voiceJoinMic(vc) {
     if (uid !== vc.myUid && !vc.peers[uid]) voiceConnectPeer(vc, uid);
   });
   voiceRenderBar(vc);
+  voiceUnlockPeerAudio();
 }
 
 function voiceLeaveMic(vc) {
@@ -5942,12 +5943,22 @@ function voiceLeaveMic(vc) {
   voiceRenderBar(vc);
 }
 
+// Retry any peer <audio> elements whose autoplay got silently blocked.
+// Called from mic-related click handlers so the retry rides on a real
+// user gesture, which unblocks playback on strict mobile browsers.
+function voiceUnlockPeerAudio() {
+  document.querySelectorAll('audio[data-voice-peer][data-voice-needs-unlock]').forEach(el => {
+    el.play().catch(() => {});
+  });
+}
+
 function voiceToggleMute(vc) {
   if (!vc.joined) return;
   vc.muted = !vc.muted;
   if (vc.localStream) vc.localStream.getAudioTracks().forEach(t => t.enabled = !vc.muted);
   vc.roomRef.collection('voice').doc(vc.myUid).update({ muted: vc.muted }).catch(()=>{});
   voiceRenderBar(vc);
+  voiceUnlockPeerAudio();
 }
 
 function voiceSetupLocalMeter(vc) {
@@ -6007,10 +6018,20 @@ async function voiceConnectPeer(vc, otherUid) {
   pc.ontrack = (ev) => {
     const audioEl = document.createElement('audio');
     audioEl.autoplay = true;
+    audioEl.playsInline = true;
+    audioEl.volume = 1;
     audioEl.srcObject = ev.streams[0];
     audioEl.dataset.voicePeer = otherUid;
     document.body.appendChild(audioEl);
     peer.audioEl = audioEl;
+    // `autoplay` alone is silently blocked on most mobile browsers/WebViews
+    // for elements created async (after ICE/signaling), since it isn't tied
+    // to a direct tap. Explicitly call play(), and if blocked, retry it the
+    // next time the user taps a mic control (see voiceUnlockPeerAudio).
+    const tryPlay = () => audioEl.play().catch(() => {});
+    tryPlay();
+    audioEl.dataset.voiceNeedsUnlock = '1';
+    audioEl.addEventListener('playing', () => { delete audioEl.dataset.voiceNeedsUnlock; });
     try {
       const ctx = vc.audioCtx || (vc.audioCtx = new (window.AudioContext || window.webkitAudioContext)());
       const src = ctx.createMediaStreamSource(ev.streams[0]);
@@ -6113,6 +6134,9 @@ let ludoRoomsUnsub = null;
 let ludoGameUnsub = null;
 let ludoOfflineCheckInterval = null;
 let _ludoPrevTokens = {}; // roomId -> last known tokens (for move animation)
+let _ludoPrevRoomState = {}; // roomId -> {diceRolled,diceValue,turnColor,winner} (for sound effects)
+let ludoActiveRoomId = null; // guards stray bot-turn timers after leaving a room
+let ludoBotTurnKey = null; // dedupes bot-turn scheduling across rapid onSnapshot fires
 const LUDO_OFFLINE_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
 
 const LUDO_COLORS = ['red','green','yellow','blue'];
@@ -6138,6 +6162,107 @@ const LUDO_BASE_SPOTS = {
   yellow: [[10.5,1.5],[10.5,3.5],[12.5,1.5],[12.5,3.5]],
   blue:   [[10.5,10.5],[10.5,12.5],[12.5,10.5],[12.5,12.5]]
 };
+
+// ══════════════════════════════════════
+// LUDO SOUND EFFECTS — synthesized with WebAudio (no asset files needed)
+// ══════════════════════════════════════
+let _ludoSoundCtx = null;
+function ludoSoundsMuted() { return localStorage.getItem('ludoSoundsMuted') === '1'; }
+function ludoSetSoundsMuted(muted) { localStorage.setItem('ludoSoundsMuted', muted ? '1' : '0'); }
+function ludoAudioCtx() {
+  if (ludoSoundsMuted()) return null;
+  try {
+    _ludoSoundCtx = _ludoSoundCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (_ludoSoundCtx.state === 'suspended') _ludoSoundCtx.resume().catch(()=>{});
+    return _ludoSoundCtx;
+  } catch (e) { return null; }
+}
+// Play one or more short tones. notes: [{freq, start, dur, type, gain}]
+function ludoPlayTones(notes) {
+  const ctx = ludoAudioCtx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  notes.forEach(n => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = n.type || 'sine';
+    osc.frequency.value = n.freq;
+    const start = now + (n.start || 0);
+    const dur = n.dur || 0.12;
+    const peak = n.gain ?? 0.18;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(peak, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(start); osc.stop(start + dur + 0.02);
+  });
+}
+// Short percussive "click" using filtered white noise — sounds like an
+// actual die tapping a surface, instead of a synth-y square wave beep.
+function ludoNoiseClick(ctx, start, dur, gain, freq) {
+  const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const bandpass = ctx.createBiquadFilter();
+  bandpass.type = 'bandpass';
+  bandpass.frequency.value = freq || 1800;
+  bandpass.Q.value = 0.9;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(gain, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  src.connect(bandpass); bandpass.connect(g); g.connect(ctx.destination);
+  src.start(start); src.stop(start + dur + 0.01);
+}
+function ludoSoundRoll() {
+  const ctx = ludoAudioCtx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  // A handful of clattery clicks that speed up then settle, like a die
+  // actually tumbling and coming to rest.
+  const gaps = [0, 0.09, 0.16, 0.22, 0.27, 0.31, 0.34];
+  gaps.forEach((g, i) => {
+    ludoNoiseClick(ctx, now + g, 0.05, 0.22 - i * 0.02, 1500 + Math.random() * 900);
+  });
+  // Pleasant two-harmonic "ding" once it settles, signalling the result is in.
+  const settleAt = now + gaps[gaps.length - 1] + 0.1;
+  [{ freq: 784, gain: 0.15 }, { freq: 1568, gain: 0.07 }].forEach(h => {
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = h.freq;
+    gainNode.gain.setValueAtTime(0, settleAt);
+    gainNode.gain.linearRampToValueAtTime(h.gain, settleAt + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, settleAt + 0.35);
+    osc.connect(gainNode); gainNode.connect(ctx.destination);
+    osc.start(settleAt); osc.stop(settleAt + 0.4);
+  });
+}
+function ludoSoundMove() {
+  ludoPlayTones([{ freq: 620, start: 0, dur: 0.08, type: 'sine', gain: 0.13 }]);
+}
+function ludoSoundCapture() {
+  ludoPlayTones([
+    { freq: 700, start: 0, dur: 0.09, type: 'sawtooth', gain: 0.15 },
+    { freq: 380, start: 0.07, dur: 0.14, type: 'sawtooth', gain: 0.13 }
+  ]);
+}
+function ludoSoundExtraTurn() {
+  ludoPlayTones([
+    { freq: 660, start: 0, dur: 0.08, type: 'sine', gain: 0.13 },
+    { freq: 880, start: 0.09, dur: 0.1, type: 'sine', gain: 0.13 }
+  ]);
+}
+function ludoSoundTurnPass() {
+  ludoPlayTones([{ freq: 260, start: 0, dur: 0.07, type: 'sine', gain: 0.08 }]);
+}
+function ludoSoundWin() {
+  [523, 659, 784, 1047].forEach((freq, i) => {
+    ludoPlayTones([{ freq, start: i*0.13, dur: 0.22, type: 'triangle', gain: 0.16 }]);
+  });
+}
 
 // ── Auto-remove players offline 10+ min from a Ludo room ──
 async function checkLudoOfflinePlayers(roomRef) {
@@ -6342,12 +6467,28 @@ function renderLudoLobby(body, clubId, clubData) {
         <button class="btn-icon" id="ludo-back-btn"><i data-lucide="arrow-left"></i></button>
         <strong style="font-size:15px">🎲 Ludo Rooms</strong>
       </div>
-      <button class="btn-primary" id="ludo-create-room-btn" style="margin-bottom:14px">+ Create Room</button>
+      <button class="btn-primary" id="ludo-create-room-btn" style="margin-bottom:10px">+ Create Room</button>
+      <button id="ludo-vs-ai-btn" style="margin-bottom:10px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text,inherit);font-weight:600;cursor:pointer">🤖 Play with AI</button>
+      <div id="ludo-ai-picker" style="display:none;margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface2)">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Number of AI opponents</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm ludo-ai-count-btn" data-n="1" style="flex:1">1</button>
+          <button class="btn-sm ludo-ai-count-btn" data-n="2" style="flex:1">2</button>
+          <button class="btn-sm ludo-ai-count-btn" data-n="3" style="flex:1">3</button>
+        </div>
+      </div>
       <div id="ludo-room-list"><div class="loading-spinner">Loading rooms…</div></div>
     </div>`;
   if (window.lucide) lucide.createIcons();
   document.getElementById('ludo-back-btn').addEventListener('click', () => renderClubGames(body, clubId, clubData));
   document.getElementById('ludo-create-room-btn').addEventListener('click', () => createLudoRoom(clubId, body, clubData));
+  document.getElementById('ludo-vs-ai-btn').addEventListener('click', () => {
+    const picker = document.getElementById('ludo-ai-picker');
+    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+  });
+  document.querySelectorAll('.ludo-ai-count-btn').forEach(btn => {
+    btn.addEventListener('click', () => createLudoRoomVsAI(clubId, body, clubData, parseInt(btn.dataset.n, 10)));
+  });
 
   if (ludoRoomsUnsub) { ludoRoomsUnsub(); ludoRoomsUnsub = null; }
   const listEl = document.getElementById('ludo-room-list');
@@ -6355,7 +6496,8 @@ function renderLudoLobby(body, clubId, clubData) {
     .where('status', 'in', ['waiting', 'playing'])
     .onSnapshot(snap => {
       if (snap.empty) { listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No active rooms. Start one! 🎲</div>'; return; }
-      const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+      const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !r.isVsAI).sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+      if (!rooms.length) { listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No active rooms. Start one! 🎲</div>'; return; }
       listEl.innerHTML = '';
       rooms.forEach(r => {
         const full = (r.players||[]).length >= 4;
@@ -6397,6 +6539,32 @@ async function createLudoRoom(clubId, body, clubData) {
   openLudoRoom(clubId, roomRef.id, body, clubData);
 }
 
+// ── Play with AI: instant solo room, filled with bot players ──
+const LUDO_BOT_NAMES = ['🤖 Bot Rio', '🤖 Bot Nova', '🤖 Bot Zed'];
+async function createLudoRoomVsAI(clubId, body, clubData, numBots) {
+  const myName = currentUserData.name || currentUser.displayName || 'Player';
+  const roomRef = db.collection('clubs').doc(clubId).collection('ludoRooms').doc();
+  const players = [{ uid: currentUser.uid, name: myName, pic: currentUserData.profilePic || '', color: 'red' }];
+  const botColors = LUDO_COLORS.filter(c => c !== 'red').slice(0, numBots);
+  botColors.forEach((color, i) => {
+    players.push({ uid: 'bot-' + (i + 1), name: LUDO_BOT_NAMES[i] || `🤖 Bot ${i + 1}`, pic: '', color, isBot: true });
+  });
+  await roomRef.set({
+    host: currentUser.uid,
+    hostName: myName,
+    isVsAI: true,
+    status: 'playing',
+    players,
+    tokens: { red:[-1,-1,-1,-1], green:[-1,-1,-1,-1], yellow:[-1,-1,-1,-1], blue:[-1,-1,-1,-1] },
+    turnColor: 'red',
+    diceValue: null,
+    diceRolled: false,
+    winner: null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  openLudoRoom(clubId, roomRef.id, body, clubData);
+}
+
 async function joinLudoRoom(clubId, roomId, body, clubData) {
   const roomRef = db.collection('clubs').doc(clubId).collection('ludoRooms').doc(roomId);
   try {
@@ -6423,6 +6591,8 @@ async function joinLudoRoom(clubId, roomId, body, clubData) {
 function openLudoRoom(clubId, roomId, body, clubData) {
   if (ludoRoomsUnsub) { ludoRoomsUnsub(); ludoRoomsUnsub = null; }
   if (ludoGameUnsub) { ludoGameUnsub(); ludoGameUnsub = null; }
+  ludoActiveRoomId = roomId;
+  ludoBotTurnKey = null;
   const roomRef = db.collection('clubs').doc(clubId).collection('ludoRooms').doc(roomId);
 
   body.innerHTML = `
@@ -6431,36 +6601,57 @@ function openLudoRoom(clubId, roomId, body, clubData) {
         <button class="btn-icon" id="ludo-leave-btn"><i data-lucide="arrow-left"></i></button>
         <strong style="font-size:14px" id="ludo-room-title">Ludo Room</strong>
         <div style="flex:1"></div>
+        <button class="btn-icon" id="ludo-mute-btn" title="Toggle sound"><i data-lucide="${ludoSoundsMuted() ? 'volume-x' : 'volume-2'}"></i></button>
         ${APP_FULLSCREEN_BTN_HTML}
       </div>
       <div id="ludo-voice-bar"></div>
       <div id="ludo-room-content">Loading…</div>
     </div>`;
   if (window.lucide) lucide.createIcons();
-  initVoiceBar(document.getElementById('ludo-voice-bar'), roomRef, currentUser.uid,
-    currentUserData.name || currentUser.displayName || 'Player', currentUserData.profilePic || '');
+  document.getElementById('ludo-mute-btn').addEventListener('click', (e) => {
+    ludoSetSoundsMuted(!ludoSoundsMuted());
+    const icon = ludoSoundsMuted() ? 'volume-x' : 'volume-2';
+    e.currentTarget.innerHTML = `<i data-lucide="${icon}"></i>`;
+    if (window.lucide) lucide.createIcons();
+    if (!ludoSoundsMuted()) ludoSoundMove(); // quick confirmation blip
+  });
   document.getElementById('ludo-leave-btn').addEventListener('click', () => {
     exitAppFullscreen();
+    ludoActiveRoomId = null;
     if (ludoGameUnsub) { ludoGameUnsub(); ludoGameUnsub = null; }
     stopLudoOfflineWatch();
     destroyVoiceBar();
     delete _ludoPrevTokens[roomId];
+    delete _ludoPrevRoomState[roomId];
     renderLudoLobby(body, clubId, clubData);
   });
 
-  startLudoOfflineWatch(roomRef);
+  let voiceStarted = false, offlineWatchStarted = false;
 
   ludoGameUnsub = roomRef.onSnapshot(snap => {
     if (!snap.exists) {
       stopLudoOfflineWatch();
       destroyVoiceBar();
       delete _ludoPrevTokens[roomId];
+      delete _ludoPrevRoomState[roomId];
       document.getElementById('ludo-room-content').innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Room closed.</div>';
       return;
     }
     const room = { id: snap.id, ...snap.data() };
+    // Solo vs-AI rooms have no other humans, so skip the mic bar and the
+    // offline-kick watcher entirely — they only make sense in real rooms.
+    if (!room.isVsAI && !voiceStarted) {
+      voiceStarted = true;
+      initVoiceBar(document.getElementById('ludo-voice-bar'), roomRef, currentUser.uid,
+        currentUserData.name || currentUser.displayName || 'Player', currentUserData.profilePic || '');
+    }
+    if (!room.isVsAI && !offlineWatchStarted) {
+      offlineWatchStarted = true;
+      startLudoOfflineWatch(roomRef);
+    }
     if (room.status === 'playing' || room.status === 'finished') renderLudoGame(room, roomRef);
     else renderLudoWaitingRoom(room, roomRef);
+    if (room.isVsAI && room.status === 'playing') scheduleLudoBotTurnIfNeeded(roomRef, room);
   });
 }
 
@@ -6534,13 +6725,16 @@ function renderLudoGame(room, roomRef) {
   // instead of teleporting.
   const tokens = room.tokens || {};
   const prevTokens = _ludoPrevTokens[room.id] || null;
+  const prevRoomState = _ludoPrevRoomState[room.id] || null;
   let tokensHtml = '';
   const movable = getLudoMovableTokens(room, me?.color);
   const pendingAnimations = []; // {color, idx, from, to}
+  let capturedHappened = false;
   LUDO_COLORS.forEach(color => {
     (tokens[color] || []).forEach((pos, idx) => {
       const prevPos = prevTokens ? prevTokens[color]?.[idx] : pos;
       const startPos = (prevPos === undefined || prevPos === null) ? pos : prevPos;
+      if (prevTokens && startPos >= 0 && startPos <= 50 && pos === -1) capturedHappened = true;
       const { x, y } = ludoPixelForToken(color, idx, startPos);
       if (startPos !== pos) pendingAnimations.push({ color, idx, from: startPos, to: pos });
       const canMove = movable.includes(color+'-'+idx);
@@ -6548,6 +6742,23 @@ function renderLudoGame(room, roomRef) {
     });
   });
   _ludoPrevTokens[room.id] = JSON.parse(JSON.stringify(tokens));
+
+  // ── Sound effects: diff this update against the last one we saw ──
+  if (prevRoomState) {
+    if (!prevRoomState.winner && room.winner) {
+      ludoSoundWin();
+    } else if (capturedHappened) {
+      ludoSoundCapture();
+    } else if (pendingAnimations.length > 0) {
+      if (room.turnColor === prevRoomState.turnColor) ludoSoundExtraTurn();
+      else ludoSoundMove();
+    } else if (!prevRoomState.diceRolled && room.diceRolled) {
+      ludoSoundRoll();
+    } else if (prevRoomState.turnColor !== room.turnColor) {
+      ludoSoundTurnPass();
+    }
+  }
+  _ludoPrevRoomState[room.id] = { diceRolled: room.diceRolled, diceValue: room.diceValue, turnColor: room.turnColor, winner: room.winner };
 
   content.innerHTML = `
     <div style="display:flex;justify-content:center;margin-bottom:14px">
@@ -6671,6 +6882,74 @@ async function ludoMoveToken(roomRef, room, color, idx) {
       tx.update(roomRef, update);
     });
   } catch (e) { console.error('ludo move failed', e); }
+}
+
+// ── Play with AI: automates bot turns (roll + move) using the same
+// transactional functions a human player's clicks would call. ──
+function scheduleLudoBotTurnIfNeeded(roomRef, room) {
+  if (room.winner || room.status !== 'playing') return;
+  const me = (room.players || []).find(p => p.color === room.turnColor);
+  if (!me || !me.isBot) return; // it's the human's turn — nothing to do
+  const key = room.id + ':' + room.turnColor + ':' + (room.diceRolled ? room.diceValue : 'roll');
+  if (ludoBotTurnKey === key) return; // already scheduled for this exact state
+  ludoBotTurnKey = key;
+  setTimeout(() => performLudoBotTurn(roomRef, room), 700);
+}
+
+async function performLudoBotTurn(roomRef, room) {
+  if (ludoActiveRoomId !== room.id) return; // left the room — abort
+  const snap = await roomRef.get();
+  if (!snap.exists) return;
+  const r = { id: snap.id, ...snap.data() };
+  if (r.winner || r.status !== 'playing') return;
+  const me = (r.players || []).find(p => p.color === r.turnColor);
+  if (!me || !me.isBot) return; // turn moved on already
+
+  if (!r.diceRolled) {
+    await ludoRollDice(roomRef, r);
+    return; // the resulting snapshot update re-triggers scheduleLudoBotTurnIfNeeded for the move step
+  }
+  if (ludoActiveRoomId !== room.id) return;
+  const movable = getLudoMovableTokens(r, r.turnColor);
+  if (!movable.length) return; // ludoRollDice's own timeout already auto-passes this case
+  const choice = ludoBotChooseMove(r, r.turnColor, movable);
+  const [color, idxStr] = choice.split('-');
+  await ludoMoveToken(roomRef, r, color, parseInt(idxStr, 10));
+}
+
+// Simple heuristic: capture an opponent if possible, else finish a token
+// that reaches home, else advance the furthest-along token, else bring a
+// new token out on a 6.
+function ludoBotChooseMove(room, color, movable) {
+  const dice = room.diceValue;
+  const tokens = room.tokens[color];
+
+  const wouldCapture = (idx) => {
+    const pos = tokens[idx];
+    const newPos = pos === -1 ? 0 : pos + dice;
+    if (newPos < 0 || newPos > 50) return false;
+    const ringIdx = (LUDO_START_IDX[color] + newPos) % 52;
+    if (LUDO_SAFE_IDX.includes(ringIdx)) return false;
+    return LUDO_COLORS.some(oc => oc !== color && (room.tokens[oc] || []).some(op =>
+      op >= 0 && op <= 50 && (LUDO_START_IDX[oc] + op) % 52 === ringIdx));
+  };
+
+  const capture = movable.find(m => wouldCapture(parseInt(m.split('-')[1], 10)));
+  if (capture) return capture;
+
+  const finishing = movable.find(m => {
+    const idx = parseInt(m.split('-')[1], 10);
+    const pos = tokens[idx];
+    return pos !== -1 && pos + dice === 57;
+  });
+  if (finishing) return finishing;
+
+  // Prefer advancing the token that's furthest along (excludes ones still at base).
+  const onBoard = movable.filter(m => tokens[parseInt(m.split('-')[1], 10)] !== -1)
+    .sort((a, b) => tokens[parseInt(b.split('-')[1], 10)] - tokens[parseInt(a.split('-')[1], 10)]);
+  if (onBoard.length) return onBoard[0];
+
+  return movable[0]; // only option left is bringing a new token out on a 6
 }
 
 // ══════════════════════════════════════
