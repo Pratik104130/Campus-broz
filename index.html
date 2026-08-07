@@ -190,6 +190,120 @@
       color: #fff;
       border: 1px solid #f2f2f2;
     }
+
+    /* ── Admin-granted "Sapphire" profile frame (icy blue gem) ──────────
+       Stored on the user doc as profileFrame: 'sapphire'. Cool blue glass
+       border with glowing gem highlights at each corner. */
+    .frame-elite-sapphire {
+      position: relative;
+      border-radius: 22px;
+      background: linear-gradient(165deg, rgba(20,42,72,0.45), rgba(8,18,34,0.2)) !important;
+      border: 1.5px solid #4fb3ff !important;
+      box-shadow:
+        0 0 0 4px rgba(79,179,255,0.14),
+        0 0 30px rgba(56,150,255,0.42),
+        inset 0 0 0 1px rgba(170,222,255,0.45);
+    }
+    .frame-elite-sapphire::after {
+      content: '';
+      position: absolute; inset: -14px;
+      border-radius: 30px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(56,150,255,0.28), rgba(56,150,255,0) 70%);
+      pointer-events: none; z-index: -1;
+    }
+    .frame-elite-sapphire::before {
+      content: '';
+      position: absolute; inset: 0; border-radius: 22px;
+      pointer-events: none; z-index: 3;
+      background:
+        radial-gradient(circle at 12px 12px, #dff3ff 0 2px, rgba(223,243,255,0.5) 3.5px, transparent 6px),
+        radial-gradient(circle at calc(100% - 12px) 12px, #dff3ff 0 2px, rgba(223,243,255,0.5) 3.5px, transparent 6px),
+        radial-gradient(circle at 12px calc(100% - 12px), #dff3ff 0 2px, rgba(223,243,255,0.5) 3.5px, transparent 6px),
+        radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), #dff3ff 0 2px, rgba(223,243,255,0.5) 3.5px, transparent 6px);
+      filter: drop-shadow(0 0 4px rgba(120,200,255,0.8));
+    }
+    .frame-tag-sapphire {
+      background: linear-gradient(135deg, #cdeaff, #2f8fe0);
+      color: #04263f;
+      box-shadow: 0 2px 8px rgba(47,143,224,0.45);
+    }
+
+    /* ── Admin-granted "Royal" profile frame (amethyst + gold regalia) ──
+       Stored on the user doc as profileFrame: 'royal'. Deep plum velvet
+       background with a gold-and-black ridged border, like a monarch's
+       portrait frame. */
+    .frame-elite-royal {
+      position: relative;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #241033 0%, #120819 100%) !important;
+      border: none !important;
+      box-shadow:
+        0 0 0 2px #000,
+        0 0 0 5px #caa14a,
+        0 0 0 7px #000,
+        0 14px 34px rgba(90,20,140,0.45),
+        inset 0 0 0 1px rgba(202,161,74,0.25);
+    }
+    .frame-elite-royal::after {
+      content: '';
+      position: absolute; inset: -16px;
+      border-radius: 30px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(140,50,190,0.35), rgba(140,50,190,0) 70%);
+      pointer-events: none; z-index: -1;
+    }
+    .frame-elite-royal::before {
+      content: '';
+      position: absolute; inset: 0; border-radius: 22px;
+      pointer-events: none; z-index: 3;
+      background:
+        radial-gradient(circle at 13px 13px, #f2d68a 0 2px, rgba(242,214,138,0.4) 3.5px, transparent 6px),
+        radial-gradient(circle at calc(100% - 13px) 13px, #f2d68a 0 2px, rgba(242,214,138,0.4) 3.5px, transparent 6px),
+        radial-gradient(circle at 13px calc(100% - 13px), #f2d68a 0 2px, rgba(242,214,138,0.4) 3.5px, transparent 6px),
+        radial-gradient(circle at calc(100% - 13px) calc(100% - 13px), #f2d68a 0 2px, rgba(242,214,138,0.4) 3.5px, transparent 6px);
+      filter: drop-shadow(0 0 4px rgba(202,161,74,0.7));
+    }
+    .frame-tag-royal {
+      background: linear-gradient(135deg, #e3c988, #8a2fb0);
+      color: #1b0a26;
+      box-shadow: 0 2px 8px rgba(138,47,176,0.45);
+    }
+
+    /* ── Admin-granted "Emerald" profile frame (nature glass) ───────────
+       Stored on the user doc as profileFrame: 'emerald'. Cool jade-green
+       glow with a soft organic double ring. */
+    .frame-elite-emerald {
+      position: relative;
+      border-radius: 22px;
+      background: linear-gradient(165deg, rgba(10,46,32,0.45), rgba(4,18,12,0.2)) !important;
+      border: 1.5px solid #33c17a !important;
+      box-shadow:
+        0 0 0 4px rgba(51,193,122,0.14),
+        0 0 30px rgba(40,180,110,0.4),
+        inset 0 0 0 1px rgba(160,255,205,0.4);
+    }
+    .frame-elite-emerald::after {
+      content: '';
+      position: absolute; inset: -14px;
+      border-radius: 30px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(40,180,110,0.28), rgba(40,180,110,0) 70%);
+      pointer-events: none; z-index: -1;
+    }
+    .frame-elite-emerald::before {
+      content: '';
+      position: absolute; inset: 0; border-radius: 22px;
+      pointer-events: none; z-index: 3;
+      background:
+        radial-gradient(circle at 12px 12px, #d8ffe9 0 2px, rgba(216,255,233,0.5) 3.5px, transparent 6px),
+        radial-gradient(circle at calc(100% - 12px) 12px, #d8ffe9 0 2px, rgba(216,255,233,0.5) 3.5px, transparent 6px),
+        radial-gradient(circle at 12px calc(100% - 12px), #d8ffe9 0 2px, rgba(216,255,233,0.5) 3.5px, transparent 6px),
+        radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), #d8ffe9 0 2px, rgba(216,255,233,0.5) 3.5px, transparent 6px);
+      filter: drop-shadow(0 0 4px rgba(90,230,160,0.75));
+    }
+    .frame-tag-emerald {
+      background: linear-gradient(135deg, #b6ffda, #1f9e5e);
+      color: #04321c;
+      box-shadow: 0 2px 8px rgba(31,158,94,0.45);
+    }
     /* ── Forgot Password ── */
     .forgot-pw-wrap { text-align: right; margin: -4px 0 10px; }
     .forgot-pw-btn {
@@ -557,6 +671,7 @@
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
       max-height: 340px; overflow-y: auto; padding: 2px;
     }
+    .gif-picker-item-wrap { display: block; }
     .gif-picker-item {
       width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px;
       cursor: pointer; border: none; background: var(--surface, rgba(255,255,255,0.06));
@@ -624,6 +739,66 @@
       transition: background 0.15s;
     }
     .search-club-row:hover, .search-post-row:hover { background: var(--surface2, rgba(255,255,255,0.055)); }
+
+    /* ── Mini elite-frame indicator for search results ──────────────
+       Shows a compact colored ring + small badge on a user's avatar in
+       search results when they have an admin-granted profileFrame, so
+       elite users stand out even in the small search card. */
+    /* Force the avatar container to stop clipping so the ring/glow below
+       is actually visible instead of being cut off at the circle edge. */
+    .search-person-avatar {
+      overflow: visible !important;
+      display: flex !important; justify-content: center;
+    }
+    .search-mini-frame {
+      position: relative; display: inline-block; border-radius: 50%;
+      height:57px;
+      width:57px;
+      line-height: 0; overflow: visible !important; padding: 3px;
+    }
+    .search-mini-frame .search-avatar-img,
+    .search-mini-frame > span:first-child {
+      display: block; border-radius: 50%; position: relative; z-index: 1;
+    }
+    .search-mini-badge {
+      position: absolute; bottom: -2px; right: -2px;
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; line-height: 1;
+      border: 2px solid #0d0d0f;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      z-index: 3;
+    }
+    /* Solid ring drawn as a real border on the frame wrapper (not a
+       box-shadow) so it can never be clipped by a parent's overflow. */
+    .search-mini-frame.mf-gold {
+      border: 3px solid #d4a437 !important;
+      box-shadow: 0 0 12px rgba(217,179,77,0.7), 0 0 0 1px rgba(217,179,77,0.3) !important;
+    }
+    .search-mini-frame.mf-gold .search-mini-badge { background: linear-gradient(135deg, #f9e6a8, #d4a437); }
+    .search-mini-frame.mf-eagle {
+      border: 3px solid #f2f2f2 !important;
+      box-shadow: 0 0 0 2px #000, 0 0 10px rgba(0,0,0,0.7) !important;
+    }
+    .search-mini-frame.mf-eagle .search-mini-badge { background: linear-gradient(135deg, #3a3a3a, #000); }
+    .search-mini-frame.mf-sapphire {
+      border: 3px solid #4f8ef7 !important;
+      box-shadow: 0 0 12px rgba(79,142,247,0.7), 0 0 0 1px rgba(79,142,247,0.3) !important;
+    }
+    .search-mini-frame.mf-sapphire .search-mini-badge { background: linear-gradient(135deg, #9ec8ff, #2f6fe0); }
+    .search-mini-frame.mf-royal {
+      border: 3px solid #8c4fd6 !important;
+      box-shadow: 0 0 12px rgba(140,79,214,0.7), 0 0 0 1px rgba(140,79,214,0.3) !important;
+    }
+    .search-mini-frame.mf-royal .search-mini-badge { background: linear-gradient(135deg, #d9b3ff, #6a2fb3); }
+    .search-mini-frame.mf-emerald {
+      border: 3px solid #2ecc71 !important;
+      box-shadow: 0 0 12px rgba(46,204,113,0.7), 0 0 0 1px rgba(46,204,113,0.3) !important;
+    }
+    .search-mini-frame.mf-emerald .search-mini-badge { background: linear-gradient(135deg, #a8f2c8, #1f9e56); }
+    .search-person-name.has-elite-frame {
+      display: inline-flex; align-items: center; gap: 4px; justify-content: center;
+    }
 
     /* Club dashboard is rebuilt and re-appended to <body> every time it's
        opened, which puts it after modal-club-members in DOM order — with
@@ -901,6 +1076,82 @@ opacity: .4;
     .voice-bar-btn.leave, .voice-bar-btn.muted {
       background: rgba(229,72,77,.14); color: var(--danger, #e5484d); border-color: rgba(229,72,77,.3);
     }
+
+    /* ── 1:1 friend chat calling (voice + video) ──────────────────────
+       Full-screen overlay shared by outgoing/incoming/active call states.
+       Signaled through Firestore ('calls/{chatId}' + ICE candidate
+       subcollections), peer audio/video connected directly via WebRTC —
+       same mesh-free pattern as the game voice bar above, just 1:1. */
+    .call-header-btn {
+      background: none; border: none; color: inherit; cursor: pointer;
+      width: 36px; height: 36px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
+      transition: background .15s;
+    }
+    .call-header-btn:hover { background: var(--surface2, rgba(255,255,255,0.08)); }
+    .call-header-btn i { width: 19px; height: 19px; }
+    .call-header-btn.disabled { opacity: .35; pointer-events: none; }
+
+    #call-overlay {
+      position: fixed; inset: 0; z-index: 100010; display: none;
+      flex-direction: column; align-items: center; justify-content: space-between;
+      background: linear-gradient(180deg, #1a1a24 0%, #0a0a10 100%);
+      color: #fff; text-align: center; padding: env(safe-area-inset-top,28px) 20px calc(env(safe-area-inset-bottom,20px) + 20px);
+    }
+    #call-overlay.open { display: flex; }
+    .call-remote-video {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      background: #000; display: none;
+    }
+    #call-overlay.has-remote-video .call-remote-video { display: block; }
+    #call-overlay.has-remote-video .call-avatar-block { display: none; }
+    .call-local-video {
+      position: absolute; top: env(safe-area-inset-top,18px); right: 16px;
+      width: 96px; height: 128px; border-radius: 14px; object-fit: cover;
+      background: #111; border: 2px solid rgba(255,255,255,0.25);
+      box-shadow: 0 8px 20px rgba(0,0,0,.4); z-index: 2; display: none;
+    }
+    #call-overlay.local-video-on .call-local-video { display: block; }
+    .call-top { position: relative; z-index: 1; margin-top: 30px; }
+    .call-avatar-block { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .call-avatar-ring {
+      width: 108px; height: 108px; border-radius: 50%; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .call-avatar-ring img, .call-avatar-ring .avatar-fallback { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+    #call-overlay.ringing .call-avatar-ring::before, #call-overlay.ringing .call-avatar-ring::after {
+      content: ''; position: absolute; inset: -4px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.35); animation: callRingPulse 1.6s ease-out infinite;
+    }
+    #call-overlay.ringing .call-avatar-ring::after { animation-delay: .5s; }
+    @keyframes callRingPulse {
+      0%   { transform: scale(1);   opacity: .9; }
+      100% { transform: scale(1.55); opacity: 0; }
+    }
+    .call-peer-name { font-size: 21px; font-weight: 800; position: relative; z-index: 1; }
+    .call-status-text { font-size: 13.5px; color: rgba(255,255,255,0.65); margin-top: 4px; position: relative; z-index: 1; }
+    .call-status-text.timer { font-variant-numeric: tabular-nums; font-size: 14px; }
+    .call-mid-spacer { flex: 1; }
+    .call-controls { display: flex; align-items: center; justify-content: center; gap: 22px; position: relative; z-index: 1; }
+    .call-btn {
+      width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.14); color: #fff; transition: background .15s, transform .1s;
+    }
+    .call-btn:active { transform: scale(0.92); }
+    .call-btn i { width: 24px; height: 24px; }
+    .call-btn.on { background: #fff; color: #16161c; }
+    .call-btn.accept { background: #2ecc71; }
+    .call-btn.decline, .call-btn.end { background: var(--danger, #e5484d); }
+    .call-btn-label { font-size: 10.5px; color: rgba(255,255,255,0.6); margin-top: 6px; display: block; }
+    .call-incoming-row { display: flex; gap: 46px; }
+    .call-incoming-col { display: flex; flex-direction: column; align-items: center; }
+    .chat-msg-call-log { justify-content: center !important; align-items: center; }
+    .msg-call-log-pill {
+      background: var(--surface2, rgba(255,255,255,0.07)); border: 1px solid var(--border, rgba(255,255,255,0.09));
+      color: var(--muted, #9aa0a6); font-size: 12px; font-weight: 600; padding: 6px 14px;
+      border-radius: 20px; margin: 4px 0;
+    }
     /* ── Full-screen game mode ──────────────────────────────────────────
        Expands the club-dashboard box edge-to-edge and hides its outer
        colored title/tab bar so only the active game is visible — used both
@@ -954,6 +1205,352 @@ opacity: .4;
     #upb-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; font-size: 11px; color: var(--muted, #9a9aa5); font-variant-numeric: tabular-nums; }
     #upb-size { flex: 1; }
     #upb-time { flex-shrink: 0; margin: 0 10px; }
+
+    /* ══════════════════════════════════════════════════════════
+       Instagram-style Chat / DM redesign
+       ══════════════════════════════════════════════════════════ */
+
+    /* -- Chat window modal (mobile) shell -- */
+    #modal-chat-window .modal.modal-fullscreen {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      max-width: 100vw;
+      box-sizing: border-box;
+    }
+
+    /* -- Header: back arrow + avatar + name + status -- */
+    #modal-chat-window .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: #000;
+    }
+    #modal-chat-window .modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .chat-header-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .chat-header-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #6c63ff, #ff4ecd);
+      padding: 2px;
+      box-sizing: border-box;
+    }
+    /* renderAvatarHtml() sets its own inline width/height/object-fit on the
+       <img> it returns, sized for whatever context it was called from —
+       force it to fill this wrapper exactly so it can never render larger
+       than its circular frame and spill outside it. */
+    .chat-header-avatar > * {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 50%;
+      object-fit: cover !important;
+    }
+    .chat-header-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+    .chat-header-name {
+      font-size: 18px; font-weight: 700; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chat-header-status {
+      font-size: 13px; color: #8e8e93; margin-top: 1px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #modal-chat-window .modal-header h3 { display: none; } /* replaced by chat-header-info */
+
+    /* -- Messages area -- */
+    #modal-chat-window .chat-messages,
+    #modal-chat-messages,
+    #desktop-chat-msgs,
+    .chat-messages {
+      background: #000;
+      padding: 14px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow-x: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* -- Message row -- */
+    .chat-msg {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      width: 100%;
+      max-width: 100%;
+      margin: 3px 0;
+      box-sizing: border-box;
+    }
+    .chat-msg.mine { flex-direction: row-reverse; }
+    .msg-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      align-self: flex-end;
+      box-sizing: border-box;
+    }
+    /* Force the avatar img to fill this exact frame — buildMsgBubble calls
+       renderAvatarHtml(..., 32), but this wrapper previously was 28px,
+       so the image (rendered at 32px via inline style, which always beats
+       a plain CSS rule) overflowed its circular frame and got unevenly
+       cropped. Matching the wrapper to 32px + !important here keeps it
+       locked to the frame regardless of what size renderAvatarHtml is
+       called with in the future. */
+    .msg-avatar > * {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 50%;
+      object-fit: cover !important;
+    }
+    .msg-inner {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .chat-msg.mine .msg-inner { align-items: flex-end; }
+    .chat-msg:not(.mine) .msg-inner { align-items: flex-start; }
+
+    /* -- Text bubble -- */
+    .msg-bubble {
+      padding: 11px 15px;
+      border-radius: 20px;
+      font-size: 16px;
+      line-height: 1.4;
+      word-break: break-word;
+      max-width: 100%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .chat-msg.mine .msg-bubble {
+      background: linear-gradient(135deg, #a52ee0, #e0339c 55%, #ff5c7a);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+    .chat-msg:not(.mine) .msg-bubble {
+      background: #262629;
+      color: #fff;
+      border-bottom-left-radius: 6px;
+    }
+    /* Bubble that only contains media should hug the media, not pad text-style */
+    .msg-bubble:has(.msg-media):not(:has(> :not(.msg-media))) {
+      padding: 4px;
+      background: transparent !important;
+      box-shadow: none;
+    }
+
+    /* -- Media (images / video) — big, Instagram-style -- */
+    .msg-media {
+      display: block;
+      border-radius: 18px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 340px;
+      background: #000;
+      box-sizing: border-box;
+    }
+    .msg-media img,
+    .msg-media video {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100% !important;
+      max-height: 440px;
+      display: block;
+      border-radius: 18px;
+      object-fit: cover;
+      background: #000;
+    }
+    .msg-media img.msg-img-clickable {
+      cursor: zoom-in;
+    }
+
+    /* -- Timestamp / ticks -- */
+    .msg-time {
+      font-size: 11.5px;
+      color: #8e8e93;
+      margin-top: 3px;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chat-msg.mine .msg-time { justify-content: flex-end; }
+    .msg-tick { color: #8e8e93; font-size: 12px; }
+    .msg-tick.read { color: #3897f0; }
+
+    /* -- Long-press action buttons -- */
+    .msg-actions { margin: 0 2px; }
+
+    /* -- Input bar: rounded pill, Instagram style -- */
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #000;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .chat-input-bar input[type="text"] {
+      flex: 1;
+      background: #1c1c1e;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-size: 16px;
+      outline: none;
+    }
+    .chat-input-bar input[type="text"]::placeholder { color: #8e8e93; }
+    .chat-input-bar .btn-icon {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #1c1c1e;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      color: #fff;
+    }
+    .chat-input-bar .btn-icon i { width: 19px; height: 19px; }
+    .chat-input-bar .btn-send {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #a52ee0, #e0339c 55%, #ff5c7a);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(224,51,156,0.35);
+    }
+    .chat-input-bar .btn-send i { width: 18px; height: 18px; color: #fff; }
+    .chat-input-bar .btn-send:active { transform: scale(0.92); }
+
+    /* -- Desktop chat layout: also give it the same dark Instagram feel -- */
+    .chat-window { background: #000; }
+    .chat-window > div:first-child {
+      background: #000 !important;
+      border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       New-message notifications: mobile nav + friend chat button
+       ══════════════════════════════════════════════════════════ */
+
+    /* Small red counter badge reused for both the mobile nav icon
+       and the per-friend chat button. */
+    .msg-notify-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #e0339c, #ff5c7a);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 17px;
+      text-align: center;
+      box-shadow: 0 0 0 2px #0d0d10;
+      z-index: 2;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Mobile bottom-nav "Friends" icon needs a positioning context
+       so the message badge can sit in its corner without disturbing
+       the existing friend-request badge (kept at its own spot). */
+    .mnav-item[data-view="friends"] { position: relative; }
+    .mnav-item[data-view="friends"] .msg-notify-badge {
+      top: 2px;
+      right: 14px;
+    }
+
+    /* Per-friend "Chat" button badge */
+    .friend-btn.msg { position: relative; overflow: visible; }
+
+    /* Unread friend rows get a subtle highlight so the message
+       badge isn't the only cue. */
+    .friend-row.has-unread-msg {
+      background: rgba(224,51,156,0.08);
+      border-radius: 14px;
+    }
+    .friend-row.has-unread-msg .friend-info strong { color: #ff6fb0; }
+    .friend-unread-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ff5c7a;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       Chat image lightbox (fullscreen viewer with a close button)
+       ══════════════════════════════════════════════════════════ */
+    .chat-img-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      background: rgba(0,0,0,0.95);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .chat-img-lightbox.open { display: flex; }
+    .chat-img-lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      object-fit: contain;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .chat-img-lightbox-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .chat-img-lightbox-close:hover { background: rgba(255,255,255,0.22); }
+    .chat-img-lightbox-close i { width: 22px; height: 22px; }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <!-- Firebase -->
@@ -1110,6 +1707,7 @@ opacity: .4;
     <a class="mnav-item" data-view="friends">
       <i data-lucide="user-plus"></i><span>Friends</span>
       <span class="notif-badge-mobile" id="friend-req-badge-mobile" style="display:none">0</span>
+      <span class="msg-notify-badge" id="chat-badge-mobile" style="display:none">0</span>
     </a>
     <a class="mnav-item" data-view="profile"><i data-lucide="user-circle-2"></i><span>Profile</span></a>
     <button class="mnav-item notif-bell-mobile" id="notif-bell-mobile" onclick="toggleNotifPanel()">
@@ -1280,7 +1878,7 @@ opacity: .4;
     </section>
 
     <!-- ── CHATS ── -->
-    <section id="view-chats" class="view" style="max-width:900px">
+    <section id="view-chats" class="view" style="max-width:1200px">
       <div class="view-header">
         <h2>💬 Chats</h2>
       </div>
@@ -1596,7 +2194,15 @@ opacity: .4;
   <div class="modal modal-fullscreen">
     <div class="modal-header">
       <button class="modal-close" data-modal="modal-chat-window">←</button>
-      <h3 id="chat-window-title">Chat</h3>
+      <div class="chat-header-info">
+        <div class="chat-header-avatar" id="chat-window-avatar"></div>
+        <div class="chat-header-text">
+          <span class="chat-header-name" id="chat-window-title">Chat</span>
+          <span class="chat-header-status" id="chat-window-status">Active now</span>
+        </div>
+      </div>
+      <button class="call-header-btn" id="chat-window-call-audio-btn" title="Voice call"><i data-lucide="phone"></i></button>
+      <button class="call-header-btn" id="chat-window-call-video-btn" title="Video call"><i data-lucide="video"></i></button>
     </div>
     <div class="chat-messages" id="modal-chat-messages"></div>
     <div class="chat-input-bar">
@@ -1606,6 +2212,60 @@ opacity: .4;
         <input type="file" id="modal-chat-media" accept="image/*,video/*" hidden/>
       </label>
       <button class="btn-send" id="modal-chat-send"><i data-lucide="send"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat image lightbox: tap an image in a chat to view it fullscreen -->
+<div class="chat-img-lightbox" id="chat-img-lightbox">
+  <button class="chat-img-lightbox-close" id="chat-img-lightbox-close" title="Close" aria-label="Close">
+    <i data-lucide="x"></i>
+  </button>
+  <img id="chat-img-lightbox-img" src="" alt=""/>
+</div>
+
+<!-- Friend-chat voice/video call overlay (outgoing / incoming / active states) -->
+<div id="call-overlay">
+  <video id="call-remote-video" class="call-remote-video" autoplay playsinline></video>
+  <video id="call-local-video" class="call-local-video" autoplay playsinline muted></video>
+
+  <div class="call-top">
+    <div class="call-avatar-block">
+      <div class="call-avatar-ring" id="call-peer-avatar"></div>
+      <div>
+        <div class="call-peer-name" id="call-peer-name">Someone</div>
+        <div class="call-status-text" id="call-status-text">Calling…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="call-mid-spacer"></div>
+
+  <!-- Incoming: Decline / Accept -->
+  <div class="call-controls call-incoming-row" id="call-controls-incoming" style="display:none">
+    <div class="call-incoming-col">
+      <button class="call-btn decline" id="call-decline-btn" title="Decline"><i data-lucide="phone-off"></i></button>
+      <span class="call-btn-label">Decline</span>
+    </div>
+    <div class="call-incoming-col">
+      <button class="call-btn accept" id="call-accept-btn" title="Accept"><i data-lucide="phone"></i></button>
+      <span class="call-btn-label">Accept</span>
+    </div>
+  </div>
+
+  <!-- Outgoing (ringing) or active call: mute / video / end -->
+  <div class="call-controls" id="call-controls-active" style="display:none">
+    <div class="call-incoming-col">
+      <button class="call-btn" id="call-mute-btn" title="Mute"><i data-lucide="mic"></i></button>
+      <span class="call-btn-label" id="call-mute-label">Mute</span>
+    </div>
+    <div class="call-incoming-col">
+      <button class="call-btn end" id="call-end-btn" title="End call"><i data-lucide="phone-off"></i></button>
+      <span class="call-btn-label">End</span>
+    </div>
+    <div class="call-incoming-col" id="call-video-toggle-wrap" style="display:none">
+      <button class="call-btn" id="call-video-btn" title="Camera"><i data-lucide="video"></i></button>
+      <span class="call-btn-label" id="call-video-label">Camera</span>
     </div>
   </div>
 </div>
@@ -1882,6 +2542,16 @@ let currentUserData = null;
 let currentChatId = null;
 let currentChatUid = null;
 let chatListener = null;
+let chatPresenceRef = null;
+let chatPresenceInterval = null;
+// Guards against the mobile "ghost click" bug: closing the chat modal's
+// back button can, on some devices, fire a second synthetic click on
+// whatever element ends up underneath the tap (a notification, another
+// chat row, etc.), silently opening a different chat right after you hit
+// back. If openChat gets called again within this window for a different
+// chat than the one just closed, we treat it as spurious and ignore it.
+let _chatCloseGuardUntil = 0;
+let _chatCloseGuardChatId = null;
 let chatListUnsub = null;
 let searchDebounce = null;
 let currentSearchFilter = 'all';
@@ -1966,6 +2636,21 @@ function timeAgo(ts) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+function presenceStatusText(pres) {
+  if (pres && pres.online) return 'Online';
+  const lastSeen = pres && pres.lastSeen;
+  if (!lastSeen) return 'Offline';
+  const diff = Date.now() - lastSeen;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'Active just now';
+  if (m < 60) return `Active ${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `Active ${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `Active ${d}d ago`;
+  return 'Offline';
 }
 
 function escHtml(str) {
@@ -2556,6 +3241,8 @@ auth.onAuthStateChanged(async user => {
     stopBanListener();
     stopPresence();
     stopClubsPresenceWatch();
+    if (_incomingCallListener) { _incomingCallListener(); _incomingCallListener = null; }
+    if (activeCall) cleanupCallSession();
     currentUser = null;
     currentUserData = null;
     hideSplash();
@@ -2581,6 +3268,7 @@ async function initApp() {
   loadFriends();
   setupNotes();
   setupSettings();
+  listenForIncomingCalls();
 
   lucide.createIcons();
 }
@@ -2782,10 +3470,8 @@ function setupNav() {
 }
 
 function switchView(view) {
-  // Stop all playing videos before switching
-  document.querySelectorAll('video').forEach(v => { try { v.pause(); } catch(e){} });
-  document.querySelectorAll('.post-video-wrap.playing').forEach(w => w.classList.remove('playing'));
-  document.querySelectorAll('.cv-play-pause').forEach(b => { b.innerHTML = '&#9654;'; });
+  // Stop all playing videos/audio before switching
+  pauseAllMedia();
 
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(`view-${view}`)?.classList.add('active');
@@ -2805,17 +3491,36 @@ function switchView(view) {
 // ══════════════════════════════════════
 // MODALS
 // ══════════════════════════════════════
+// Pauses every video/audio element in the document and mutes it — used
+// whenever a modal closes so playback (and sound) never keeps running
+// once it's off screen. Chat videos in particular were only ever paused
+// when switching the whole app view, not when just backing out of the
+// chat modal itself, so audio kept playing silently in the background.
+function pauseAllMedia() {
+  document.querySelectorAll('video, audio').forEach(el => {
+    try { el.pause(); el.muted = true; } catch(e) {}
+  });
+  document.querySelectorAll('.post-video-wrap.playing').forEach(w => w.classList.remove('playing'));
+  document.querySelectorAll('.cv-play-pause').forEach(b => { b.innerHTML = '&#9654;'; });
+}
+
 document.querySelectorAll('.modal-close').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.getElementById('story-vid')?.pause();
+    pauseAllMedia();
     if (btn.dataset.modal === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
+    if (btn.dataset.modal === 'modal-chat-window') {
+      if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
+      if (chatPresenceInterval) { clearInterval(chatPresenceInterval); chatPresenceInterval = null; }
+      _chatCloseGuardChatId = currentChatId;
+      _chatCloseGuardUntil = Date.now() + 600;
+    }
     closeModal(btn.dataset.modal);
   });
 });
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
     if (e.target === overlay) {
-      document.getElementById('story-vid')?.pause();
+      pauseAllMedia();
       if (overlay.id === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
       overlay.classList.remove('open');
     }
@@ -2990,10 +3695,21 @@ function renderSearchResults(results, q) {
       <div class="search-people-grid">
       ${results.users.slice(0,8).map(u => {
         const uid = u.uid || u.id;
-        const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" class="search-avatar-img"/>`;
+        const frameMeta = {
+          gold:     { cls: 'mf-gold',     badge: '👑' },
+          eagle:    { cls: 'mf-eagle',    badge: '🦅' },
+          sapphire: { cls: 'mf-sapphire', badge: '💎' },
+          royal:    { cls: 'mf-royal',    badge: '♛'  },
+          emerald:  { cls: 'mf-emerald',  badge: '🌿' }
+        };
+        const fm = frameMeta[u.profileFrame];
+        const rawAvatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" class="search-avatar-img"/>`;
+        const avatarHtml = fm
+          ? `<div class="search-mini-frame ${fm.cls}" title="${fm.cls === 'mf-gold' ? 'Elite' : fm.cls === 'mf-eagle' ? 'Eagle' : fm.cls === 'mf-sapphire' ? 'Sapphire' : fm.cls === 'mf-royal' ? 'Royal' : 'Emerald'} Profile">${rawAvatarHtml}<span class="search-mini-badge">${fm.badge}</span></div>`
+          : rawAvatarHtml;
         return `<div class="search-person-card" data-uid="${uid}">
           <div class="search-person-avatar">${avatarHtml}</div>
-          <div class="search-person-name">${escHtml(u.name||'Student')}</div>
+          <div class="search-person-name${fm ? ' has-elite-frame' : ''}">${escHtml(u.name||'Student')}${fm ? ` <span style="font-size:11px">${fm.badge}</span>` : ''}</div>
           <div class="search-person-meta">@${escHtml(u.username||'user')}</div>
           <div class="search-person-college">🎓 ${escHtml((u.college||'').slice(0,20))}</div>
           <div class="search-person-action" data-uid="${uid}" data-name="${escHtml(u.name||'Student')}" data-avatar="${escHtml(u.avatar||'')}"></div>
@@ -3582,7 +4298,10 @@ const GIF_PAGE_SIZE = 9;
 function loadGifsCache() {
   if (_gifsCache) return Promise.resolve(_gifsCache);
   return db.collection('gifs').orderBy('createdAt', 'desc').limit(300).get().then(snap => {
-    _gifsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Public GIFs (no exclusiveTo, or empty array) show for everyone.
+    // Exclusive GIFs only show for the users an admin specifically granted them to.
+    _gifsCache = all.filter(g => !g.exclusiveTo || !g.exclusiveTo.length || g.exclusiveTo.includes(currentUser.uid));
     return _gifsCache;
   }).catch(() => { _gifsCache = []; return _gifsCache; });
 }
@@ -3623,9 +4342,13 @@ function toggleGifPicker(postId, postOwnerUid) {
       return;
     }
     const slice = currentList.slice(0, visibleCount);
-    grid.innerHTML = slice.map(g =>
-      `<img class="gif-picker-item" src="${escHtml(g.url)}" loading="lazy" title="${escHtml(g.label || '')}" data-url="${escHtml(g.url)}"/>`
-    ).join('');
+    grid.innerHTML = slice.map(g => {
+      const isExclusive = g.exclusiveTo && g.exclusiveTo.length;
+      return `<div class="gif-picker-item-wrap" style="position:relative">
+        <img class="gif-picker-item" src="${escHtml(g.url)}" loading="lazy" title="${escHtml(g.label || (isExclusive ? 'Your exclusive GIF' : ''))}" data-url="${escHtml(g.url)}"/>
+        ${isExclusive ? `<span title="Exclusive to you" style="position:absolute;top:3px;right:3px;font-size:11px;line-height:1;background:rgba(0,0,0,0.55);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;pointer-events:none">✨</span>` : ''}
+      </div>`;
+    }).join('');
     grid.querySelectorAll('.gif-picker-item').forEach(img => {
       img.addEventListener('click', () => {
         picker.classList.remove('open');
@@ -8594,9 +9317,19 @@ function startChat(uid, name, avatar, profilePic) {
 }
 
 async function openChat(chatId, otherUid, otherInfo) {
+  // Ignore a spurious re-open that lands within the ghost-click guard
+  // window right after closing a different chat (see comment on
+  // _chatCloseGuardUntil above).
+  if (Date.now() < _chatCloseGuardUntil && chatId !== _chatCloseGuardChatId) {
+    _chatCloseGuardUntil = 0;
+    return;
+  }
+  _chatCloseGuardUntil = 0;
+
   currentChatId = chatId;
   currentChatUid = otherUid;
   markChatRead(chatId);
+  clearChatBadgesLocally(chatId, otherUid);
 
   const chatRef = db.collection('chats').doc(chatId);
   let snap;
@@ -8643,7 +9376,12 @@ async function openChat(chatId, otherUid, otherInfo) {
   win.innerHTML = `
     <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
       ${renderAvatarHtml(null, otherInfo.profilePic, 32)}
-      <strong>${escHtml(otherInfo.name||'User')}</strong>
+      <div style="display:flex;flex-direction:column;line-height:1.25;flex:1;min-width:0;">
+        <strong>${escHtml(otherInfo.name||'User')}</strong>
+        <span id="desktop-chat-status" style="font-size:11.5px;color:var(--muted,#9aa0a6)">&nbsp;</span>
+      </div>
+      <button class="call-header-btn" id="desktop-chat-call-audio-btn" title="Voice call"><i data-lucide="phone"></i></button>
+      <button class="call-header-btn" id="desktop-chat-call-video-btn" title="Video call"><i data-lucide="video"></i></button>
     </div>
     <div class="chat-messages" id="desktop-chat-msgs"></div>
     <div class="chat-input-bar">
@@ -8655,6 +9393,20 @@ async function openChat(chatId, otherUid, otherInfo) {
       <button class="btn-send" id="desktop-chat-send"><i data-lucide="send"></i></button>
     </div>`;
   lucide.createIcons();
+
+  // Voice/video call buttons — only meaningful for 1:1 chats (otherUid set),
+  // not group/club chats, and not with someone you've blocked.
+  const canCall = !!otherUid;
+  [$('desktop-chat-call-audio-btn'), $('chat-window-call-audio-btn')].forEach(b => {
+    if (!b) return;
+    b.classList.toggle('disabled', !canCall);
+    b.onclick = () => startCall(chatId, otherUid, otherInfo, 'audio');
+  });
+  [$('desktop-chat-call-video-btn'), $('chat-window-call-video-btn')].forEach(b => {
+    if (!b) return;
+    b.classList.toggle('disabled', !canCall);
+    b.onclick = () => startCall(chatId, otherUid, otherInfo, 'video');
+  });
 
   $('desktop-chat-media').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file) return;
@@ -8672,29 +9424,41 @@ async function openChat(chatId, otherUid, otherInfo) {
   if (chatListener) chatListener.off();
   const msgRef = rtdb.ref(`chats/${chatId}/messages`);
   chatListener = msgRef;
-  msgRef.on('value', snap => {
-    const msgs = snap.val() || {};
-    const el = $('desktop-chat-msgs');
-    if (!el) return;
-    el.innerHTML = '';
-    Object.entries(msgs).sort((a,b)=>a[1].ts-b[1].ts).forEach(([key, m]) => {
-      el.appendChild(buildMsgBubble({ ...m, key }));
+  attachIncrementalChatRenderer(msgRef, $('desktop-chat-msgs'));
+
+  // Live "online" / "active Xh ago" status in the chat header
+  if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
+  if (chatPresenceInterval) { clearInterval(chatPresenceInterval); chatPresenceInterval = null; }
+  if (otherUid) {
+    let _latestPres = null;
+    const renderPresence = () => {
+      const text = presenceStatusText(_latestPres);
+      const desktopStatusEl = $('desktop-chat-status');
+      if (desktopStatusEl) desktopStatusEl.textContent = text;
+      const mobileStatusEl = $('chat-window-status');
+      if (mobileStatusEl) mobileStatusEl.textContent = text;
+    };
+    chatPresenceRef = rtdb.ref('presence/' + otherUid);
+    chatPresenceRef.on('value', snap => {
+      _latestPres = snap.val();
+      renderPresence();
     });
-    el.scrollTop = el.scrollHeight;
-    lucide.createIcons();
-  });
+    // Keep "Active Xh ago" ticking upward even without new presence events
+    chatPresenceInterval = setInterval(renderPresence, 60000);
+  }
 
   if (window.innerWidth < 768) {
-    $('chat-window-title').textContent = otherInfo.name || 'Chat';
-    openModal('modal-chat-window');
-    const mmsgs = $('modal-chat-messages');
-    msgRef.on('value', snap => {
-      const msgs = snap.val() || {};
-      mmsgs.innerHTML = '';
-      Object.entries(msgs).sort((a,b)=>a[1].ts-b[1].ts).forEach(([key, m]) => mmsgs.appendChild(buildMsgBubble({ ...m, key })));
-      mmsgs.scrollTop = mmsgs.scrollHeight;
-      lucide.createIcons();
+    // Close any other modal left open underneath (e.g. a friend's profile
+    // modal you tapped "Message" from) — otherwise pressing the chat's
+    // back button reveals that leftover modal instead of the chat list.
+    document.querySelectorAll('.modal-overlay.open').forEach(ov => {
+      if (ov.id !== 'modal-chat-window') ov.classList.remove('open');
     });
+    $('chat-window-title').textContent = otherInfo.name || 'Chat';
+    const avatarEl = $('chat-window-avatar');
+    if (avatarEl) avatarEl.innerHTML = renderAvatarHtml(otherInfo.avatar || null, otherInfo.profilePic, 40);
+    openModal('modal-chat-window');
+    attachIncrementalChatRenderer(msgRef, $('modal-chat-messages'));
     $('modal-chat-send').onclick = () => {
       const txt = $('modal-chat-input').value.trim(); if (!txt) return;
       sendChatMessage(chatId, txt); $('modal-chat-input').value = '';
@@ -8715,6 +9479,668 @@ function sendDesktopMsg(chatId) {
   const txt = inp?.value.trim(); if (!txt) return;
   sendChatMessage(chatId, txt);
   inp.value = '';
+}
+
+// ══════════════════════════════════════
+// FRIEND-CHAT CALLING (1:1 voice + video)
+// Signaled through Firestore: one doc per chat at `calls/{chatId}` carries
+// the offer/answer/status, with `candidatesCaller` / `candidatesCallee`
+// subcollections carrying ICE candidates. Peer media connects directly
+// (WebRTC), same no-extra-server approach as the club-game voice bar.
+// Only one call at a time app-wide, tracked in `activeCall`.
+// ══════════════════════════════════════
+const CALL_RTC_CONFIG = { iceServers: [
+  { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+  // STUN alone only works when both devices can reach each other directly
+  // (e.g. same wifi). Two real phones on different networks/carrier NATs
+  // very often can't punch through with STUN only — signaling still
+  // succeeds (call looks "connected", timer runs) but no media ever flows,
+  // which is exactly what "no sound" looks like. A TURN relay is the
+  // fallback path for those cases.
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+]};
+const CALL_RING_TIMEOUT_MS = 45000;
+let activeCall = null;           // the live call session (caller or callee side), or null
+let _incomingCallListener = null; // app-wide listener for calls addressed to me
+
+// ── Fallback watchdog: if the peer connection itself reports the link is
+// dead (closed/failed/disconnected for a sustained period), end the call
+// locally even if the Firestore 'ended' signal never arrived or was
+// dropped. This is what actually fixes "other device doesn't know the call
+// ended" when the signaling write silently failed (e.g. offline blip,
+// permission hiccup) — we no longer depend solely on Firestore delivering
+// the hangup message.
+function attachConnectionWatchdog(session, pc) {
+  let failTimer = null;
+  const onStateChange = () => {
+    const state = pc.connectionState || pc.iceConnectionState;
+    if (state === 'failed' || state === 'closed') {
+      if (activeCall === session) {
+        console.warn('[calls] connection', state, '— ending call locally as a fallback');
+        if (session.role === 'caller') finishCallAsCaller(session, 'ended');
+        else cleanupCallSession();
+      }
+    } else if (state === 'disconnected') {
+      // Give it a few seconds to recover (brief network blips are normal)
+      // before treating it as a real hangup.
+      clearTimeout(failTimer);
+      failTimer = setTimeout(() => {
+        if (activeCall === session && (pc.connectionState === 'disconnected' || pc.iceConnectionState === 'disconnected')) {
+          console.warn('[calls] connection stayed disconnected — ending call locally as a fallback');
+          if (session.role === 'caller') finishCallAsCaller(session, 'ended');
+          else cleanupCallSession();
+        }
+      }, 8000);
+    } else {
+      clearTimeout(failTimer);
+    }
+  };
+  pc.onconnectionstatechange = onStateChange;
+  pc.oniceconnectionstatechange = onStateChange;
+}
+
+// ── App-wide incoming-call listener — call once after login ──
+function listenForIncomingCalls() {
+  if (_incomingCallListener) _incomingCallListener();
+  if (!currentUser) return;
+  _incomingCallListener = db.collection('calls')
+    .where('calleeUid', '==', currentUser.uid)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(ch => {
+        const d = ch.doc.data();
+        if (!d) return;
+        const chatId = ch.doc.id;
+        if (d.status !== 'ringing') {
+          // The call this doc represents ended/was answered elsewhere —
+          // if we're currently showing exactly this call (ringing OR
+          // already active), hide it. Previously this only matched while
+          // still 'ringing', so once a call was accepted this whole
+          // listener went silent and cleanup depended entirely on the
+          // per-session listener — if that one ever missed an event, nothing
+          // else caught it. Now this acts as a real second, independent path.
+          if (activeCall && activeCall.role === 'callee' && activeCall.chatId === chatId) {
+            if (d.status === 'missed' || d.status === 'cancelled') toast('Missed call 📞', 'info');
+            cleanupCallSession();
+          }
+          return;
+        }
+        // Ignore stale "ringing" docs left over from a dropped connection —
+        // only react to calls that started recently.
+        const createdMs = d.createdAt?.toMillis ? d.createdAt.toMillis() : Date.now();
+        if (Date.now() - createdMs > CALL_RING_TIMEOUT_MS) {
+          return;
+        }
+        if (activeCall) {
+          // Already on/starting a call — auto-decline as busy rather than
+          // silently ignoring, so the caller doesn't wait the full timeout.
+          console.warn('[calls] auto-declining as busy — activeCall already set:', activeCall.chatId, activeCall.status, activeCall.role);
+          ch.doc.ref.update({ status: 'busy', endedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+          return;
+        }
+        showIncomingCall(chatId, d);
+      });
+    }, err => {
+      console.error('[calls] incoming call listener error:', err);
+      if (err.code === 'permission-denied') {
+        toast('Can\'t receive calls — Firestore permission error. See console.', 'error');
+      } else {
+        toast('Call listener error: ' + err.message, 'error');
+      }
+    });
+}
+
+// Safety valve: if something ever gets stuck (an unhandled error mid-call
+// leaves activeCall set without cleanup), this lets you unstick it from the
+// console without a full page reload — window.__forceResetCall().
+window.__forceResetCall = function () {
+  console.warn('[calls] force-resetting stuck call state:', activeCall);
+  activeCall = null;
+  hideCallOverlay();
+};
+
+function callOverlayEl() { return $('call-overlay'); }
+
+function setCallStatusText(text, isTimer) {
+  const el = $('call-status-text');
+  if (el) { el.textContent = text; el.classList.toggle('timer', !!isTimer); }
+}
+
+function renderCallPeer(name, avatar, pic) {
+  const nameEl = $('call-peer-name');
+  const avatarEl = $('call-peer-avatar');
+  if (nameEl) nameEl.textContent = name || 'Student';
+  if (avatarEl) avatarEl.innerHTML = renderAvatarHtml(avatar || null, pic, 100);
+}
+
+// ── Best-effort wipe of any leftover ICE candidates from a previous call
+// in this same chat, so a fresh call never gets confused by stale signals. ──
+async function clearCallCandidates(chatId) {
+  const ref = db.collection('calls').doc(chatId);
+  for (const sub of ['candidatesCaller', 'candidatesCallee']) {
+    try {
+      const snap = await ref.collection(sub).get();
+      await Promise.all(snap.docs.map(d => d.ref.delete()));
+    } catch (e) {}
+  }
+}
+
+// ── Simple two-tone ringtone using WebAudio (no audio asset needed) ──
+function startRingtone(session) {
+  try {
+    const ctx = session.ringCtx = session.ringCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const beep = () => {
+      if (!session.ringCtx) return;
+      [740, 620].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.001, ctx.currentTime + i * 0.28);
+        gain.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + i * 0.28 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.28 + 0.25);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.28);
+        osc.stop(ctx.currentTime + i * 0.28 + 0.26);
+      });
+    };
+    beep();
+    session.ringInterval = setInterval(beep, 1800);
+  } catch (e) { /* ringtone is a nice-to-have — silent failure is fine */ }
+}
+function stopRingtone(session) {
+  if (!session) return;
+  if (session.ringInterval) { clearInterval(session.ringInterval); session.ringInterval = null; }
+  if (session.ringCtx) { try { session.ringCtx.close(); } catch(e){} session.ringCtx = null; }
+}
+
+// ── Caller: start a call ──
+async function startCall(chatId, otherUid, otherInfo, type) {
+  if (!otherUid) { toast('Calling isn\'t available in this chat.', 'error'); return; }
+  if (isBlocked(otherUid)) { toast('You can\'t call this user.', 'error'); return; }
+  if (activeCall) { toast('You\'re already on a call.', 'error'); return; }
+
+  let localStream;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: type === 'video' ? { facingMode: 'user', width: { ideal: 480 } } : false
+    });
+  } catch (e) {
+    toast(type === 'video' ? 'Camera/mic access denied.' : 'Mic access denied.', 'error');
+    return;
+  }
+
+  const callDocRef = db.collection('calls').doc(chatId);
+  const session = {
+    chatId, otherUid, type, role: 'caller', status: 'ringing',
+    otherName: otherInfo.name || 'Student', otherAvatar: otherInfo.avatar || '', otherPic: otherInfo.profilePic || '',
+    localStream, remoteStream: null, pc: null, callDocRef,
+    unsubCallDoc: null, unsubCandidates: null,
+    muted: false, videoOn: type === 'video', startedAt: null, timerInterval: null,
+    ringTimeoutId: null, loggedEnd: false, remoteDescSet: false
+  };
+  activeCall = session;
+
+  await clearCallCandidates(chatId);
+
+  const pc = new RTCPeerConnection(CALL_RTC_CONFIG);
+  session.pc = pc;
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.ontrack = ev => attachRemoteStream(session, ev.streams[0]);
+  pc.onicecandidate = ev => { if (ev.candidate) callDocRef.collection('candidatesCaller').add(ev.candidate.toJSON()).catch(()=>{}); };
+  attachConnectionWatchdog(session, pc);
+
+  showCallOverlayOutgoing(session);
+  startCallDocWatchdog(session);
+
+  let offer;
+  try {
+    offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await callDocRef.set({
+      chatId, type, status: 'ringing',
+      callerUid: currentUser.uid,
+      callerName: currentUserData?.name || currentUser.displayName || 'Student',
+      callerAvatar: currentUserData?.avatar || '',
+      callerPic: currentUserData?.profilePic || '',
+      calleeUid: otherUid,
+      calleeName: otherInfo.name || 'Student',
+      calleeAvatar: otherInfo.avatar || '',
+      calleePic: otherInfo.profilePic || '',
+      offer: { sdp: offer.sdp, type: offer.type },
+      // NOTE: no `answer` field here on purpose — this is a plain (non-merge)
+      // .set(), which already replaces the whole document, so any leftover
+      // `answer` from a previous call in this chat is wiped automatically.
+      // FieldValue.delete() is NOT valid inside a plain .set() (only inside
+      // .update() or .set(..., {merge:true})) — including it here was the
+      // actual bug causing every call to fail with "invalid data" before
+      // ever reaching the callee.
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (e) {
+    // Anything failing here (WebRTC offer creation or the Firestore write)
+    // must still clear activeCall — otherwise every future incoming call on
+    // this device silently gets auto-declined as "busy" forever, with no
+    // visible error, which is the classic way this feature goes silent.
+    console.error('[calls] startCall failed:', e);
+    toast('Could not start the call: ' + (e.message || 'unknown error'), 'error');
+    cleanupCallSession();
+    return;
+  }
+  sendNotification(otherUid, 'call', `📞 Incoming ${type === 'video' ? 'video' : 'voice'} call`, chatId);
+
+  session.unsubCallDoc = callDocRef.onSnapshot(async doc => {
+    const d = doc.data();
+    if (!d || !activeCall || activeCall.chatId !== chatId) return;
+    if (d.status === 'accepted' && d.answer && !session.remoteDescSet) {
+      session.remoteDescSet = true;
+      await pc.setRemoteDescription(new RTCSessionDescription(d.answer));
+      if (!session.unsubCandidates) {
+        session.unsubCandidates = callDocRef.collection('candidatesCallee').onSnapshot(csnap => {
+          csnap.docChanges().forEach(cc => { if (cc.type === 'added') pc.addIceCandidate(new RTCIceCandidate(cc.doc.data())).catch(()=>{}); });
+        }, err => console.warn('[calls] candidate listener error (caller reading callee candidates):', err));
+      }
+      clearTimeout(session.ringTimeoutId);
+      session.status = 'active';
+      session.startedAt = Date.now();
+      showCallOverlayActive(session);
+    } else if (d.status === 'declined') {
+      clearTimeout(session.ringTimeoutId);
+      toast(`${session.otherName} declined the call`, 'info');
+      finishCallAsCaller(session, 'declined');
+    } else if (d.status === 'busy') {
+      clearTimeout(session.ringTimeoutId);
+      toast(`${session.otherName} is on another call`, 'info');
+      finishCallAsCaller(session, 'declined');
+    } else if (d.status === 'ended') {
+      // Don't require session.status === 'active' here — the other side
+      // can write 'ended' from a busy/other-device reject too, and gating
+      // on our local status left the caller's own overlay stuck open with
+      // no way to close it if this event arrived a tick before our local
+      // status flipped to 'active'.
+      clearTimeout(session.ringTimeoutId);
+      finishCallAsCaller(session, 'ended');
+    }
+  }, err => {
+    console.error('[calls] call doc listener error (caller side):', err);
+    toast('Call connection lost: ' + err.message, 'error');
+    clearTimeout(session.ringTimeoutId);
+    finishCallAsCaller(session, 'missed');
+  });
+
+  session.ringTimeoutId = setTimeout(() => {
+    if (activeCall !== session || session.status !== 'ringing') return;
+    callDocRef.update({ status: 'missed', endedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+    toast('No answer', 'info');
+    finishCallAsCaller(session, 'missed');
+  }, CALL_RING_TIMEOUT_MS);
+}
+
+// Caller-side: write the one call-summary log line for this call and tear
+// everything down. (Caller is always the single source of truth for the
+// chat's call-log entry, so both sides never double-log the same call.)
+function finishCallAsCaller(session, finalStatus) {
+  if (!session.loggedEnd) {
+    session.loggedEnd = true;
+    const duration = session.startedAt ? Math.round((Date.now() - session.startedAt) / 1000) : 0;
+    sendCallLogMessage(session.chatId, session.type, finalStatus, duration);
+  }
+  cleanupCallSession();
+}
+
+// ── Callee: an incoming call arrived ──
+function showIncomingCall(chatId, d) {
+  const callDocRef = db.collection('calls').doc(chatId);
+  const session = {
+    chatId, otherUid: d.callerUid, type: d.type || 'audio', role: 'callee', status: 'ringing',
+    otherName: d.callerName || 'Student', otherAvatar: d.callerAvatar || '', otherPic: d.callerPic || '',
+    localStream: null, remoteStream: null, pc: null, callDocRef, offer: d.offer,
+    unsubCallDoc: null, unsubCandidates: null,
+    muted: false, videoOn: (d.type === 'video'), startedAt: null, timerInterval: null,
+    ringTimeoutId: null, loggedEnd: true // callee never logs — caller owns the log line
+  };
+  activeCall = session;
+
+  session.unsubCallDoc = callDocRef.onSnapshot(doc => {
+    const dd = doc.data();
+    if (!dd || !activeCall || activeCall.chatId !== chatId) return;
+    if (dd.status === 'missed' || dd.status === 'cancelled' || dd.status === 'ended') {
+      cleanupCallSession();
+    }
+  }, err => {
+    console.error('[calls] call doc listener error (callee side):', err);
+    toast('Call connection lost: ' + err.message, 'error');
+    cleanupCallSession();
+  });
+
+  const overlay = callOverlayEl();
+  overlay.className = 'open ringing';
+  renderCallPeer(session.otherName, session.otherAvatar, session.otherPic);
+  setCallStatusText(`Incoming ${session.type === 'video' ? 'video' : 'voice'} call…`);
+  $('call-controls-incoming').style.display = 'flex';
+  $('call-controls-active').style.display = 'none';
+  $('call-accept-btn').onclick = () => acceptCall(activeCall || session);
+  $('call-decline-btn').onclick = () => declineCall(activeCall || session);
+  startRingtone(session);
+  if (navigator.vibrate) { try { navigator.vibrate([300, 200, 300, 200, 300]); } catch(e){} }
+  startCallDocWatchdog(session);
+}
+
+async function acceptCall(session) {
+  stopRingtone(session);
+  let localStream;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: session.type === 'video' ? { facingMode: 'user', width: { ideal: 480 } } : false
+    });
+  } catch (e) {
+    toast(session.type === 'video' ? 'Camera/mic access denied.' : 'Mic access denied.', 'error');
+    declineCall(session);
+    return;
+  }
+  session.localStream = localStream;
+
+  const pc = new RTCPeerConnection(CALL_RTC_CONFIG);
+  session.pc = pc;
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.ontrack = ev => attachRemoteStream(session, ev.streams[0]);
+  pc.onicecandidate = ev => { if (ev.candidate) session.callDocRef.collection('candidatesCallee').add(ev.candidate.toJSON()).catch(()=>{}); };
+  attachConnectionWatchdog(session, pc);
+
+  let answer;
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(session.offer));
+    answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    session.unsubCandidates = session.callDocRef.collection('candidatesCaller').onSnapshot(csnap => {
+      csnap.docChanges().forEach(cc => { if (cc.type === 'added') pc.addIceCandidate(new RTCIceCandidate(cc.doc.data())).catch(()=>{}); });
+    }, err => console.warn('[calls] candidate listener error (callee reading caller candidates):', err));
+
+    await session.callDocRef.update({
+      answer: { sdp: answer.sdp, type: answer.type },
+      status: 'accepted',
+      acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (e) {
+    // Same rule as startCall: never let a thrown error here leave activeCall
+    // stuck — that silently breaks every call after this one.
+    console.error('[calls] acceptCall failed:', e);
+    toast('Could not connect the call: ' + (e.message || 'unknown error'), 'error');
+    cleanupCallSession();
+    return;
+  }
+
+  session.status = 'active';
+  session.startedAt = Date.now();
+  showCallOverlayActive(session);
+}
+
+function declineCall(session) {
+  // Guaranteed to close the screen even if `session` is a stale/partial
+  // object or the Firestore write throws synchronously — the tap must
+  // never be a no-op.
+  try { stopRingtone(session); } catch (e) {}
+  try {
+    session.callDocRef.update({ status: 'declined', endedAt: firebase.firestore.FieldValue.serverTimestamp(), endedBy: currentUser.uid }).catch(()=>{});
+  } catch (e) {}
+  cleanupCallSession();
+}
+
+// ── Either side: end an active call ──
+function endCall() {
+  const session = activeCall;
+  if (!session) { cleanupCallSession(); return; }
+  // This write is what tells the *other* device to close its call screen.
+  // It was previously fire-and-forget with a swallowed .catch(()=>{}) — if
+  // it failed for any reason (e.g. offline blip, permission error), the
+  // other device never found out and stayed stuck on the call UI with no
+  // way to close it. Now we retry once via set(merge) if update() fails,
+  // and log a visible error if even that fails, so a failure is at least
+  // diagnosable instead of silently disappearing. The connection watchdog
+  // (attachConnectionWatchdog) and startCallDocWatchdog poll are the
+  // last-resort fallbacks if this message never gets through at all.
+  try {
+    const payload = { status: 'ended', endedAt: firebase.firestore.FieldValue.serverTimestamp(), endedBy: currentUser.uid };
+    session.callDocRef.update(payload).catch(err => {
+      console.warn('[calls] endCall update() failed, retrying with set(merge):', err);
+      session.callDocRef.set(payload, { merge: true }).catch(err2 => {
+        console.error('[calls] endCall failed to signal hangup to the other device:', err2);
+      });
+    });
+  } catch (e) { console.error('[calls] endCall signaling threw synchronously:', e); }
+  // The tap itself must always close *this* device's screen, regardless of
+  // whether the signaling write above succeeds.
+  if (session.role === 'caller') {
+    finishCallAsCaller(session, 'ended');
+  } else {
+    cleanupCallSession();
+  }
+}
+
+// Some mobile browsers (iOS Safari in particular) block a play() call that
+// happens asynchronously — e.g. triggered from a Firestore snapshot
+// callback once the peer connects — even though the call itself started
+// from a tap. When that happens we retry playback on the very next tap
+// anywhere on the call overlay, so remote audio doesn't just silently
+// never start.
+function retryMediaPlayOnNextTap(mediaEl) {
+  const overlay = callOverlayEl();
+  if (!overlay || !mediaEl) return;
+  const retry = () => {
+    mediaEl.play().catch(() => {});
+    overlay.removeEventListener('click', retry);
+    overlay.removeEventListener('touchstart', retry);
+  };
+  overlay.addEventListener('click', retry, { once: true });
+  overlay.addEventListener('touchstart', retry, { once: true });
+}
+
+function attachRemoteStream(session, stream) {
+  session.remoteStream = stream;
+  const remoteVideoEl = $('call-remote-video');
+  const overlay = callOverlayEl();
+  if (session.type === 'video' && stream.getVideoTracks().length) {
+    remoteVideoEl.srcObject = stream;
+    remoteVideoEl.muted = false;
+    const playPromise = remoteVideoEl.play();
+    if (playPromise && playPromise.catch) playPromise.catch(() => retryMediaPlayOnNextTap(remoteVideoEl));
+    overlay.classList.add('has-remote-video');
+  } else {
+    // Audio-only (or video call where the peer's camera is off): play sound
+    // via a hidden audio element instead of the video tag.
+    let audioEl = document.getElementById('call-remote-audio');
+    if (!audioEl) {
+      audioEl = document.createElement('audio');
+      audioEl.id = 'call-remote-audio';
+      audioEl.autoplay = true;
+      audioEl.playsInline = true;
+      document.body.appendChild(audioEl);
+    }
+    audioEl.srcObject = stream;
+    audioEl.muted = false;
+    audioEl.volume = 1;
+    const playPromise = audioEl.play();
+    if (playPromise && playPromise.catch) playPromise.catch(() => retryMediaPlayOnNextTap(audioEl));
+  }
+}
+
+function showCallOverlayOutgoing(session) {
+  const overlay = callOverlayEl();
+  overlay.className = 'open ringing';
+  renderCallPeer(session.otherName, session.otherAvatar, session.otherPic);
+  setCallStatusText(`Calling…`);
+  $('call-controls-incoming').style.display = 'none';
+  $('call-controls-active').style.display = 'flex';
+  $('call-video-toggle-wrap').style.display = 'none';
+  $('call-mute-btn').onclick = () => toggleCallMute();
+  $('call-end-btn').onclick = () => endCall();
+  if (session.type === 'video' && session.localStream) {
+    $('call-local-video').srcObject = session.localStream;
+    overlay.classList.add('local-video-on');
+  }
+}
+
+function showCallOverlayActive(session) {
+  const overlay = callOverlayEl();
+  overlay.className = 'open';
+  renderCallPeer(session.otherName, session.otherAvatar, session.otherPic);
+  $('call-controls-incoming').style.display = 'none';
+  $('call-controls-active').style.display = 'flex';
+  $('call-mute-btn').onclick = () => toggleCallMute();
+  $('call-end-btn').onclick = () => endCall();
+
+  if (session.type === 'video') {
+    $('call-video-toggle-wrap').style.display = 'flex';
+    $('call-video-btn').onclick = () => toggleCallVideo();
+    if (session.localStream) {
+      $('call-local-video').srcObject = session.localStream;
+      overlay.classList.add('local-video-on');
+    }
+  } else {
+    $('call-video-toggle-wrap').style.display = 'none';
+  }
+
+  // Update the status text (and clear whatever "Calling…" / "Incoming
+  // call…" text was left over from the ringing state) immediately, instead
+  // of waiting for the first setInterval tick a full second later — that
+  // delay was what made the screen that just connected look stuck showing
+  // the old ringing text.
+  if (session.timerInterval) clearInterval(session.timerInterval);
+  const tickCallTimer = () => {
+    if (!activeCall || activeCall !== session) { clearInterval(session.timerInterval); return; }
+    const secs = Math.max(0, Math.round((Date.now() - session.startedAt) / 1000));
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    setCallStatusText(`${m}:${s}`, true);
+  };
+  tickCallTimer();
+  session.timerInterval = setInterval(tickCallTimer, 1000);
+}
+
+function toggleCallMute() {
+  const session = activeCall;
+  if (!session || !session.localStream) return;
+  session.muted = !session.muted;
+  session.localStream.getAudioTracks().forEach(t => t.enabled = !session.muted);
+  const btn = $('call-mute-btn');
+  btn.classList.toggle('on', session.muted);
+  btn.innerHTML = session.muted ? '<i data-lucide="mic-off"></i>' : '<i data-lucide="mic"></i>';
+  $('call-mute-label').textContent = session.muted ? 'Unmute' : 'Mute';
+  lucide.createIcons();
+}
+
+function toggleCallVideo() {
+  const session = activeCall;
+  if (!session || !session.localStream) return;
+  session.videoOn = !session.videoOn;
+  session.localStream.getVideoTracks().forEach(t => t.enabled = session.videoOn);
+  const overlay = callOverlayEl();
+  overlay.classList.toggle('local-video-on', session.videoOn);
+  const btn = $('call-video-btn');
+  btn.classList.toggle('on', !session.videoOn);
+  btn.innerHTML = session.videoOn ? '<i data-lucide="video"></i>' : '<i data-lucide="video-off"></i>';
+  $('call-video-label').textContent = session.videoOn ? 'Camera' : 'Camera off';
+  lucide.createIcons();
+}
+
+function cleanupCallSession() {
+  const session = activeCall;
+  // Reset the shared state and hide the overlay FIRST, unconditionally.
+  // Previously these were the last two lines of this function — if any
+  // teardown step above threw (a stream already stopped, a null unsub,
+  // etc.) the function aborted before ever reaching them, leaving
+  // `activeCall` stuck non-null and the overlay stuck open forever. Every
+  // later tap on End/Decline just re-ran this same function, hit the same
+  // exception, and failed the same way — that's what "end button does
+  // nothing" looked like. Now the UI/state reset can never be skipped;
+  // teardown of the media/listeners happens after, best-effort.
+  activeCall = null;
+  hideCallOverlay();
+  clearInterval(session && session._watchdogInterval);
+  if (!session) return;
+  try { stopRingtone(session); } catch (e) {}
+  try { clearTimeout(session.ringTimeoutId); } catch (e) {}
+  try { clearInterval(session.timerInterval); } catch (e) {}
+  try { if (session.unsubCallDoc) session.unsubCallDoc(); } catch (e) {}
+  try { if (session.unsubCandidates) session.unsubCandidates(); } catch (e) {}
+  try { if (session.pc) session.pc.close(); } catch (e) {}
+  try { if (session.localStream) session.localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  try {
+    const remoteAudioEl = document.getElementById('call-remote-audio');
+    if (remoteAudioEl) remoteAudioEl.remove();
+  } catch (e) {}
+}
+
+// ── Last-resort safety net: poll the call doc directly every few seconds
+// while it's ringing/active. onSnapshot listeners *should* always deliver
+// the 'ended'/'declined'/'missed' status, but if one ever gets dropped
+// (backgrounded tab, flaky connection, a missed event) this guarantees the
+// screen still closes within a few seconds instead of staying stuck with a
+// dead End button. ──
+function startCallDocWatchdog(session) {
+  clearInterval(session._watchdogInterval);
+  session._watchdogInterval = setInterval(async () => {
+    if (activeCall !== session) { clearInterval(session._watchdogInterval); return; }
+    try {
+      const snap = await session.callDocRef.get();
+      const dd = snap.data();
+      if (dd && ['ended', 'missed', 'cancelled', 'declined', 'busy'].includes(dd.status) && activeCall === session) {
+        console.warn('[calls] watchdog caught terminal status the listener missed:', dd.status);
+        cleanupCallSession();
+      }
+    } catch (e) { /* transient — next tick will retry */ }
+  }, 4000);
+}
+
+function hideCallOverlay() {
+  const overlay = callOverlayEl();
+  if (!overlay) return;
+  overlay.className = '';
+  const remoteVideoEl = $('call-remote-video');
+  const localVideoEl = $('call-local-video');
+  if (remoteVideoEl) remoteVideoEl.srcObject = null;
+  if (localVideoEl) localVideoEl.srcObject = null;
+}
+
+// ── Write the one-line call summary into the chat's message list ──
+async function sendCallLogMessage(chatId, callType, callStatus, duration) {
+  const msg = {
+    uid: currentUser.uid,
+    name: currentUserData?.name || currentUser.displayName || 'Student',
+    avatar: currentUserData?.avatar || '',
+    profilePic: currentUserData?.profilePic || '',
+    text: '', mediaUrl: '', isVideo: false,
+    callType, callStatus, callDuration: duration || 0,
+    ts: Date.now(), read: false
+  };
+  try { await rtdb.ref(`chats/${chatId}/messages`).push(msg); } catch(e) { return; }
+
+  const icon = callType === 'video' ? '📹' : '📞';
+  const label = callStatus === 'missed' ? 'Missed call' : callStatus === 'declined' ? 'Call declined' : `Call · ${formatCallDuration(duration)}`;
+  const preview = `${icon} ${label}`;
+  try {
+    await db.collection('chats').doc(chatId).update({
+      lastMessage: preview, lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(), lastSenderId: currentUser.uid
+    });
+  } catch(e) {}
+  if (callStatus === 'missed') {
+    try {
+      const chatSnap = await db.collection('chats').doc(chatId).get();
+      const other = (chatSnap.data()?.members || []).find(m => m !== currentUser.uid);
+      if (other) sendNotification(other, 'call', `📞 Missed ${callType === 'video' ? 'video' : 'voice'} call`, chatId);
+    } catch(e) {}
+  }
+}
+
+function formatCallDuration(secs) {
+  secs = secs || 0;
+  const m = String(Math.floor(secs / 60)).padStart(2, '0');
+  const s = String(secs % 60).padStart(2, '0');
+  return `${m}:${s}`;
 }
 
 async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
@@ -8808,10 +10234,17 @@ function markChatRead(chatId) {
       snap.forEach(doc => doc.ref.update({ read: true }).catch(() => {}));
     }).catch(() => {});
   // Fix 4c: Reset unread count for this user
-  db.collection('chats').doc(chatId).set(
-    { [`unreadCount.${currentUser.uid}`]: 0 },
-    { merge: true }
-  ).catch(() => {});
+  // Must use update() — set(..., {merge:true}) treats the dotted key
+  // "unreadCount.<uid>" as a literal field name instead of a nested path,
+  // so the real nested unreadCount map never actually gets reset. That's
+  // why the badge appeared to clear locally but came back after refresh.
+  db.collection('chats').doc(chatId).update(
+    { [`unreadCount.${currentUser.uid}`]: 0 }
+  ).catch(err => {
+    // Doc may not exist yet in a rare race — fall back to a plain (non-dotted)
+    // merge so we don't crash, though there's nothing to reset in that case.
+    console.error('markChatRead: failed to reset unreadCount', err);
+  });
 }
 
 async function startGroupChat(clubId, clubName, emoji) {
@@ -8831,17 +10264,173 @@ async function startGroupChat(clubId, clubName, emoji) {
   openChat(chatId, null, { name: `${emoji} ${clubName}`, avatar: emoji });
 }
 
+// ── Chat image lightbox: tap any image bubble to view it fullscreen ──
+function openChatImageLightbox(url) {
+  if (!url) return;
+  const box = $('chat-img-lightbox');
+  const img = $('chat-img-lightbox-img');
+  if (!box || !img) return;
+  img.src = url;
+  box.classList.add('open');
+}
+function closeChatImageLightbox() {
+  const box = $('chat-img-lightbox');
+  const img = $('chat-img-lightbox-img');
+  if (!box) return;
+  box.classList.remove('open');
+  if (img) img.src = '';
+}
+(function wireChatImageLightbox() {
+  const closeBtn = $('chat-img-lightbox-close');
+  const box = $('chat-img-lightbox');
+  if (closeBtn) closeBtn.addEventListener('click', closeChatImageLightbox);
+  // Clicking the dark backdrop (but not the image itself) also closes it
+  if (box) box.addEventListener('click', e => { if (e.target === box) closeChatImageLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChatImageLightbox(); });
+})();
+
+// ── Incremental chat message renderer ──────────────────────────────────
+// Previously the message list was rebuilt from scratch (innerHTML = '')
+// on every single RTDB update — including read-receipt toggles — which
+// meant sending a new message (or the other person reading yours) tore
+// down and recreated every bubble already on screen, including any
+// <video> elements, causing them to reload/restart mid-playback.
+// This renders each message once via child_added and only ever touches
+// that one bubble again later (read-tick swap on child_changed, removal
+// on child_removed) — existing videos are never rebuilt.
+function attachIncrementalChatRenderer(msgRef, containerEl) {
+  if (!containerEl) return () => {};
+  const nodesByKey = new Map();
+  containerEl.innerHTML = '';
+
+  // NOTE: this can be called twice for the same msgRef (once for the
+  // desktop message list, once for the mobile modal one). Do NOT call
+  // msgRef.off(eventType) here with no callback — that removes every
+  // listener of that type on the ref, including the other container's,
+  // which would silently stop that container from updating at all.
+  const onAdded = snap => {
+    const key = snap.key;
+    if (nodesByKey.has(key)) return;
+    const m = snap.val();
+    const bubble = buildMsgBubble({ ...m, key });
+    bubble.__msgText = m.text || '';
+    nodesByKey.set(key, bubble);
+    containerEl.appendChild(bubble);
+    containerEl.scrollTop = containerEl.scrollHeight;
+    lucide.createIcons();
+  };
+
+  const onChanged = snap => {
+    const key = snap.key;
+    const m = snap.val();
+    const node = nodesByKey.get(key);
+    if (!node) return;
+    // Fast path: only the read receipt changed (the common case) — just
+    // flip the tick in place instead of rebuilding the whole bubble, so
+    // any video/image inside it is never touched.
+    const tick = node.querySelector('.msg-tick');
+    const textChanged = (m.text || '') !== (node.__msgText ?? '');
+    if (tick && !textChanged) {
+      tick.classList.toggle('read', !!m.read);
+      tick.textContent = m.read ? '✓✓' : '✓';
+      return;
+    }
+    // Fallback: something else about the message changed — rebuild just
+    // this one bubble, leaving every other message/video untouched.
+    const fresh = buildMsgBubble({ ...m, key });
+    fresh.__msgText = m.text || '';
+    if (node.parentNode) node.parentNode.replaceChild(fresh, node);
+    nodesByKey.set(key, fresh);
+    lucide.createIcons();
+  };
+
+  const onRemoved = snap => {
+    const key = snap.key;
+    const node = nodesByKey.get(key);
+    if (node && node.parentNode) node.parentNode.removeChild(node);
+    nodesByKey.delete(key);
+  };
+
+  msgRef.on('child_added', onAdded);
+  msgRef.on('child_changed', onChanged);
+  msgRef.on('child_removed', onRemoved);
+
+  return () => {
+    msgRef.off('child_added', onAdded);
+    msgRef.off('child_changed', onChanged);
+    msgRef.off('child_removed', onRemoved);
+    nodesByKey.clear();
+  };
+}
+
 function buildMsgBubble(m) {
   const mine = m.uid === currentUser?.uid;
   const wrap = document.createElement('div');
   wrap.className = `chat-msg ${mine ? 'mine' : ''}`;
 
+  // Call-log line ("📞 Voice call · 2:15", "📞 Missed call", etc.) — no
+  // text/media, just a compact centered pill like WhatsApp's. Still
+  // deletable though: hold for 3s to reveal a delete button, same as a
+  // regular message (works for either side's call-log entry, not just
+  // "your own", since it's just a record of a call that already happened).
+  if (m.callType) {
+    const icon = m.callType === 'video' ? '📹' : '📞';
+    const label = m.callStatus === 'missed' ? (mine ? 'No answer' : 'Missed call')
+      : m.callStatus === 'declined' ? 'Call declined'
+      : `${m.callType === 'video' ? 'Video' : 'Voice'} call · ${formatCallDuration(m.callDuration)}`;
+    wrap.className = 'chat-msg chat-msg-call-log';
+    wrap.innerHTML = `
+      <div class="msg-call-log-pill">${icon} ${escHtml(label)}</div>
+      ${m.key ? `<button class="msg-delete-btn call-log-delete-btn" title="Delete" data-key="${escHtml(m.key||'')}" style="display:none;width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2,rgba(255,255,255,0.1));color:var(--danger,#f66);align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-left:6px"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
+    `;
+
+    if (m.key) {
+      const pill = wrap.querySelector('.msg-call-log-pill');
+      const delBtn = wrap.querySelector('.call-log-delete-btn');
+      let pressTimer = null;
+      let hideTimer = null;
+
+      pill.style.webkitUserSelect = 'none';
+      pill.style.userSelect = 'none';
+      pill.style.webkitTouchCallout = 'none';
+      pill.style.touchAction = 'manipulation';
+      pill.style.cursor = 'pointer';
+      pill.addEventListener('contextmenu', e => e.preventDefault());
+
+      const showDelete = () => {
+        delBtn.style.display = 'flex';
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => { delBtn.style.display = 'none'; }, 3000);
+      };
+      const startPress = () => { pressTimer = setTimeout(showDelete, 1000); };
+      const cancelPress = () => clearTimeout(pressTimer);
+
+      pill.addEventListener('mousedown', startPress);
+      pill.addEventListener('mouseup', cancelPress);
+      pill.addEventListener('mouseleave', cancelPress);
+      pill.addEventListener('touchstart', startPress, { passive: true });
+      pill.addEventListener('touchend', cancelPress);
+      pill.addEventListener('touchcancel', cancelPress);
+
+      delBtn.addEventListener('click', () => {
+        showConfirmDialog('Delete this call from history?', async () => {
+          try {
+            await rtdb.ref(`chats/${currentChatId}/messages/${m.key}`).remove();
+            wrap.classList.add('msg-deleting');
+            setTimeout(() => wrap.remove(), 300);
+          } catch (e) { toast('Could not delete call', 'error'); }
+        });
+      });
+    }
+    return wrap;
+  }
+
   let content = m.text ? escHtml(m.text) : '';
   let media = '';
   if (m.mediaUrl) {
     media = m.isVideo
-      ? `<div class="msg-media"><video src="${m.mediaUrl}" controls playsinline style="max-width:200px;border-radius:10px"></video></div>`
-      : `<div class="msg-media"><img src="${m.mediaUrl}" style="max-width:200px;border-radius:10px" loading="lazy"/></div>`;
+      ? `<div class="msg-media"><video src="${m.mediaUrl}" controls playsinline preload="metadata"></video></div>`
+      : `<div class="msg-media"><img src="${m.mediaUrl}" loading="lazy" class="msg-img-clickable"/></div>`;
   }
   const tickHtml = mine
     ? `<span class="msg-tick ${m.read ? 'read' : ''}">${m.read ? '✓✓' : '✓'}</span>`
@@ -8857,6 +10446,10 @@ function buildMsgBubble(m) {
       ${m.text ? `<button class="msg-copy-btn" title="Copy" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2,rgba(255,255,255,0.1));color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><i data-lucide="copy" style="width:14px;height:14px"></i></button>` : ''}
       ${mine && m.key ? `<button class="msg-delete-btn" title="Delete" data-key="${escHtml(m.key||'')}" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2,rgba(255,255,255,0.1));color:var(--danger,#f66);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>` : ''}
     </div>`;
+
+  // Tap an image in the chat to open it fullscreen
+  const clickableImg = wrap.querySelector('.msg-img-clickable');
+  if (clickableImg) clickableImg.addEventListener('click', () => openChatImageLightbox(m.mediaUrl));
 
   // ── Long-press menu (3s / 1s hold): Copy for any message, Delete for your own ──
   if (m.text || (mine && m.key)) {
@@ -8888,7 +10481,12 @@ function buildMsgBubble(m) {
     bubble.querySelectorAll('img').forEach(el => {
       el.style.webkitUserSelect   = 'none';
       el.style.webkitTouchCallout = 'none';
-      el.style.pointerEvents      = 'none'; // let taps/holds pass to the bubble itself
+      // NOTE: previously this also set pointerEvents:'none' to let taps/holds
+      // pass straight through to the bubble for long-press detection — but
+      // that silently blocked the click listener used to open the fullscreen
+      // image viewer. touchstart/mousedown still bubble up to the bubble
+      // fine without pointer-events being disabled, so it's safe to leave
+      // pointer events enabled on the image itself.
       el.addEventListener('contextmenu', e => e.preventDefault());
       el.setAttribute('draggable', 'false');
     });
@@ -9009,27 +10607,30 @@ function renderProfileSocialLinks(userData) {
 
 // Admin-grantable custom profile frame ("customize profile lobby" perk).
 // Only admin.html can set userData.profileFrame — regular users can't self-grant it.
-// Supports 'gold' (Elite gold frame) and 'eagle' (black wings + dark background).
+// Supports 'gold' (Elite gold frame), 'eagle' (black wings + dark background),
+// 'sapphire' (icy blue gem), 'royal' (amethyst + gold regalia), and
+// 'emerald' (jade-green nature glass).
 function applyProfileFrame(cardEl, tagEl, frame) {
   if (!cardEl) return;
-  cardEl.classList.remove('frame-elite-gold', 'frame-elite-eagle');
+  cardEl.classList.remove('frame-elite-gold', 'frame-elite-eagle', 'frame-elite-sapphire', 'frame-elite-royal', 'frame-elite-emerald');
   if (tagEl) {
-    tagEl.classList.remove('frame-tag-gold', 'frame-tag-eagle');
+    tagEl.classList.remove('frame-tag-gold', 'frame-tag-eagle', 'frame-tag-sapphire', 'frame-tag-royal', 'frame-tag-emerald');
     tagEl.style.display = 'none';
     tagEl.textContent = '';
   }
-  if (frame === 'gold') {
-    cardEl.classList.add('frame-elite-gold');
+  const FRAME_META = {
+    gold:     { cls: 'frame-elite-gold',     tagCls: 'frame-tag-gold',     label: '👑 Elite Profile' },
+    eagle:    { cls: 'frame-elite-eagle',    tagCls: 'frame-tag-eagle',    label: '🦅 Eagle Profile' },
+    sapphire: { cls: 'frame-elite-sapphire', tagCls: 'frame-tag-sapphire', label: '💎 Sapphire Profile' },
+    royal:    { cls: 'frame-elite-royal',    tagCls: 'frame-tag-royal',    label: '♛ Royal Profile' },
+    emerald:  { cls: 'frame-elite-emerald',  tagCls: 'frame-tag-emerald',  label: '🌿 Emerald Profile' },
+  };
+  const meta = FRAME_META[frame];
+  if (meta) {
+    cardEl.classList.add(meta.cls);
     if (tagEl) {
-      tagEl.classList.add('frame-tag-gold');
-      tagEl.textContent = '👑 Elite Profile';
-      tagEl.style.display = 'inline-flex';
-    }
-  } else if (frame === 'eagle') {
-    cardEl.classList.add('frame-elite-eagle');
-    if (tagEl) {
-      tagEl.classList.add('frame-tag-eagle');
-      tagEl.textContent = '🦅 Eagle Profile';
+      tagEl.classList.add(meta.tagCls);
+      tagEl.textContent = meta.label;
       tagEl.style.display = 'inline-flex';
     }
   }
@@ -9324,15 +10925,16 @@ function renderFriendRows(users) {
   users.forEach(u => {
     const row = document.createElement('div');
     row.className = 'friend-row';
+    row.setAttribute('data-uid', u.uid);
     const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" class="friend-avatar-img"/>`;
     row.innerHTML = `
       <div class="friend-avatar">${avatarHtml}<span class="presence-dot" title="Offline"></span></div>
       <div class="friend-info">
-        <strong>${escHtml(u.name || 'Student')}</strong>
+        <strong>${escHtml(u.name || 'Student')}<span class="friend-unread-dot" style="display:none"></span></strong>
         <small>@${escHtml(u.username || 'user')} · 🎓 ${escHtml(u.college || '')}</small>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
-        <button class="friend-btn msg" title="Open chat">💬 Chat</button>
+        <button class="friend-btn msg" title="Open chat">💬 Chat<span class="msg-notify-badge" style="display:none">0</span></button>
         <button class="friend-btn unfriend small">Remove</button>
       </div>`;
 
@@ -9354,6 +10956,7 @@ function renderFriendRows(users) {
     row.querySelector('.friend-btn.unfriend').addEventListener('click', () => unfriend(u.uid));
     fList.appendChild(row);
   });
+  applyFriendChatBadges();
 }
 
 let _friendsSearchWired = false;
@@ -9647,6 +11250,9 @@ async function openUserProfile(uid) {
         <div class="ig-profile-info">
           ${u.profileFrame === 'gold' ? `<div class="frame-tag frame-tag-gold" style="margin:0 0 4px">👑 Elite Profile</div>` : ''}
           ${u.profileFrame === 'eagle' ? `<div class="frame-tag frame-tag-eagle" style="margin:0 0 4px">🦅 Eagle Profile</div>` : ''}
+          ${u.profileFrame === 'sapphire' ? `<div class="frame-tag frame-tag-sapphire" style="margin:0 0 4px">💎 Sapphire Profile</div>` : ''}
+          ${u.profileFrame === 'royal' ? `<div class="frame-tag frame-tag-royal" style="margin:0 0 4px">♛ Royal Profile</div>` : ''}
+          ${u.profileFrame === 'emerald' ? `<div class="frame-tag frame-tag-emerald" style="margin:0 0 4px">🌿 Emerald Profile</div>` : ''}
           <div class="ig-profile-name-row"><h2>${escHtml(u.name || 'Student')}</h2></div>
           <p class="ig-profile-username">@${escHtml(u.username || 'user')}</p>
           <p class="ig-profile-meta-line">🎓 ${escHtml(u.college || '')}</p>
@@ -9867,13 +11473,69 @@ function setupNotifications() {
     .where('members', 'array-contains', currentUser.uid)
     .onSnapshot(snap => {
       let total = 0;
+      friendChatUnread = {};
+      chatUnreadByChatId = {};
+      chatIdToOtherUid = {};
       snap.forEach(doc => {
         const d = doc.data();
-        if (d.lastSenderId !== currentUser.uid) total += (d.unreadCount?.[currentUser.uid] || 0);
+        const unread = (d.lastSenderId !== currentUser.uid) ? (d.unreadCount?.[currentUser.uid] || 0) : 0;
+        total += unread;
+        chatUnreadByChatId[doc.id] = unread;
+        // Map unread count to the other 1:1 chat member so friend rows can
+        // show a badge on their own "Chat" button. Group/club chats
+        // (type === 'group') are excluded — those aren't in the friends list.
+        if (d.type !== 'group' && Array.isArray(d.members)) {
+          const otherUid = d.members.find(m => m !== currentUser.uid);
+          if (otherUid) {
+            chatIdToOtherUid[doc.id] = otherUid;
+            if (unread > 0) friendChatUnread[otherUid] = unread;
+          }
+        }
       });
+      chatUnreadTotal = total;
       updateBadge('chat-badge', total);
       updateBadge('chat-badge-mobile', total);
+      applyFriendChatBadges();
     }, () => {});
+}
+
+// ── Per-friend unread-message badges (Friends list "Chat" buttons) ──
+var friendChatUnread    = {};
+var chatUnreadByChatId  = {}; // chatId -> unread count (incl. group chats)
+var chatIdToOtherUid    = {}; // chatId -> other member uid (1:1 chats only)
+var chatUnreadTotal     = 0;
+function applyFriendChatBadges() {
+  document.querySelectorAll('#friends-list .friend-row[data-uid]').forEach(row => {
+    const uid = row.getAttribute('data-uid');
+    const count = friendChatUnread[uid] || 0;
+    const badge = row.querySelector('.msg-notify-badge');
+    const dot   = row.querySelector('.friend-unread-dot');
+    if (badge) {
+      badge.textContent   = count > 9 ? '9+' : String(count);
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+    if (dot) dot.style.display = count > 0 ? 'inline-block' : 'none';
+    row.classList.toggle('has-unread-msg', count > 0);
+  });
+}
+
+// Instantly zero out every badge tied to a chat the moment it's opened,
+// instead of waiting on the round-trip Firestore snapshot to confirm the
+// unreadCount reset. The listener above will reconfirm the same (already
+// zero) values shortly after, so there's no flicker — just no stuck badge.
+function clearChatBadgesLocally(chatId, otherUid) {
+  const prev = chatUnreadByChatId[chatId] || 0;
+  if (prev > 0) {
+    chatUnreadTotal = Math.max(0, chatUnreadTotal - prev);
+    updateBadge('chat-badge', chatUnreadTotal);
+    updateBadge('chat-badge-mobile', chatUnreadTotal);
+  }
+  chatUnreadByChatId[chatId] = 0;
+  const uid = otherUid || chatIdToOtherUid[chatId];
+  if (uid && friendChatUnread[uid]) {
+    delete friendChatUnread[uid];
+    applyFriendChatBadges();
+  }
 }
 
 function updateBadge(id, count) {
@@ -9919,7 +11581,7 @@ function showNotifToast(d, docId) {
   const t = document.createElement('div');
   t.className = 'notif-toast';
   const avatarHtml = renderAvatarHtml(null, d.fromProfilePic, 32);
-  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️'}[d.type]||'🔔';
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
   t.innerHTML = `
     <div class="notif-toast-avatar">${avatarHtml}</div>
     <div class="notif-toast-body">
@@ -9983,7 +11645,7 @@ function buildNotifItem(doc) {
   const item = document.createElement('div');
   const extraClass = d.type === 'admin_warning' ? ' admin-warning' : (d.type === 'admin_announcement' ? ' admin-announcement' : '');
   item.className = 'notif-item' + (d.read ? '' : ' unread') + extraClass;
-  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️'}[d.type]||'🔔';
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
   const avatarHtml = renderAvatarHtml(null, d.fromProfilePic, 32);
   item.innerHTML = `
     <div class="notif-item-avatar-wrap">
