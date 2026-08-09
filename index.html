@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
   <title>CampusVibes – College Social</title>
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -139,6 +139,38 @@
       background: linear-gradient(135deg, #f9e6a8, #d4a437);
       color: #3a2a05;
       box-shadow: 0 2px 8px rgba(212,164,55,0.4);
+    }
+
+    /* ── Voice notes in chat ─────────────────────────────────────────── */
+    .msg-voice-note {
+      display: flex; align-items: center; gap: 8px;
+      min-width: 190px; padding: 6px 4px;
+    }
+    .voice-note-play-btn {
+      flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      background: var(--accent, #4f8ef7); color: #fff;
+    }
+    .voice-note-play-btn i { width: 15px; height: 15px; }
+    .voice-note-play-btn .voice-icon-pause { display: none; }
+    .voice-note-play-btn.playing .voice-icon-play  { display: none; }
+    .voice-note-play-btn.playing .voice-icon-pause { display: block; }
+    .voice-note-track {
+      flex: 1; height: 4px; border-radius: 2px;
+      background: rgba(127,127,127,0.3); position: relative; overflow: hidden;
+    }
+    .voice-note-progress { height: 100%; width: 0%; background: var(--accent, #4f8ef7); transition: width 0.1s linear; }
+    .voice-note-duration { font-size: 11px; color: var(--muted, #aaa); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+    .chat-voice-record-bar { border-top: 1px solid var(--border, rgba(255,255,255,0.1)); }
+    .voice-cancel-btn {
+      width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+      background: var(--surface2, rgba(255,255,255,0.08)); color: var(--danger, #f66);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .voice-cancel-btn i { width: 15px; height: 15px; }
+    #desktop-chat-action-btn.recording, #modal-chat-action-btn.recording {
+      color: #ff4757;
     }
 
     /* ── Admin-granted "Eagle" profile frame (black wings + dark background) ──
@@ -303,6 +335,162 @@
       background: linear-gradient(135deg, #b6ffda, #1f9e5e);
       color: #04321c;
       box-shadow: 0 2px 8px rgba(31,158,94,0.45);
+    }
+
+    /* ── Admin-granted "Crystal" profile frame (pink glowing crystal) ───
+       Stored on the user doc as profileFrame: 'crystal'. A faceted pink
+       gemstone: angled facet border (clip-path style highlights), real
+       crystal-shard ornaments at each corner (SVG), and a soft glow.
+       Perf note: only `opacity`/`transform` are animated (compositor-only)
+       so this never triggers layout/paint thrashing or janks scrolling. */
+    .frame-elite-crystal {
+      position: relative;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(255,180,230,0.14) 0%, transparent 30%),
+        linear-gradient(315deg, rgba(255,180,230,0.1) 0%, transparent 35%),
+        linear-gradient(165deg, rgba(64,10,50,0.5), rgba(20,4,18,0.25)) !important;
+      border: 1.5px solid #ff8ad4 !important;
+      box-shadow:
+        0 0 0 3px rgba(255,110,199,0.14),
+        0 0 22px rgba(255,90,190,0.4),
+        inset 0 0 14px rgba(255,150,220,0.12),
+        inset 0 0 0 1px rgba(255,210,240,0.4);
+    }
+    /* Faceted highlight edges, like light catching cut gem facets */
+    .frame-elite-crystal::before {
+      content: '';
+      position: absolute; inset: 0; border-radius: 18px;
+      pointer-events: none; z-index: 3;
+      background:
+        linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.22) 50%, transparent 62%),
+        linear-gradient(105deg, rgba(255,255,255,0.5) 0%, transparent 3%),
+        linear-gradient(255deg, rgba(255,255,255,0.5) 0%, transparent 3%),
+        linear-gradient(15deg, rgba(255,255,255,0.35) 0%, transparent 4%),
+        linear-gradient(195deg, rgba(255,255,255,0.35) 0%, transparent 4%);
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mix-blend-mode: screen;
+    }
+    /* Soft breathing halo — animates opacity only (cheap, GPU composited) */
+    .frame-elite-crystal::after {
+      content: '';
+      position: absolute; inset: -18px;
+      border-radius: 26px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(255,90,190,0.4), rgba(255,90,190,0) 70%);
+      pointer-events: none; z-index: -1;
+      animation: crystalHaloPulse 2.8s ease-in-out infinite;
+      will-change: opacity;
+    }
+    @keyframes crystalHaloPulse {
+      0%, 100% { opacity: 0.65; }
+      50%      { opacity: 1; }
+    }
+    /* Real crystal-shard ornaments at each corner (reuses the corner-vine slots) */
+    .frame-elite-crystal .corner-vine {
+      display: block;
+      width: 40px; height: 40px;
+      background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmYwZmEiLz4KPHN0b3Agb2Zmc2V0PSIwLjUiIHN0b3AtY29sb3I9IiNmZjZlYzciLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYzIyZjhlIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHBvbHlnb24gcG9pbnRzPSI2LDYgNTUsMiA0MCwzMCA1OCw1NCAyMCw1OCA0LDMwIiBmaWxsPSJ1cmwoI2cpIiBzdHJva2U9IiNmZmU2ZjciIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjxwb2x5Z29uIHBvaW50cz0iNiw2IDQwLDMwIDIwLDU4IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjMzIi8+Cjxwb2x5Z29uIHBvaW50cz0iNTUsMiA0MCwzMCA1OCw1NCIgZmlsbD0iIzAwMDAwMCIgb3BhY2l0eT0iMC4xNCIvPgo8L3N2Zz4=");
+      background-repeat: no-repeat; background-size: contain;
+      opacity: 0.95;
+      filter: drop-shadow(0 0 5px rgba(255,120,210,0.75));
+      animation: crystalShardGlint 3.4s ease-in-out infinite;
+    }
+    .frame-elite-crystal .corner-vine-tl { top: -6px; left: -6px; }
+    .frame-elite-crystal .corner-vine-tr { top: -6px; right: -6px; transform: scaleX(-1); animation-delay: 0.5s; }
+    .frame-elite-crystal .corner-vine-bl { bottom: -6px; left: -6px; transform: scaleY(-1); animation-delay: 1s; }
+    .frame-elite-crystal .corner-vine-br { bottom: -6px; right: -6px; transform: scale(-1,-1); animation-delay: 1.6s; }
+    @keyframes crystalShardGlint {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50%      { opacity: 1; transform: scale(1.06); }
+    }
+    .frame-elite-crystal .corner-vine-tr { transform: scaleX(-1) scale(1); }
+    /* frame-lights repurposed as a row of tiny gem glints */
+    .frame-elite-crystal .frame-lights {
+      display: block;
+      background-image: radial-gradient(circle, rgba(255,235,248,0.95) 0 2px, rgba(255,180,230,0.5) 3.5px, rgba(255,180,230,0) 6px);
+      background-size: 20px 12px; background-repeat: repeat-x; background-position: center;
+      filter: blur(0.5px) drop-shadow(0 0 3px rgba(255,140,220,0.6));
+      animation: crystalHaloPulse 2.8s ease-in-out infinite;
+    }
+    .frame-tag-crystal {
+      background: linear-gradient(135deg, #ffe3f6, #ff4fb8 60%, #c22f8e);
+      color: #4a0630;
+      box-shadow: 0 2px 8px rgba(255,79,184,0.45);
+    }
+
+    /* ── Admin-granted "Nebula" profile frame (holographic cosmic aurora) ─
+       Stored on the user doc as profileFrame: 'nebula'. The most unique
+       tier: a starfield backdrop with a spinning holographic ring and
+       twinkling corner stars. All motion uses transform/opacity only, so
+       it's compositor-driven and won't block scrolling or cause jank. */
+    .frame-elite-nebula {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.9) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 70% 15%, rgba(255,255,255,0.7) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 85% 60%, rgba(255,255,255,0.85) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 35% 80%, rgba(255,255,255,0.7) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 55% 45%, rgba(255,255,255,0.6) 0 1px, transparent 1.5px),
+        linear-gradient(160deg, #150a2e 0%, #0a0616 60%, #1a0a26 100%) !important;
+      border: 2px solid transparent !important;
+      box-shadow:
+        0 0 24px rgba(160,90,255,0.35),
+        inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    /* Spinning holographic ring: a large conic gradient rotated with
+       transform (GPU-composited) and clipped to a thin ring via mask —
+       far cheaper than animating background-position. */
+    .frame-elite-nebula::after {
+      content: '';
+      position: absolute; inset: -40%;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #ff6ec7, #7c5cff, #3ee6ff, #7c5cff, #ff6ec7);
+      -webkit-mask: radial-gradient(circle, transparent 62%, #fff 63%, #fff 66%, transparent 67%);
+      mask: radial-gradient(circle, transparent 62%, #fff 63%, #fff 66%, transparent 67%);
+      animation: nebulaSpin 6s linear infinite;
+      pointer-events: none; z-index: 1;
+      will-change: transform;
+    }
+    @keyframes nebulaSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .frame-elite-nebula::before {
+      content: '';
+      position: absolute; inset: -18px;
+      border-radius: 32px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(124,92,255,0.32), rgba(124,92,255,0) 70%);
+      pointer-events: none; z-index: -1;
+    }
+    /* Twinkling star ornaments at each corner (reuses corner-vine slots) */
+    .frame-elite-nebula .corner-vine {
+      display: block;
+      width: 26px; height: 26px;
+      background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPHBhdGggZD0iTTUwIDAgTDYwIDQwIEwxMDAgNTAgTDYwIDYwIEw1MCAxMDAgTDQwIDYwIEwwIDUwIEw0MCA0MCBaIiBmaWxsPSIjZmZmZmZmIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNlOGRkZmYiLz4KPC9zdmc+");
+      background-repeat: no-repeat; background-size: contain;
+      filter: drop-shadow(0 0 6px rgba(190,150,255,0.9));
+      animation: nebulaTwinkle 2.2s ease-in-out infinite;
+      z-index: 2;
+    }
+    .frame-elite-nebula .corner-vine-tl { top: 6px; left: 6px; transform: none; animation-delay: 0s; }
+    .frame-elite-nebula .corner-vine-tr { top: 6px; right: 6px; transform: none; animation-delay: 0.55s; }
+    .frame-elite-nebula .corner-vine-bl { bottom: 6px; left: 6px; transform: none; animation-delay: 1.1s; }
+    .frame-elite-nebula .corner-vine-br { bottom: 6px; right: 6px; transform: none; animation-delay: 1.65s; }
+    @keyframes nebulaTwinkle {
+      0%, 100% { opacity: 0.35; transform: scale(0.8); }
+      50%      { opacity: 1; transform: scale(1.15); }
+    }
+    .frame-elite-nebula .frame-lights { display: none; }
+    .frame-tag-nebula {
+      background: linear-gradient(120deg, #ff6ec7, #7c5cff, #3ee6ff);
+      color: #0a0616;
+      box-shadow: 0 2px 10px rgba(124,92,255,0.5);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .frame-elite-crystal::after, .frame-elite-crystal .corner-vine, .frame-elite-crystal .frame-lights,
+      .frame-elite-nebula::after, .frame-elite-nebula .corner-vine { animation: none !important; }
     }
     /* ── Forgot Password ── */
     .forgot-pw-wrap { text-align: right; margin: -4px 0 10px; }
@@ -796,6 +984,16 @@
       box-shadow: 0 0 12px rgba(46,204,113,0.7), 0 0 0 1px rgba(46,204,113,0.3) !important;
     }
     .search-mini-frame.mf-emerald .search-mini-badge { background: linear-gradient(135deg, #a8f2c8, #1f9e56); }
+    .search-mini-frame.mf-crystal {
+      border: 3px solid #ff6ec7 !important;
+      box-shadow: 0 0 12px rgba(255,110,199,0.7), 0 0 0 1px rgba(255,110,199,0.3) !important;
+    }
+    .search-mini-frame.mf-crystal .search-mini-badge { background: linear-gradient(135deg, #ffd3ee, #ff4fb8); }
+    .search-mini-frame.mf-nebula {
+      border: 3px solid #7c5cff !important;
+      box-shadow: 0 0 12px rgba(124,92,255,0.7), 0 0 0 1px rgba(124,92,255,0.3) !important;
+    }
+    .search-mini-frame.mf-nebula .search-mini-badge { background: linear-gradient(120deg, #ff6ec7, #7c5cff, #3ee6ff); }
     .search-person-name.has-elite-frame {
       display: inline-flex; align-items: center; gap: 4px; justify-content: center;
     }
@@ -1411,24 +1609,25 @@ opacity: .4;
     .chat-input-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
+      gap: 6px;
+      padding: 8px 10px;
       background: #000;
       border-top: 1px solid rgba(255,255,255,0.08);
     }
     .chat-input-bar input[type="text"] {
       flex: 1;
+      min-width: 0;
       background: #1c1c1e;
       border: 1px solid rgba(255,255,255,0.12);
       color: #fff;
-      border-radius: 22px;
-      padding: 11px 16px;
+      border-radius: 20px;
+      padding: 10px 14px;
       font-size: 16px;
       outline: none;
     }
     .chat-input-bar input[type="text"]::placeholder { color: #8e8e93; }
     .chat-input-bar .btn-icon {
-      width: 38px; height: 38px;
+      width: 34px; height: 34px;
       border-radius: 50%;
       background: #1c1c1e;
       display: flex; align-items: center; justify-content: center;
@@ -1436,9 +1635,9 @@ opacity: .4;
       cursor: pointer;
       color: #fff;
     }
-    .chat-input-bar .btn-icon i { width: 19px; height: 19px; }
+    .chat-input-bar .btn-icon i { width: 17px; height: 17px; }
     .chat-input-bar .btn-send {
-      width: 40px; height: 40px;
+      width: 36px; height: 36px;
       border-radius: 50%;
       border: none;
       flex-shrink: 0;
@@ -1446,8 +1645,93 @@ opacity: .4;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       box-shadow: 0 3px 10px rgba(224,51,156,0.35);
+      transition: background .15s ease;
     }
-    .chat-input-bar .btn-send i { width: 18px; height: 18px; color: #fff; }
+    .chat-input-bar .btn-send i { width: 17px; height: 17px; color: #fff; }
+    /* When the combined action button is showing the mic (no text typed
+       yet), give it a plain neutral fill instead of the send gradient so
+       it doesn't look like a disabled/mis-colored send button. */
+    .chat-input-bar .btn-send.mic-mode {
+      background: #1c1c1e;
+      box-shadow: none;
+    }
+    /* Both icons live inside the button at all times; only one is shown,
+       toggled purely with CSS (via the .mic-mode class) so this keeps
+       working even after lucide.createIcons() swaps the <i> for an <svg> —
+       that swap preserves the element's classes, but NOT any data-lucide
+       attribute we might try to mutate afterwards, so attribute-based
+       toggling silently breaks after the first render. Class-based
+       show/hide has no such problem. */
+    .chat-input-bar .btn-send .action-icon-send { display: none; }
+    .chat-input-bar .btn-send.mic-mode .action-icon-mic  { display: block; }
+    .chat-input-bar .btn-send.mic-mode .action-icon-send { display: none; }
+    .chat-input-bar .btn-send:not(.mic-mode) .action-icon-mic  { display: none; }
+    .chat-input-bar .btn-send:not(.mic-mode) .action-icon-send { display: block; }
+
+    /* -- Sticker/GIF picker -- */
+    .chat-input-bar { position: relative; }
+    .sticker-picker-panel {
+      position: absolute; bottom: calc(100% + 8px); left: 8px; right: 8px;
+      max-width: 380px; height: 360px; background: #18181b;
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.55);
+      display: none; flex-direction: column; overflow: hidden; z-index: 40;
+      opacity: 0; transform: translateY(8px) scale(0.98); transition: opacity .15s ease, transform .15s ease;
+    }
+    .sticker-picker-panel.open { display: flex; }
+    .sticker-picker-panel.open.show { opacity: 1; transform: translateY(0) scale(1); }
+    .sticker-picker-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px 8px; flex-shrink: 0;
+    }
+    .sticker-picker-head span { font-size: 13.5px; font-weight: 700; color: #fff; }
+    .sticker-picker-close {
+      width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(255,255,255,0.08);
+      color: #9aa0a6; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    }
+    .sticker-picker-close i { width: 14px; height: 14px; }
+    .sticker-picker-tabs {
+      display: flex; gap: 6px; padding: 0 12px 10px; flex-shrink: 0;
+    }
+    .sticker-picker-tabs button {
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid transparent; color: #9aa0a6;
+      font-size: 12.5px; font-weight: 700; padding: 7px 0; cursor: pointer; border-radius: 20px;
+      transition: background .15s, color .15s;
+    }
+    .sticker-picker-tabs button.active { color: #fff; background: linear-gradient(135deg, #a52ee0, #e0339c 55%, #ff5c7a); }
+    .sticker-picker-search { padding: 0 12px 10px; flex-shrink: 0; display: none; }
+    .sticker-picker-search.show { display: block; }
+    .sticker-picker-search input {
+      width: 100%; background: #1c1c1e; border: 1px solid rgba(255,255,255,0.12); color: #fff;
+      border-radius: 18px; padding: 8px 14px; font-size: 14px; outline: none; box-sizing: border-box;
+    }
+    .sticker-picker-search input:focus { border-color: #e0339c; }
+    /* Flex-wrap of fixed-size boxes instead of CSS grid + aspect-ratio —
+       far more reliable across mobile webviews, which is what was causing
+       the stickers to overlap/collapse into each other. */
+    .sticker-picker-grid {
+      flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start;
+      gap: 10px; padding: 4px 12px 14px; box-sizing: border-box;
+    }
+    .sticker-picker-item {
+      background: rgba(255,255,255,0.05); border-radius: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; padding: 4px; box-sizing: border-box; flex: 0 0 auto;
+      transition: transform .1s, background .1s, border-color .1s;
+    }
+    .sticker-picker-item:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.12); }
+    .sticker-picker-item:active { transform: scale(0.88); }
+    .sticker-picker-item img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+    .sticker-picker-grid.gif-grid { gap: 10px; }
+    .sticker-picker-grid.gif-grid .sticker-picker-item {
+      width: calc(50% - 4px); height: 92px; padding: 0; overflow: hidden; border-radius: 12px;
+    }
+    .sticker-picker-grid.gif-grid .sticker-picker-item img { object-fit: cover; }
+    .sticker-picker-empty {
+      width: 100%; color: #9aa0a6; font-size: 13px; text-align: center; line-height: 1.5;
+      padding: 40px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+
     .chat-input-bar .btn-send:active { transform: scale(0.92); }
 
     /* -- Desktop chat layout: also give it the same dark Instagram feel -- */
@@ -1551,6 +1835,16 @@ opacity: .4;
     }
     .chat-img-lightbox-close:hover { background: rgba(255,255,255,0.22); }
     .chat-img-lightbox-close i { width: 22px; height: 22px; }
+    /* Force every text-entry field to at least 16px. Below that threshold,
+       mobile Chrome/Safari auto-zoom the page on focus (to make the text
+       legible) and — on Chrome especially — often don't zoom back out
+       afterwards. Several inputs across the app set a smaller inline
+       font-size (13–15px) for visual density; !important here overrides
+       those without having to touch each one individually. Combined with
+       the viewport meta tag's user-scalable=0, this is the standard
+       belt-and-suspenders fix for the "page zooms in when I tap a field"
+       issue on both iOS Safari and Android Chrome. */
+    input, textarea, select { font-size: 16px !important; }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <!-- Firebase -->
@@ -1561,6 +1855,9 @@ opacity: .4;
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
   <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- QR code generation (for "my code") + decoding (for scanning) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
 </head>
 <body>
 
@@ -1800,8 +2097,12 @@ opacity: .4;
 
     <!-- ── FRIENDS ── -->
     <section id="view-friends" class="view">
-      <div class="view-header">
+      <div class="view-header" style="display:flex;align-items:center">
         <h2>🤝 Friends</h2>
+        <button id="friends-qr-btn" title="Add friend via QR code"
+                style="margin-left:auto;width:36px;height:36px;border-radius:50%;border:1px solid var(--border,rgba(255,255,255,0.14));background:var(--surface2,rgba(255,255,255,0.06));color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <i data-lucide="qr-code" style="width:18px;height:18px"></i>
+        </button>
       </div>
       <div id="friend-requests-section" style="display:none">
         <div class="friends-section">
@@ -2085,6 +2386,53 @@ opacity: .4;
   </div>
 </div>
 
+<!-- Add Friend via QR Modal -->
+<div class="modal-overlay" id="modal-qr-friend">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3>📷 Add by QR Code</h3>
+      <button class="modal-close" data-modal="modal-qr-friend">✕</button>
+    </div>
+
+    <div class="qr-tabs" style="display:flex;gap:8px;margin:2px 0 16px">
+      <button class="qr-tab-btn active" data-qrtab="mine"
+        style="flex:1;padding:9px 0;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:var(--accent);color:#fff">
+        My Code
+      </button>
+      <button class="qr-tab-btn" data-qrtab="scan"
+        style="flex:1;padding:9px 0;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:var(--surface2,rgba(255,255,255,0.08));color:inherit">
+        Scan
+      </button>
+    </div>
+
+    <!-- My QR code -->
+    <div id="qr-pane-mine" class="qr-pane">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+        <div id="qr-mine-canvas-wrap" style="background:#fff;padding:14px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.25)"></div>
+        <div style="text-align:center">
+          <strong id="qr-mine-name" style="display:block;font-size:15px">Your Name</strong>
+          <small id="qr-mine-username" style="color:var(--muted,#aaa)">@username</small>
+        </div>
+        <p style="font-size:12px;color:var(--muted,#aaa);text-align:center;margin:0">
+          Let a friend scan this code with the Scan tab to send you a friend request instantly.
+        </p>
+      </div>
+    </div>
+
+    <!-- Scan a friend's QR code -->
+    <div id="qr-pane-scan" class="qr-pane" style="display:none">
+      <div style="position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:1/1">
+        <video id="qr-scan-video" playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>
+        <div style="position:absolute;inset:0;border:2.5px solid rgba(255,255,255,0.85);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,0.35);margin:14%"></div>
+      </div>
+      <canvas id="qr-scan-canvas" style="display:none"></canvas>
+      <p id="qr-scan-status" style="font-size:12.5px;color:var(--muted,#aaa);text-align:center;margin:12px 0 0">
+        Point your camera at a friend's code
+      </p>
+    </div>
+  </div>
+</div>
+
 <!-- Settings Modal (Instagram-style) -->
 <div class="modal-overlay" id="modal-settings">
   <div class="modal" style="max-width:440px;padding:0;overflow:hidden">
@@ -2205,13 +2553,25 @@ opacity: .4;
       <button class="call-header-btn" id="chat-window-call-video-btn" title="Video call"><i data-lucide="video"></i></button>
     </div>
     <div class="chat-messages" id="modal-chat-messages"></div>
-    <div class="chat-input-bar">
-      <input type="text" id="modal-chat-input" placeholder="Type a message…"/>
-      <label class="btn-icon">
+    <div class="chat-input-bar" id="modal-chat-input-bar">
+      <div class="sticker-picker-panel" id="modal-sticker-panel"></div>
+      <button class="btn-icon" id="modal-chat-sticker-btn" title="Stickers &amp; GIFs"><i data-lucide="smile-plus"></i></button>
+      <label class="btn-icon" title="Attach photo/video">
         <i data-lucide="image"></i>
         <input type="file" id="modal-chat-media" accept="image/*,video/*" hidden/>
       </label>
-      <button class="btn-send" id="modal-chat-send"><i data-lucide="send"></i></button>
+      <input type="text" id="modal-chat-input" placeholder="Type a message…"/>
+      <button class="btn-send mic-mode" id="modal-chat-action-btn" title="Voice note">
+        <i data-lucide="mic" class="action-icon-mic"></i>
+        <i data-lucide="send" class="action-icon-send"></i>
+      </button>
+    </div>
+    <div class="chat-voice-record-bar" id="modal-voice-record-bar" style="display:none;align-items:center;gap:10px;padding:10px 14px">
+      <button class="btn-icon voice-cancel-btn" title="Cancel recording"><i data-lucide="trash-2"></i></button>
+      <span class="voice-rec-dot" style="width:10px;height:10px;border-radius:50%;background:#ff4757;flex-shrink:0;animation:presencePulse 1.2s infinite"></span>
+      <span class="voice-rec-timer" style="font-variant-numeric:tabular-nums;font-size:13px;flex-shrink:0">0:00</span>
+      <span style="flex:1;font-size:12px;color:var(--muted,#aaa)">Recording voice note…</span>
+      <button class="btn-send voice-send-btn" title="Send voice note"><i data-lucide="send"></i></button>
     </div>
   </div>
 </div>
@@ -2544,6 +2904,10 @@ let currentChatUid = null;
 let chatListener = null;
 let chatPresenceRef = null;
 let chatPresenceInterval = null;
+let chatTypingRef  = null;   // rtdb listener on the OTHER user's typing state
+let _otherTyping    = false; // whether the other person is currently typing
+let _myTypingActive = false; // whether I've currently marked myself as typing
+let _typingIdleTimer = null; // clears my own typing flag after a pause
 // Guards against the mobile "ghost click" bug: closing the chat modal's
 // back button can, on some devices, fire a second synthetic click on
 // whatever element ends up underneath the tap (a notification, another
@@ -3508,9 +3872,13 @@ document.querySelectorAll('.modal-close').forEach(btn => {
   btn.addEventListener('click', () => {
     pauseAllMedia();
     if (btn.dataset.modal === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
+    if (btn.dataset.modal === 'modal-qr-friend' && typeof stopQrScan === 'function') stopQrScan();
     if (btn.dataset.modal === 'modal-chat-window') {
       if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
       if (chatPresenceInterval) { clearInterval(chatPresenceInterval); chatPresenceInterval = null; }
+      if (chatTypingRef) { chatTypingRef.off(); chatTypingRef = null; }
+      if (typeof clearMyTyping === 'function') clearMyTyping();
+      if (typeof cancelVoiceRecording === 'function') cancelVoiceRecording();
       _chatCloseGuardChatId = currentChatId;
       _chatCloseGuardUntil = Date.now() + 600;
     }
@@ -3522,6 +3890,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) {
       pauseAllMedia();
       if (overlay.id === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
+      if (overlay.id === 'modal-qr-friend' && typeof stopQrScan === 'function') stopQrScan();
       overlay.classList.remove('open');
     }
   });
@@ -3700,12 +4069,15 @@ function renderSearchResults(results, q) {
           eagle:    { cls: 'mf-eagle',    badge: '🦅' },
           sapphire: { cls: 'mf-sapphire', badge: '💎' },
           royal:    { cls: 'mf-royal',    badge: '♛'  },
-          emerald:  { cls: 'mf-emerald',  badge: '🌿' }
+          emerald:  { cls: 'mf-emerald',  badge: '🌿' },
+          crystal:  { cls: 'mf-crystal',  badge: '🔮' },
+          nebula:   { cls: 'mf-nebula',   badge: '🌌' }
         };
         const fm = frameMeta[u.profileFrame];
+        const FM_LABELS = { 'mf-gold':'Elite', 'mf-eagle':'Eagle', 'mf-sapphire':'Sapphire', 'mf-royal':'Royal', 'mf-emerald':'Emerald', 'mf-crystal':'Crystal', 'mf-nebula':'Nebula' };
         const rawAvatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" class="search-avatar-img"/>`;
         const avatarHtml = fm
-          ? `<div class="search-mini-frame ${fm.cls}" title="${fm.cls === 'mf-gold' ? 'Elite' : fm.cls === 'mf-eagle' ? 'Eagle' : fm.cls === 'mf-sapphire' ? 'Sapphire' : fm.cls === 'mf-royal' ? 'Royal' : 'Emerald'} Profile">${rawAvatarHtml}<span class="search-mini-badge">${fm.badge}</span></div>`
+          ? `<div class="search-mini-frame ${fm.cls}" title="${FM_LABELS[fm.cls]} Profile">${rawAvatarHtml}<span class="search-mini-badge">${fm.badge}</span></div>`
           : rawAvatarHtml;
         return `<div class="search-person-card" data-uid="${uid}">
           <div class="search-person-avatar">${avatarHtml}</div>
@@ -9384,13 +9756,25 @@ async function openChat(chatId, otherUid, otherInfo) {
       <button class="call-header-btn" id="desktop-chat-call-video-btn" title="Video call"><i data-lucide="video"></i></button>
     </div>
     <div class="chat-messages" id="desktop-chat-msgs"></div>
-    <div class="chat-input-bar">
-      <input type="text" id="desktop-chat-input" placeholder="Type a message…"/>
-      <label class="btn-icon">
+    <div class="chat-input-bar" id="desktop-chat-input-bar">
+      <div class="sticker-picker-panel" id="desktop-sticker-panel"></div>
+      <button class="btn-icon" id="desktop-chat-sticker-btn" title="Stickers &amp; GIFs"><i data-lucide="smile-plus"></i></button>
+      <label class="btn-icon" title="Attach photo/video">
         <i data-lucide="image"></i>
         <input type="file" id="desktop-chat-media" accept="image/*,video/*" hidden/>
       </label>
-      <button class="btn-send" id="desktop-chat-send"><i data-lucide="send"></i></button>
+      <input type="text" id="desktop-chat-input" placeholder="Type a message…"/>
+      <button class="btn-send mic-mode" id="desktop-chat-action-btn" title="Voice note">
+        <i data-lucide="mic" class="action-icon-mic"></i>
+        <i data-lucide="send" class="action-icon-send"></i>
+      </button>
+    </div>
+    <div class="chat-voice-record-bar" id="desktop-voice-record-bar" style="display:none;align-items:center;gap:10px;padding:10px 14px">
+      <button class="btn-icon voice-cancel-btn" title="Cancel recording"><i data-lucide="trash-2"></i></button>
+      <span class="voice-rec-dot" style="width:10px;height:10px;border-radius:50%;background:#ff4757;flex-shrink:0;animation:presencePulse 1.2s infinite"></span>
+      <span class="voice-rec-timer" style="font-variant-numeric:tabular-nums;font-size:13px;flex-shrink:0">0:00</span>
+      <span style="flex:1;font-size:12px;color:var(--muted,#aaa)">Recording voice note…</span>
+      <button class="btn-send voice-send-btn" title="Send voice note"><i data-lucide="send"></i></button>
     </div>`;
   lucide.createIcons();
 
@@ -9410,16 +9794,16 @@ async function openChat(chatId, otherUid, otherInfo) {
 
   $('desktop-chat-media').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file) return;
-    showLoading();
     try {
       const url = await uploadToCloudinary(file);
       await sendChatMessage(chatId, '', url, file.type.startsWith('video'));
     } catch(err) { toast(err.message, 'error'); }
-    hideLoading();
+    e.target.value = '';
   });
+  setupStickerPicker('desktop-sticker-panel', 'desktop-chat-sticker-btn', chatId);
 
-  $('desktop-chat-send').addEventListener('click', () => sendDesktopMsg(chatId));
-  $('desktop-chat-input').addEventListener('keydown', e => { if(e.key==='Enter') sendDesktopMsg(chatId); });
+  wireChatActionBtn('desktop', chatId);
+  $('desktop-chat-input').addEventListener('keydown', e => { if(e.key==='Enter') $('desktop-chat-action-btn')?.click(); });
 
   if (chatListener) chatListener.off();
   const msgRef = rtdb.ref(`chats/${chatId}/messages`);
@@ -9429,10 +9813,12 @@ async function openChat(chatId, otherUid, otherInfo) {
   // Live "online" / "active Xh ago" status in the chat header
   if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
   if (chatPresenceInterval) { clearInterval(chatPresenceInterval); chatPresenceInterval = null; }
+  if (chatTypingRef) { chatTypingRef.off(); chatTypingRef = null; }
+  _otherTyping = false;
   if (otherUid) {
     let _latestPres = null;
     const renderPresence = () => {
-      const text = presenceStatusText(_latestPres);
+      const text = _otherTyping ? 'typing…' : presenceStatusText(_latestPres);
       const desktopStatusEl = $('desktop-chat-status');
       if (desktopStatusEl) desktopStatusEl.textContent = text;
       const mobileStatusEl = $('chat-window-status');
@@ -9445,7 +9831,20 @@ async function openChat(chatId, otherUid, otherInfo) {
     });
     // Keep "Active Xh ago" ticking upward even without new presence events
     chatPresenceInterval = setInterval(renderPresence, 60000);
+
+    // Live typing indicator: the other person writes a short-lived flag to
+    // chats/{chatId}/typing/{theirUid} while composing (see
+    // setupTypingIndicator below); we just watch it and swap it in ahead of
+    // the normal presence text.
+    chatTypingRef = rtdb.ref(`chats/${chatId}/typing/${otherUid}`);
+    chatTypingRef.on('value', snap => {
+      _otherTyping = !!snap.val();
+      renderPresence();
+    });
   }
+
+  setupTypingIndicator(chatId);
+  setupVoiceRecording(chatId);
 
   if (window.innerWidth < 768) {
     // Close any other modal left open underneath (e.g. a friend's profile
@@ -9459,18 +9858,15 @@ async function openChat(chatId, otherUid, otherInfo) {
     if (avatarEl) avatarEl.innerHTML = renderAvatarHtml(otherInfo.avatar || null, otherInfo.profilePic, 40);
     openModal('modal-chat-window');
     attachIncrementalChatRenderer(msgRef, $('modal-chat-messages'));
-    $('modal-chat-send').onclick = () => {
-      const txt = $('modal-chat-input').value.trim(); if (!txt) return;
-      sendChatMessage(chatId, txt); $('modal-chat-input').value = '';
-    };
-    $('modal-chat-input').onkeydown = e => { if(e.key==='Enter') $('modal-chat-send').click(); };
+    wireChatActionBtn('modal', chatId);
+    $('modal-chat-input').onkeydown = e => { if(e.key==='Enter') $('modal-chat-action-btn')?.click(); };
     $('modal-chat-media').onchange = async e => {
       const file = e.target.files[0]; if (!file) return;
-      showLoading();
       try { const url = await uploadToCloudinary(file); await sendChatMessage(chatId,'',url,file.type.startsWith('video')); }
       catch(err){toast(err.message,'error');}
-      hideLoading();
+      e.target.value = '';
     };
+    setupStickerPicker('modal-sticker-panel', 'modal-chat-sticker-btn', chatId);
   }
 }
 
@@ -9479,6 +9875,154 @@ function sendDesktopMsg(chatId) {
   const txt = inp?.value.trim(); if (!txt) return;
   sendChatMessage(chatId, txt);
   inp.value = '';
+  clearMyTyping();
+  updateActionBtnIcon('desktop');
+}
+
+// ══════════════════════════════════════
+// STICKER / GIF PICKER
+// Stickers: a small built-in set of Twemoji PNGs (open-licensed, no API
+// key needed) sent instantly as an image message — no upload step, since
+// they're already hosted.
+// GIFs: reuses the same admin-curated `gifs` Firestore collection that
+// already powers the comment-GIF picker (loadGifsCache) — no external
+// API, no key. Add/manage GIFs from admin.html same as before and they'll
+// show up here too.
+// ══════════════════════════════════════
+const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/';
+const STICKER_SET = ['1f602','1f923','2764','1f60d','1f622','1f62d','1f621','1f631',
+  '1f44d','1f44e','1f44f','1f64f','1f525','1f389','1f60e','1f929',
+  '1f60f','1f971','1f973','1f92f','1f914','1f644','1f61c','1f92a',
+  '1f4af','2728','1f480','1f47b','1f47d','1f437','1f436','1f431'];
+
+// Measures the grid's actual rendered content width and sets an exact
+// pixel width (and matching height for a given aspect ratio) on every
+// item, so exactly `cols` items fit per row no matter how wide the panel
+// really is on this device. This is deliberately NOT done with CSS
+// percentages/aspect-ratio — that's what caused stickers to overlap
+// before, since those depend on layout timing that isn't always reliable
+// across mobile webviews.
+function sizeGridItems(grid, cols, ratio = 1) {
+  const gapPx = 10;
+  const styles = getComputedStyle(grid);
+  const contentWidth = grid.clientWidth - parseFloat(styles.paddingLeft || 0) - parseFloat(styles.paddingRight || 0);
+  const itemWidth = Math.floor((contentWidth - gapPx * (cols - 1)) / cols);
+  grid.querySelectorAll('.sticker-picker-item').forEach(item => {
+    item.style.width = itemWidth + 'px';
+    item.style.height = Math.round(itemWidth / ratio) + 'px';
+  });
+}
+
+function setupStickerPicker(panelId, btnId, chatId) {
+  const panel = $(panelId), btn = $(btnId);
+  if (!panel || !btn) return;
+
+  panel.innerHTML = `
+    <div class="sticker-picker-head">
+      <span>Stickers &amp; GIFs</span>
+      <button type="button" class="sticker-picker-close" title="Close"><i data-lucide="x"></i></button>
+    </div>
+    <div class="sticker-picker-tabs">
+      <button type="button" class="active" data-tab="stickers">Stickers</button>
+      <button type="button" data-tab="gifs">GIFs</button>
+    </div>
+    <div class="sticker-picker-search"><input type="text" placeholder="Search GIFs…"/></div>
+    <div class="sticker-picker-grid"></div>
+  `;
+  lucide.createIcons();
+  const tabs = panel.querySelectorAll('.sticker-picker-tabs button');
+  const searchWrap = panel.querySelector('.sticker-picker-search');
+  const searchInput = panel.querySelector('.sticker-picker-search input');
+  const grid = panel.querySelector('.sticker-picker-grid');
+
+  const renderStickers = () => {
+    grid.className = 'sticker-picker-grid';
+    grid.innerHTML = STICKER_SET.map(code =>
+      `<button type="button" class="sticker-picker-item" data-url="${TWEMOJI_BASE}${code}.png"><img src="${TWEMOJI_BASE}${code}.png" loading="lazy"/></button>`
+    ).join('');
+    sizeGridItems(grid, 4);
+  };
+
+  const renderGifList = (list) => {
+    grid.className = 'sticker-picker-grid gif-grid';
+    if (!list.length) { grid.innerHTML = `<div class="sticker-picker-empty">🎬<br>No GIFs available to you yet.<br>Admins add GIFs from the admin panel — some are public, some are given to specific people.</div>`; return; }
+    grid.innerHTML = list.map(g =>
+      `<button type="button" class="sticker-picker-item" data-url="${escHtml(g.url)}" title="${escHtml(g.label||'')}"><img src="${escHtml(g.url)}" loading="lazy"/></button>`
+    ).join('');
+    sizeGridItems(grid, 2, 4/3);
+  };
+
+  let allGifs = null;
+  const renderGifs = async (query) => {
+    grid.className = 'sticker-picker-grid gif-grid';
+    if (allGifs === null) {
+      grid.innerHTML = `<div class="sticker-picker-empty">Loading…</div>`;
+      allGifs = await loadGifsCache();
+    }
+    const q = (query || '').toLowerCase().trim();
+    const filtered = q ? allGifs.filter(g => (g.label || '').toLowerCase().includes(q)) : allGifs;
+    renderGifList(filtered);
+  };
+
+  let gifDebounce = null;
+  tabs.forEach(tabBtn => {
+    tabBtn.onclick = () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tabBtn.classList.add('active');
+      if (tabBtn.dataset.tab === 'stickers') {
+        searchWrap.classList.remove('show');
+        renderStickers();
+      } else {
+        searchWrap.classList.add('show');
+        renderGifs(searchInput.value.trim());
+      }
+    };
+  });
+
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(gifDebounce);
+    gifDebounce = setTimeout(() => renderGifs(searchInput.value.trim()), 250);
+  });
+
+  grid.addEventListener('click', e => {
+    const item = e.target.closest('.sticker-picker-item');
+    if (!item) return;
+    sendChatMessage(chatId, '', item.dataset.url, false);
+    panel.classList.remove('show');
+    setTimeout(() => panel.classList.remove('open'), 150);
+  });
+
+  renderStickers();
+
+  const openPanel = () => {
+    panel.classList.add('open');
+    requestAnimationFrame(() => {
+      panel.classList.add('show');
+      // Re-run sizing now that the panel actually has real layout width
+      // (it was 0 while display:none, so any earlier sizing pass was a no-op).
+      const activeGrid = panel.querySelector('.sticker-picker-grid');
+      if (activeGrid) {
+        if (activeGrid.classList.contains('gif-grid')) sizeGridItems(activeGrid, 2, 4/3);
+        else sizeGridItems(activeGrid, 4);
+      }
+    });
+  };
+  const closePanel = () => {
+    panel.classList.remove('show');
+    setTimeout(() => panel.classList.remove('open'), 150);
+  };
+
+  panel.querySelector('.sticker-picker-close').onclick = closePanel;
+  btn.onclick = () => {
+    if (panel.classList.contains('open')) closePanel(); else openPanel();
+  };
+  // Close the picker on an outside tap, but not on the toggle button
+  // itself (that already handles its own open/close).
+  document.addEventListener('click', e => {
+    if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+      closePanel();
+    }
+  });
 }
 
 // ══════════════════════════════════════
@@ -10143,13 +10687,14 @@ function formatCallDuration(secs) {
   return `${m}:${s}`;
 }
 
-async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
+async function sendChatMessage(chatId, text, mediaUrl, isVideo, isAudio, audioDuration) {
   if (isBlocked(currentChatUid)) {
     toast('You can\'t message this user.', 'error');
     return;
   }
   mediaUrl = mediaUrl || '';
   isVideo  = !!isVideo;
+  isAudio  = !!isAudio;
   const msg = {
     uid:      currentUser.uid,
     name:     currentUserData.name   || currentUser.displayName || 'Student',
@@ -10158,13 +10703,15 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
     text:     text     || '',
     mediaUrl: mediaUrl,
     isVideo:  isVideo,
+    isAudio:  isAudio,
+    audioDuration: isAudio ? (audioDuration || 0) : null,
     ts:       Date.now(),
     read:     false
   };
   const msgRef = await rtdb.ref(`chats/${chatId}/messages`).push(msg);
   // Fix 4b: Track unread count for each member
   const chatMetaUpdate = {
-    lastMessage: text || (mediaUrl ? '📎 Media' : ''),
+    lastMessage: text || (isAudio ? '🎙️ Voice note' : (mediaUrl ? '📎 Media' : '')),
     lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
     lastSenderId: currentUser.uid
   };
@@ -10203,13 +10750,232 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo) {
         fromName: currentUserData.name || 'Student',
         fromAvatar: currentUserData.avatar || '',
         type:     'message',
-        text:     text ? text.slice(0, 60) : (mediaUrl ? '📎 Media' : ''),
+        text:     text ? text.slice(0, 60) : (isAudio ? '🎙️ Voice note' : (mediaUrl ? '📎 Media' : '')),
         chatId:   chatId,
         read:     false,
         ts:       firebase.firestore.FieldValue.serverTimestamp()
       }).catch(() => {});
     });
   } catch(e) {}
+}
+
+// ══════════════════════════════════════
+// TYPING INDICATOR
+// While composing, briefly mark chats/{chatId}/typing/{myUid} = true in the
+// Realtime Database (self-clearing after a short idle period or on send).
+// The other side listens on that same path — wired up in openChat().
+// ══════════════════════════════════════
+function writeTypingState(chatId, isTyping) {
+  if (!chatId || !currentUser) return;
+  const ref = rtdb.ref(`chats/${chatId}/typing/${currentUser.uid}`);
+  if (isTyping) {
+    ref.set(true);
+    // Auto-clear if the tab/app closes without a clean stop
+    ref.onDisconnect().remove();
+  } else {
+    ref.remove();
+    ref.onDisconnect().cancel();
+  }
+}
+
+function clearMyTyping() {
+  clearTimeout(_typingIdleTimer);
+  _typingIdleTimer = null;
+  if (_myTypingActive && currentChatId) writeTypingState(currentChatId, false);
+  _myTypingActive = false;
+}
+
+function handleTypingKeystroke(chatId) {
+  if (!_myTypingActive) {
+    _myTypingActive = true;
+    writeTypingState(chatId, true);
+  }
+  clearTimeout(_typingIdleTimer);
+  _typingIdleTimer = setTimeout(() => {
+    _myTypingActive = false;
+    writeTypingState(chatId, false);
+  }, 2000);
+}
+
+function setupTypingIndicator(chatId) {
+  // Actual keystroke wiring now lives in wireChatActionBtn() (it owns the
+  // input's oninput handler so the icon-toggle and typing-ping logic can't
+  // fight over the same event). This just resets state for the newly
+  // opened chat so a stale "typing…" flag from the previous chat can't leak.
+  clearMyTyping();
+}
+
+// ══════════════════════════════════════
+// VOICE NOTES
+// Record a short audio clip with MediaRecorder, upload it to Cloudinary
+// (as a "video" resource — Cloudinary's audio bucket), and send it as a
+// chat message with isAudio:true. Reuses the same mic-permission flow as
+// voice/video calling elsewhere in the app.
+// ══════════════════════════════════════
+let _voiceRecorder     = null;
+let _voiceChunks       = [];
+let _voiceStream       = null;
+let _voiceStartedAt    = 0;
+let _voiceTimerInterval = null;
+let _voiceActiveBarId  = null; // 'desktop' | 'modal' — which UI is recording
+
+function voiceBarEls(prefix) {
+  return {
+    inputBar:  document.getElementById(`${prefix}-chat-input-bar`),
+    recordBar: document.getElementById(`${prefix}-voice-record-bar`),
+    micBtn:    document.getElementById(`${prefix}-chat-action-btn`),
+    timerEl:   document.querySelector(`#${prefix}-voice-record-bar .voice-rec-timer`),
+    cancelBtn: document.querySelector(`#${prefix}-voice-record-bar .voice-cancel-btn`),
+    sendBtn:   document.querySelector(`#${prefix}-voice-record-bar .voice-send-btn`)
+  };
+}
+
+function showRecordingUi(prefix) {
+  const el = voiceBarEls(prefix);
+  if (el.inputBar) el.inputBar.style.display = 'none';
+  if (el.recordBar) el.recordBar.style.display = 'flex';
+}
+function hideRecordingUi(prefix) {
+  const el = voiceBarEls(prefix);
+  if (el.inputBar) el.inputBar.style.display = '';
+  if (el.recordBar) el.recordBar.style.display = 'none';
+}
+
+async function beginVoiceRecording(chatId, prefix) {
+  if (_voiceRecorder) return; // already recording somewhere
+  if (isBlocked(currentChatUid)) { toast('You can\'t message this user.', 'error'); return; }
+  try {
+    _voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    toast('Microphone access denied.', 'error');
+    return;
+  }
+  _voiceActiveBarId = prefix;
+  _voiceChunks = [];
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+  _voiceRecorder = mimeType ? new MediaRecorder(_voiceStream, { mimeType }) : new MediaRecorder(_voiceStream);
+  _voiceRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) _voiceChunks.push(e.data); };
+  _voiceRecorder.start();
+  _voiceStartedAt = Date.now();
+
+  showRecordingUi(prefix);
+  const el = voiceBarEls(prefix);
+  if (el.micBtn) el.micBtn.classList.add('recording');
+  if (el.timerEl) el.timerEl.textContent = '0:00';
+  clearInterval(_voiceTimerInterval);
+  _voiceTimerInterval = setInterval(() => {
+    const secs = Math.floor((Date.now() - _voiceStartedAt) / 1000);
+    if (el.timerEl) el.timerEl.textContent = formatCallDuration(secs);
+    // Auto-stop long recordings so nobody accidentally sends a 20-minute clip
+    if (secs >= 120) finishVoiceRecording(chatId, prefix, true);
+  }, 250);
+}
+
+function stopVoiceStreamOnly() {
+  clearInterval(_voiceTimerInterval);
+  _voiceTimerInterval = null;
+  if (_voiceStream) { _voiceStream.getTracks().forEach(t => t.stop()); _voiceStream = null; }
+  const prefix = _voiceActiveBarId;
+  if (prefix) {
+    const el = voiceBarEls(prefix);
+    if (el.micBtn) el.micBtn.classList.remove('recording');
+    hideRecordingUi(prefix);
+  }
+  _voiceRecorder = null;
+  _voiceActiveBarId = null;
+}
+
+function cancelVoiceRecording() {
+  if (!_voiceRecorder) return;
+  try { _voiceRecorder.ondataavailable = null; _voiceRecorder.stop(); } catch(e) {}
+  _voiceChunks = [];
+  stopVoiceStreamOnly();
+}
+
+async function finishVoiceRecording(chatId, prefix, send) {
+  if (!_voiceRecorder) return;
+  const recorder = _voiceRecorder;
+  const durationSecs = Math.round((Date.now() - _voiceStartedAt) / 1000);
+
+  await new Promise(resolve => {
+    recorder.onstop = resolve;
+    try { recorder.stop(); } catch(e) { resolve(); }
+  });
+  stopVoiceStreamOnly();
+
+  if (!send || durationSecs < 1 || _voiceChunks.length === 0) return;
+
+  try {
+    const blob = new Blob(_voiceChunks, { type: 'audio/webm' });
+    const file = new File([blob], `voice-note-${Date.now()}.webm`, { type: blob.type });
+    const url = await uploadToCloudinary(file, 'video', '🎙️ Uploading voice note…');
+    await sendChatMessage(chatId, '', url, false, true, durationSecs);
+  } catch (e) {
+    toast('Voice note failed: ' + e.message, 'error');
+  }
+}
+
+function setupVoiceRecording(chatId) {
+  cancelVoiceRecording(); // discard any in-progress recording from a previous chat
+
+  // Re-bind every time openChat runs rather than once-ever: the desktop
+  // chat bar's innerHTML is rebuilt per chat, so a "wire once" guard would
+  // silently leave later chats with dead buttons.
+  ['desktop', 'modal'].forEach(prefix => {
+    const el = voiceBarEls(prefix);
+    // Starting a recording is triggered from the combined mic/send button
+    // (see wireChatActionBtn) when the input is empty — nothing to bind here.
+    if (el.cancelBtn) el.cancelBtn.onclick = () => cancelVoiceRecording();
+    if (el.sendBtn) el.sendBtn.onclick = () => {
+      if (currentChatId) finishVoiceRecording(currentChatId, prefix, true);
+    };
+  });
+}
+
+// ══════════════════════════════════════
+// COMBINED SEND / MIC BUTTON
+// One button instead of a separate send + mic icon, so the input bar stays
+// compact: it shows a mic while the field is empty (tap → start a voice
+// note) and morphs into a send arrow as soon as there's text (tap/Enter →
+// send). Re-wired every time a chat is opened via assignment (.oninput /
+// .onclick) rather than addEventListener, so re-opening a chat can't stack
+// duplicate handlers or leave stale ones bound to a replaced DOM node.
+// ══════════════════════════════════════
+function updateActionBtnIcon(prefix) {
+  const input = document.getElementById(`${prefix}-chat-input`);
+  const btn   = document.getElementById(`${prefix}-chat-action-btn`);
+  if (!input || !btn) return;
+  const hasText = input.value.trim().length > 0;
+  // Both icons are always present in the DOM (see markup) — this just
+  // toggles which one is visible via CSS, so it keeps working even after
+  // lucide has converted the <i> tags into <svg> elements.
+  btn.classList.toggle('mic-mode', !hasText);
+  btn.title = hasText ? 'Send' : 'Voice note';
+}
+
+function wireChatActionBtn(prefix, chatId) {
+  const input = document.getElementById(`${prefix}-chat-input`);
+  const btn   = document.getElementById(`${prefix}-chat-action-btn`);
+  if (!input || !btn) return;
+
+  updateActionBtnIcon(prefix);
+
+  input.oninput = () => {
+    updateActionBtnIcon(prefix);
+    if (currentChatId) handleTypingKeystroke(currentChatId);
+  };
+
+  btn.onclick = () => {
+    const txt = input.value.trim();
+    if (txt) {
+      sendChatMessage(chatId, txt);
+      input.value = '';
+      clearMyTyping();
+      updateActionBtnIcon(prefix);
+    } else if (currentChatId) {
+      beginVoiceRecording(currentChatId, prefix);
+    }
+  };
 }
 
 // Mark messages read when chat is opened
@@ -10427,7 +11193,17 @@ function buildMsgBubble(m) {
 
   let content = m.text ? escHtml(m.text) : '';
   let media = '';
-  if (m.mediaUrl) {
+  if (m.isAudio && m.mediaUrl) {
+    media = `<div class="msg-media msg-voice-note">
+      <button class="voice-note-play-btn" title="Play">
+        <i data-lucide="play" class="voice-icon-play"></i>
+        <i data-lucide="pause" class="voice-icon-pause"></i>
+      </button>
+      <div class="voice-note-track"><div class="voice-note-progress"></div></div>
+      <span class="voice-note-duration">${formatCallDuration(m.audioDuration || 0)}</span>
+      <audio preload="none" src="${m.mediaUrl}"></audio>
+    </div>`;
+  } else if (m.mediaUrl) {
     media = m.isVideo
       ? `<div class="msg-media"><video src="${m.mediaUrl}" controls playsinline preload="metadata"></video></div>`
       : `<div class="msg-media"><img src="${m.mediaUrl}" loading="lazy" class="msg-img-clickable"/></div>`;
@@ -10450,6 +11226,29 @@ function buildMsgBubble(m) {
   // Tap an image in the chat to open it fullscreen
   const clickableImg = wrap.querySelector('.msg-img-clickable');
   if (clickableImg) clickableImg.addEventListener('click', () => openChatImageLightbox(m.mediaUrl));
+
+  // Voice note playback: single shared <audio>, play/pause toggle + live progress bar
+  const voiceBtn = wrap.querySelector('.voice-note-play-btn');
+  if (voiceBtn) {
+    const audioEl = wrap.querySelector('audio');
+    const progressEl = wrap.querySelector('.voice-note-progress');
+    const durationEl = wrap.querySelector('.voice-note-duration');
+    voiceBtn.addEventListener('click', () => {
+      // Pause any other voice note currently playing so only one plays at once
+      document.querySelectorAll('audio').forEach(a => { if (a !== audioEl && !a.paused) a.pause(); });
+      if (audioEl.paused) { audioEl.play().catch(() => {}); }
+      else { audioEl.pause(); }
+    });
+    audioEl.addEventListener('play',  () => { voiceBtn.classList.add('playing');    voiceBtn.title = 'Pause'; });
+    audioEl.addEventListener('pause', () => { voiceBtn.classList.remove('playing'); voiceBtn.title = 'Play'; });
+    audioEl.addEventListener('ended', () => { progressEl.style.width = '0%'; });
+    audioEl.addEventListener('timeupdate', () => {
+      if (audioEl.duration) progressEl.style.width = ((audioEl.currentTime / audioEl.duration) * 100) + '%';
+    });
+    audioEl.addEventListener('loadedmetadata', () => {
+      if (isFinite(audioEl.duration) && audioEl.duration > 0) durationEl.textContent = formatCallDuration(Math.round(audioEl.duration));
+    });
+  }
 
   // ── Long-press menu (3s / 1s hold): Copy for any message, Delete for your own ──
   if (m.text || (mine && m.key)) {
@@ -10608,13 +11407,14 @@ function renderProfileSocialLinks(userData) {
 // Admin-grantable custom profile frame ("customize profile lobby" perk).
 // Only admin.html can set userData.profileFrame — regular users can't self-grant it.
 // Supports 'gold' (Elite gold frame), 'eagle' (black wings + dark background),
-// 'sapphire' (icy blue gem), 'royal' (amethyst + gold regalia), and
-// 'emerald' (jade-green nature glass).
+// 'sapphire' (icy blue gem), 'royal' (amethyst + gold regalia),
+// 'emerald' (jade-green nature glass), 'crystal' (pink glowing crystal),
+// and 'nebula' (holographic cosmic aurora).
 function applyProfileFrame(cardEl, tagEl, frame) {
   if (!cardEl) return;
-  cardEl.classList.remove('frame-elite-gold', 'frame-elite-eagle', 'frame-elite-sapphire', 'frame-elite-royal', 'frame-elite-emerald');
+  cardEl.classList.remove('frame-elite-gold', 'frame-elite-eagle', 'frame-elite-sapphire', 'frame-elite-royal', 'frame-elite-emerald', 'frame-elite-crystal', 'frame-elite-nebula');
   if (tagEl) {
-    tagEl.classList.remove('frame-tag-gold', 'frame-tag-eagle', 'frame-tag-sapphire', 'frame-tag-royal', 'frame-tag-emerald');
+    tagEl.classList.remove('frame-tag-gold', 'frame-tag-eagle', 'frame-tag-sapphire', 'frame-tag-royal', 'frame-tag-emerald', 'frame-tag-crystal', 'frame-tag-nebula');
     tagEl.style.display = 'none';
     tagEl.textContent = '';
   }
@@ -10624,6 +11424,8 @@ function applyProfileFrame(cardEl, tagEl, frame) {
     sapphire: { cls: 'frame-elite-sapphire', tagCls: 'frame-tag-sapphire', label: '💎 Sapphire Profile' },
     royal:    { cls: 'frame-elite-royal',    tagCls: 'frame-tag-royal',    label: '♛ Royal Profile' },
     emerald:  { cls: 'frame-elite-emerald',  tagCls: 'frame-tag-emerald',  label: '🌿 Emerald Profile' },
+    crystal:  { cls: 'frame-elite-crystal',  tagCls: 'frame-tag-crystal',  label: '🔮 Crystal Profile' },
+    nebula:   { cls: 'frame-elite-nebula',   tagCls: 'frame-tag-nebula',   label: '🌌 Nebula Profile' },
   };
   const meta = FRAME_META[frame];
   if (meta) {
@@ -11140,6 +11942,157 @@ async function acceptFriendRequest(fromUid) {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+// ══════════════════════════════════════
+// ADD FRIEND VIA QR CODE
+// Two tabs: "My Code" renders a scannable QR encoding this user's uid,
+// "Scan" opens the device camera and decodes a friend's QR to send them
+// a friend request automatically.
+// ══════════════════════════════════════
+let _qrStream       = null;
+let _qrRafId        = null;
+let _qrScanning     = false;
+
+function openQrFriendModal() {
+  if (!currentUser) return;
+  switchQrTab('mine');
+  openModal('modal-qr-friend');
+}
+
+function switchQrTab(tab) {
+  const paneMine = document.getElementById('qr-pane-mine');
+  const paneScan = document.getElementById('qr-pane-scan');
+  if (paneMine) paneMine.style.display = tab === 'mine' ? '' : 'none';
+  if (paneScan) paneScan.style.display = tab === 'scan' ? '' : 'none';
+
+  document.querySelectorAll('.qr-tab-btn').forEach(b => {
+    const active = b.dataset.qrtab === tab;
+    b.classList.toggle('active', active);
+    b.style.background = active ? 'var(--accent)' : 'var(--surface2,rgba(255,255,255,0.08))';
+    b.style.color = active ? '#fff' : 'inherit';
+  });
+
+  if (tab === 'mine') {
+    stopQrScan();
+    renderMyQrCode();
+  } else {
+    renderMyQrCode.__scanTab = true;
+    startQrScan();
+  }
+}
+
+function renderMyQrCode() {
+  const wrap = document.getElementById('qr-mine-canvas-wrap');
+  if (!wrap || !currentUser || typeof QRCode === 'undefined') return;
+  wrap.innerHTML = '';
+  const payload = JSON.stringify({ app: 'campusvibes', type: 'friend', uid: currentUser.uid });
+  new QRCode(wrap, {
+    text: payload, width: 200, height: 200,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  const nameEl = document.getElementById('qr-mine-name');
+  const userEl = document.getElementById('qr-mine-username');
+  if (nameEl) nameEl.textContent = currentUserData?.name || 'Student';
+  if (userEl) userEl.textContent = '@' + (currentUserData?.username || 'user');
+}
+
+async function startQrScan() {
+  const video  = document.getElementById('qr-scan-video');
+  const canvas = document.getElementById('qr-scan-canvas');
+  const status = document.getElementById('qr-scan-status');
+  if (!video || !canvas) return;
+  if (typeof jsQR === 'undefined') {
+    if (status) status.textContent = 'QR scanning isn\'t available right now.';
+    return;
+  }
+  if (status) status.textContent = "Point your camera at a friend's code";
+
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  } catch (e) {
+    if (status) status.textContent = 'Camera access denied — enable camera permission to scan.';
+    return;
+  }
+
+  video.srcObject = _qrStream;
+  try { await video.play(); } catch (e) {}
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  _qrScanning = true;
+
+  const tick = () => {
+    if (!_qrScanning) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imgData.data, imgData.width, imgData.height);
+      if (code && code.data) {
+        _qrScanning = false;
+        handleQrScanResult(code.data);
+        return;
+      }
+    }
+    _qrRafId = requestAnimationFrame(tick);
+  };
+  _qrRafId = requestAnimationFrame(tick);
+}
+
+function stopQrScan() {
+  _qrScanning = false;
+  if (_qrRafId) { cancelAnimationFrame(_qrRafId); _qrRafId = null; }
+  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
+  const video = document.getElementById('qr-scan-video');
+  if (video) { try { video.pause(); } catch(e) {} video.srcObject = null; }
+}
+
+async function handleQrScanResult(raw) {
+  stopQrScan();
+  const status = document.getElementById('qr-scan-status');
+  let uid = null;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.app === 'campusvibes' && parsed.uid) uid = parsed.uid;
+  } catch (e) {
+    // Not JSON — fall back to treating the raw text as a bare uid
+    if (typeof raw === 'string' && raw.trim() && !raw.includes(' ')) uid = raw.trim();
+  }
+
+  if (!uid) {
+    if (status) status.textContent = "That doesn't look like a CampusVibes friend code.";
+    setTimeout(() => { if (document.getElementById('modal-qr-friend').classList.contains('open')) startQrScan(); }, 1600);
+    return;
+  }
+  if (uid === currentUser.uid) {
+    if (status) status.textContent = "That's your own code — have a friend scan it instead!";
+    setTimeout(() => { if (document.getElementById('modal-qr-friend').classList.contains('open')) startQrScan(); }, 1600);
+    return;
+  }
+
+  if (status) status.textContent = 'Code found — sending request…';
+  try {
+    const snap = await db.collection('users').doc(uid).get();
+    if (!snap.exists) {
+      if (status) status.textContent = 'User not found.';
+      setTimeout(() => { if (document.getElementById('modal-qr-friend').classList.contains('open')) startQrScan(); }, 1600);
+      return;
+    }
+    const u = snap.data();
+    await sendFriendRequest(uid, u.name || 'Student', u.avatar || '');
+    closeModal('modal-qr-friend');
+  } catch (e) {
+    if (status) status.textContent = 'Something went wrong: ' + e.message;
+    setTimeout(() => { if (document.getElementById('modal-qr-friend').classList.contains('open')) startQrScan(); }, 1600);
+  }
+}
+
+document.getElementById('friends-qr-btn')?.addEventListener('click', openQrFriendModal);
+document.querySelectorAll('.qr-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchQrTab(btn.dataset.qrtab));
+});
+
 async function rejectFriendRequest(fromUid) {
   if (!currentUser) return;
   try {
@@ -11253,6 +12206,8 @@ async function openUserProfile(uid) {
           ${u.profileFrame === 'sapphire' ? `<div class="frame-tag frame-tag-sapphire" style="margin:0 0 4px">💎 Sapphire Profile</div>` : ''}
           ${u.profileFrame === 'royal' ? `<div class="frame-tag frame-tag-royal" style="margin:0 0 4px">♛ Royal Profile</div>` : ''}
           ${u.profileFrame === 'emerald' ? `<div class="frame-tag frame-tag-emerald" style="margin:0 0 4px">🌿 Emerald Profile</div>` : ''}
+          ${u.profileFrame === 'crystal' ? `<div class="frame-tag frame-tag-crystal" style="margin:0 0 4px">🔮 Crystal Profile</div>` : ''}
+          ${u.profileFrame === 'nebula' ? `<div class="frame-tag frame-tag-nebula" style="margin:0 0 4px">🌌 Nebula Profile</div>` : ''}
           <div class="ig-profile-name-row"><h2>${escHtml(u.name || 'Student')}</h2></div>
           <p class="ig-profile-username">@${escHtml(u.username || 'user')}</p>
           <p class="ig-profile-meta-line">🎓 ${escHtml(u.college || '')}</p>
