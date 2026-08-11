@@ -1856,8 +1856,10 @@ opacity: .4;
   <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <!-- QR code generation (for "my code") + decoding (for scanning) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"
+    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'"></script>
 </head>
 <body>
 
@@ -2099,8 +2101,12 @@ opacity: .4;
     <section id="view-friends" class="view">
       <div class="view-header" style="display:flex;align-items:center">
         <h2>🤝 Friends</h2>
-        <button id="friends-qr-btn" title="Add friend via QR code"
+        <button id="campus-map-btn" title="See who's around campus"
                 style="margin-left:auto;width:36px;height:36px;border-radius:50%;border:1px solid var(--border,rgba(255,255,255,0.14));background:var(--surface2,rgba(255,255,255,0.06));color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <i data-lucide="map-pin" style="width:18px;height:18px"></i>
+        </button>
+        <button id="friends-qr-btn" title="Add friend via QR code"
+                style="margin-left:8px;width:36px;height:36px;border-radius:50%;border:1px solid var(--border,rgba(255,255,255,0.14));background:var(--surface2,rgba(255,255,255,0.06));color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
           <i data-lucide="qr-code" style="width:18px;height:18px"></i>
         </button>
       </div>
@@ -2422,13 +2428,71 @@ opacity: .4;
     <!-- Scan a friend's QR code -->
     <div id="qr-pane-scan" class="qr-pane" style="display:none">
       <div style="position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:1/1">
-        <video id="qr-scan-video" playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>
+        <video id="qr-scan-video" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover;display:block"></video>
         <div style="position:absolute;inset:0;border:2.5px solid rgba(255,255,255,0.85);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,0.35);margin:14%"></div>
       </div>
       <canvas id="qr-scan-canvas" style="display:none"></canvas>
       <p id="qr-scan-status" style="font-size:12.5px;color:var(--muted,#aaa);text-align:center;margin:12px 0 0">
         Point your camera at a friend's code
       </p>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0 2px">
+        <div style="flex:1;height:1px;background:var(--surface2,rgba(255,255,255,0.12))"></div>
+        <span style="font-size:11px;color:var(--muted,#aaa)">or</span>
+        <div style="flex:1;height:1px;background:var(--surface2,rgba(255,255,255,0.12))"></div>
+      </div>
+      <button id="qr-gallery-btn" type="button" style="width:100%;margin-top:10px;padding:10px 0;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:var(--surface2,rgba(255,255,255,0.08));color:inherit;display:flex;align-items:center;justify-content:center;gap:8px">
+        <i data-lucide="image" style="width:16px;height:16px"></i>
+        Upload from gallery
+      </button>
+      <input type="file" id="qr-gallery-input" accept="image/*" style="display:none">
+    </div>
+  </div>
+</div>
+
+<!-- Campus Map Modal -->
+<div class="modal-overlay" id="modal-campus-map">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>📍 Campus Map</h3>
+      <button class="modal-close" data-modal="modal-campus-map">✕</button>
+    </div>
+
+    <!-- Your status -->
+    <div style="background:var(--surface2,rgba(255,255,255,0.06));border:1px solid var(--border,rgba(255,255,255,0.1));border-radius:14px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <strong style="font-size:14px;display:block">Share my location</strong>
+          <small id="campus-map-my-status" style="color:var(--muted,#aaa);font-size:12px">Off — friends can't see where you are</small>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0">
+          <input type="checkbox" id="campus-map-share-toggle" style="opacity:0;width:0;height:0">
+          <span id="campus-map-toggle-track" style="position:absolute;inset:0;background:var(--surface3,rgba(255,255,255,0.18));border-radius:999px;cursor:pointer;transition:background .2s"></span>
+          <span id="campus-map-toggle-knob" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s"></span>
+        </label>
+      </div>
+      <div id="campus-map-spot-picker" style="display:none;margin-top:12px;flex-wrap:wrap;gap:8px">
+        <select id="campus-map-spot-select" style="width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,0.14));background:var(--surface,rgba(0,0,0,0.2));color:inherit;font-size:13px">
+          <option value="">Choose where you are…</option>
+          <option value="📚 Library">📚 Library</option>
+          <option value="🏋️ Gym">🏋️ Gym</option>
+          <option value="🍽️ Dining Hall">🍽️ Dining Hall</option>
+          <option value="🏠 Dorm">🏠 Dorm</option>
+          <option value="🎓 Class">🎓 Class</option>
+          <option value="☕ Coffee Shop">☕ Coffee Shop</option>
+          <option value="🌳 Quad">🌳 Quad</option>
+          <option value="📖 Study Room">📖 Study Room</option>
+          <option value="🎉 Event">🎉 Event</option>
+          <option value="__custom">✏️ Custom…</option>
+        </select>
+        <input id="campus-map-spot-custom" type="text" maxlength="30" placeholder="Where are you?"
+          style="display:none;width:100%;margin-top:8px;padding:9px 10px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,0.14));background:var(--surface,rgba(0,0,0,0.2));color:inherit;font-size:13px">
+        <small style="display:block;margin-top:8px;color:var(--muted,#aaa);font-size:11px">Auto-clears after 3 hours. Turn off anytime.</small>
+      </div>
+    </div>
+
+    <!-- Friends currently sharing -->
+    <div id="campus-map-list" style="display:flex;flex-direction:column;gap:14px;max-height:50vh;overflow-y:auto">
+      <div class="loading-spinner">Loading…</div>
     </div>
   </div>
 </div>
@@ -3873,6 +3937,7 @@ document.querySelectorAll('.modal-close').forEach(btn => {
     pauseAllMedia();
     if (btn.dataset.modal === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
     if (btn.dataset.modal === 'modal-qr-friend' && typeof stopQrScan === 'function') stopQrScan();
+    if (btn.dataset.modal === 'modal-campus-map' && typeof stopCampusMapWatch === 'function') stopCampusMapWatch();
     if (btn.dataset.modal === 'modal-chat-window') {
       if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
       if (chatPresenceInterval) { clearInterval(chatPresenceInterval); chatPresenceInterval = null; }
@@ -3891,6 +3956,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       pauseAllMedia();
       if (overlay.id === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
       if (overlay.id === 'modal-qr-friend' && typeof stopQrScan === 'function') stopQrScan();
+      if (overlay.id === 'modal-campus-map' && typeof stopCampusMapWatch === 'function') stopCampusMapWatch();
       overlay.classList.remove('open');
     }
   });
@@ -11996,26 +12062,78 @@ function renderMyQrCode() {
   if (userEl) userEl.textContent = '@' + (currentUserData?.username || 'user');
 }
 
+async function ensureJsQrLoaded() {
+  if (typeof jsQR !== 'undefined') return true;
+  const sources = [
+    'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js',
+    'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
+    'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js'
+  ];
+  for (const src of sources) {
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      if (typeof jsQR !== 'undefined') return true;
+    } catch (e) { /* try next source */ }
+  }
+  return typeof jsQR !== 'undefined';
+}
+
 async function startQrScan() {
   const video  = document.getElementById('qr-scan-video');
   const canvas = document.getElementById('qr-scan-canvas');
   const status = document.getElementById('qr-scan-status');
   if (!video || !canvas) return;
   if (typeof jsQR === 'undefined') {
-    if (status) status.textContent = 'QR scanning isn\'t available right now.';
-    return;
+    if (status) status.textContent = 'Loading scanner…';
+    const loaded = await ensureJsQrLoaded();
+    if (!loaded) {
+      if (status) status.textContent = 'QR scanning isn\'t available right now — check your internet connection.';
+      return;
+    }
   }
   if (status) status.textContent = "Point your camera at a friend's code";
 
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (status) status.textContent = window.isSecureContext === false
+      ? 'Camera requires a secure (https) connection to work.'
+      : "Camera isn't supported on this browser/device.";
+    return;
+  }
+
   try {
-    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    // Prefer the rear camera, but fall back to any available camera
+    // if the device has no "environment" facing camera (e.g. laptops).
+    try {
+      _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+    } catch (e) {
+      _qrStream = await navigator.mediaDevices.getUserMedia({ video: true });
+    }
   } catch (e) {
-    if (status) status.textContent = 'Camera access denied — enable camera permission to scan.';
+    if (status) {
+      status.textContent = (e && e.name === 'NotAllowedError')
+        ? 'Camera access denied — enable camera permission to scan.'
+        : (e && e.name === 'NotFoundError')
+          ? 'No camera was found on this device.'
+          : 'Could not access camera: ' + (e && e.message ? e.message : 'unknown error');
+    }
     return;
   }
 
   video.srcObject = _qrStream;
-  try { await video.play(); } catch (e) {}
+  video.setAttribute('autoplay', '');
+  video.setAttribute('playsinline', '');
+  video.muted = true;
+  try { await video.play(); } catch (e) {
+    // Autoplay can be blocked right after an async gesture gap;
+    // retry play once the video actually has data.
+    video.addEventListener('loadedmetadata', () => { video.play().catch(() => {}); }, { once: true });
+  }
 
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   _qrScanning = true;
@@ -12091,6 +12209,259 @@ async function handleQrScanResult(raw) {
 document.getElementById('friends-qr-btn')?.addEventListener('click', openQrFriendModal);
 document.querySelectorAll('.qr-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchQrTab(btn.dataset.qrtab));
+});
+
+document.getElementById('qr-gallery-btn')?.addEventListener('click', () => {
+  document.getElementById('qr-gallery-input')?.click();
+});
+document.getElementById('qr-gallery-input')?.addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // allow re-selecting the same file later
+  if (file) await scanQrFromImageFile(file);
+});
+
+async function scanQrFromImageFile(file) {
+  const status = document.getElementById('qr-scan-status');
+  const canvas = document.getElementById('qr-scan-canvas');
+  if (!canvas) return;
+
+  if (!file.type || !file.type.startsWith('image/')) {
+    if (status) status.textContent = 'Please choose an image file.';
+    return;
+  }
+
+  const loaded = await ensureJsQrLoaded();
+  if (!loaded) {
+    if (status) status.textContent = 'QR scanning isn\'t available right now — check your internet connection.';
+    return;
+  }
+
+  if (status) status.textContent = 'Reading QR code from image…';
+  stopQrScan(); // pause the live camera feed while we process the upload
+
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    ctx.drawImage(img, 0, 0);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imgData.data, imgData.width, imgData.height);
+
+    if (code && code.data) {
+      handleQrScanResult(code.data);
+    } else {
+      if (status) status.textContent = "Couldn't find a QR code in that image — try another one.";
+      setTimeout(() => { if (document.getElementById('modal-qr-friend').classList.contains('open')) startQrScan(); }, 1800);
+    }
+  } catch (e) {
+    if (status) status.textContent = 'Could not read that image.';
+    setTimeout(() => { if (document.getElementById('modal-qr-friend').classList.contains('open')) startQrScan(); }, 1800);
+  }
+}
+
+// ── CAMPUS MAP (opt-in "who's around" location sharing) ──
+// Stored in Realtime DB at campusLocations/{uid} = { spot, name, avatar, profilePic, updatedAt, expiresAt }
+// Uses preset campus spots rather than raw GPS coordinates — simpler, and avoids
+// exposing precise real-world location.
+const CAMPUS_LOCATION_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
+let _campusLocRef = null;      // rtdb.ref('campusLocations/' + myUid) — my own entry
+let _campusLocWatchRef = null; // rtdb.ref('campusLocations') — everyone's entries
+let _campusLocExpireTimer = null;
+
+function openCampusMapModal() {
+  if (!currentUser) return;
+  openModal('modal-campus-map');
+  initCampusMapToggleState();
+  startCampusMapWatch();
+}
+
+async function initCampusMapToggleState() {
+  const toggle = document.getElementById('campus-map-share-toggle');
+  const track  = document.getElementById('campus-map-toggle-track');
+  const knob   = document.getElementById('campus-map-toggle-knob');
+  const picker = document.getElementById('campus-map-spot-picker');
+  const status = document.getElementById('campus-map-my-status');
+  if (!toggle) return;
+
+  try {
+    const snap = await rtdb.ref('campusLocations/' + currentUser.uid).once('value');
+    const mine = snap.val();
+    const isSharing = !!(mine && mine.spot && mine.expiresAt > Date.now());
+    toggle.checked = isSharing;
+    track.style.background = isSharing ? 'var(--accent)' : 'var(--surface3,rgba(255,255,255,0.18))';
+    knob.style.transform = isSharing ? 'translateX(20px)' : 'translateX(0)';
+    picker.style.display = isSharing ? 'flex' : 'none';
+    if (isSharing) {
+      status.textContent = `Sharing: ${mine.spot}`;
+      const sel = document.getElementById('campus-map-spot-select');
+      const custom = document.getElementById('campus-map-spot-custom');
+      const knownOptions = Array.from(sel.options).map(o => o.value);
+      if (knownOptions.includes(mine.spot)) {
+        sel.value = mine.spot;
+      } else {
+        sel.value = '__custom';
+        custom.style.display = 'block';
+        custom.value = mine.spot;
+      }
+    } else {
+      status.textContent = "Off — friends can't see where you are";
+    }
+  } catch (e) { /* ignore — treat as off */ }
+}
+
+function setCampusMapToggleUi(isOn) {
+  const track  = document.getElementById('campus-map-toggle-track');
+  const knob   = document.getElementById('campus-map-toggle-knob');
+  const picker = document.getElementById('campus-map-spot-picker');
+  const status = document.getElementById('campus-map-my-status');
+  track.style.background = isOn ? 'var(--accent)' : 'var(--surface3,rgba(255,255,255,0.18))';
+  knob.style.transform = isOn ? 'translateX(20px)' : 'translateX(0)';
+  picker.style.display = isOn ? 'flex' : 'none';
+  if (!isOn) status.textContent = "Off — friends can't see where you are";
+}
+
+async function updateMyCampusLocation(spot) {
+  if (!currentUser) return;
+  const status = document.getElementById('campus-map-my-status');
+  if (!spot) return;
+  const ref = rtdb.ref('campusLocations/' + currentUser.uid);
+  const payload = {
+    spot,
+    name: currentUserData?.name || 'Student',
+    avatar: currentUserData?.avatar || '',
+    profilePic: currentUserData?.profilePic || '',
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    expiresAt: Date.now() + CAMPUS_LOCATION_TTL_MS
+  };
+  try {
+    await ref.set(payload);
+    ref.onDisconnect().remove(); // clear if they lose connection ungracefully
+    if (status) status.textContent = `Sharing: ${spot}`;
+    toast('Location shared with friends', 'success');
+  } catch (e) {
+    toast('Could not update your location', 'error');
+  }
+}
+
+async function stopSharingMyCampusLocation() {
+  if (!currentUser) return;
+  try {
+    await rtdb.ref('campusLocations/' + currentUser.uid).remove();
+  } catch (e) { /* ignore */ }
+}
+
+function startCampusMapWatch() {
+  if (_campusLocWatchRef) return; // already watching
+  const list = document.getElementById('campus-map-list');
+  _campusLocWatchRef = rtdb.ref('campusLocations');
+  _campusLocWatchRef.on('value', snap => renderCampusMapList(snap.val() || {}), err => {
+    if (list) list.innerHTML = '<p style="text-align:center;color:var(--muted,#aaa);font-size:13px">Couldn\'t load the map right now.</p>';
+  });
+}
+
+function stopCampusMapWatch() {
+  if (_campusLocWatchRef) { _campusLocWatchRef.off(); _campusLocWatchRef = null; }
+}
+
+function renderCampusMapList(allLocations) {
+  const list = document.getElementById('campus-map-list');
+  if (!list) return;
+
+  const now = Date.now();
+  const friendSet = new Set(friendsList);
+  const entries = Object.entries(allLocations)
+    .filter(([uid, loc]) => loc && loc.spot && loc.expiresAt > now)
+    .filter(([uid]) => uid === currentUser?.uid || friendSet.has(uid))
+    .map(([uid, loc]) => ({ uid, ...loc }));
+
+  if (entries.length === 0) {
+    list.innerHTML = `
+      <div class="friends-empty">
+        <span style="font-size:40px">🗺️</span>
+        <p>No one's sharing yet</p>
+        <small>Turn on sharing above to let friends know where you are</small>
+      </div>`;
+    return;
+  }
+
+  // Group by spot
+  const bySpot = {};
+  entries.forEach(e => { (bySpot[e.spot] = bySpot[e.spot] || []).push(e); });
+
+  list.innerHTML = Object.entries(bySpot).map(([spot, people]) => `
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">${escHtml(spot)} <span style="color:var(--muted,#aaa);font-weight:500">· ${people.length}</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${people.map(p => `
+          <div style="display:flex;align-items:center;gap:10px">
+            <img src="${escHtml(p.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0"/>
+            <div style="min-width:0">
+              <strong style="font-size:13.5px;display:block">${escHtml(p.name || 'Student')}${p.uid === currentUser?.uid ? ' (you)' : ''}</strong>
+              <small style="color:var(--muted,#aaa);font-size:11.5px">${campusMapRelativeTime(p.updatedAt)}</small>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function campusMapRelativeTime(ts) {
+  if (!ts || typeof ts !== 'number') return 'just now';
+  const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs}h ago`;
+}
+
+document.getElementById('campus-map-btn')?.addEventListener('click', openCampusMapModal);
+
+document.getElementById('campus-map-share-toggle')?.addEventListener('change', async (e) => {
+  const isOn = e.target.checked;
+  setCampusMapToggleUi(isOn);
+  if (!isOn) {
+    await stopSharingMyCampusLocation();
+  } else {
+    const sel = document.getElementById('campus-map-spot-select');
+    if (sel && sel.value && sel.value !== '__custom') {
+      await updateMyCampusLocation(sel.value);
+    }
+    // If no spot chosen yet, wait for the select/custom input below.
+  }
+});
+
+document.getElementById('campus-map-spot-select')?.addEventListener('change', async (e) => {
+  const custom = document.getElementById('campus-map-spot-custom');
+  if (e.target.value === '__custom') {
+    custom.style.display = 'block';
+    custom.focus();
+    return;
+  }
+  custom.style.display = 'none';
+  if (e.target.value) await updateMyCampusLocation(e.target.value);
+});
+
+let _campusMapCustomDebounce = null;
+document.getElementById('campus-map-spot-custom')?.addEventListener('input', (e) => {
+  clearTimeout(_campusMapCustomDebounce);
+  const val = e.target.value.trim();
+  _campusMapCustomDebounce = setTimeout(() => {
+    if (val) updateMyCampusLocation(val);
+  }, 600);
 });
 
 async function rejectFriendRequest(fromUid) {
