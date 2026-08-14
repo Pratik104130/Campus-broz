@@ -7,23 +7,51 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <style>
-  
+    /* ── Mobile layout guard ──────────────────────────────────────────
+       style.css lays the app out as sidebar + main-content for desktop.
+       If that stylesheet's mobile breakpoint doesn't fire correctly in
+       some webviews, the sidebar keeps its width and shoves main-content
+       (and everything in it — tabs, search, mini player, etc.) off the
+       right edge of the screen. Force the mobile layout below 900px
+       regardless of what style.css decides. */
+    @media (max-width: 900px) {
+      #sidebar { display: none !important; }
+      #main-content {
+        width: 100% !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        left: 0 !important;
+      }
+      html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+      }
+    }
     /* ── Club Dashboard: header + scrollable tab bar (upgraded UI) ── */
     .club-dash-header {
       position: relative;
       box-shadow: 0 4px 18px rgba(0,0,0,0.28);
     }
-    .club-dash-topline { display: flex; align-items: center; gap: 10px; }
+    .club-dash-header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 15% -10%, rgba(255,255,255,0.22), transparent 55%);
+      pointer-events: none;
+    }
+    .club-dash-topline { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
     .club-dash-emoji {
-      font-size: 24px; line-height: 1; flex-shrink: 0;
-      width: 40px; height: 40px; border-radius: 12px;
-      background: rgba(255,255,255,0.18);
+      font-size: 26px; line-height: 1; flex-shrink: 0;
+      width: 46px; height: 46px; border-radius: 14px;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
       display: flex; align-items: center; justify-content: center;
     }
     .club-dash-titles { flex: 1; min-width: 0; }
     .club-dash-name {
-      color: #fff; font-size: 16px; font-weight: 800; margin: 0; line-height: 1.25;
+      color: #fff; font-size: 17px; font-weight: 800; margin: 0; line-height: 1.25;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
     .club-dash-meta {
       display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
@@ -86,6 +114,650 @@
       background: #fff; color: var(--accent);
       box-shadow: 0 3px 10px rgba(0,0,0,0.25);
     }
+
+    /* ── Club browse pages: sections grid + club grid (redesigned cards) ──
+       Scoped to these two grid ids so it safely layers on top of whatever
+       base .club-card rules already exist in style.css. */
+    #club-sections-grid.club-grid,
+    #club-grid.club-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    #club-sections-grid .club-card,
+    #club-grid .club-card {
+      position: relative;
+      display: flex; flex-direction: column;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 18px;
+      padding: 16px 14px 14px;
+      overflow: hidden;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+    #club-sections-grid .club-card::before,
+    #club-grid .club-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent, #6c63ff), #ff4ecd);
+      opacity: 0.9;
+    }
+    #club-sections-grid .club-card:active,
+    #club-grid .club-card:active { transform: scale(0.97); }
+    @media (hover: hover) {
+      #club-sections-grid .club-card:hover,
+      #club-grid .club-card:hover {
+        border-color: rgba(255,255,255,0.18);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+        transform: translateY(-2px);
+      }
+    }
+    #club-sections-grid .club-emoji,
+    #club-grid .club-emoji {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 10px;
+      background: linear-gradient(135deg, rgba(108,99,255,0.22), rgba(255,78,205,0.16));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    #club-sections-grid .club-name,
+    #club-grid .club-name {
+      font-size: 14.5px; font-weight: 800; color: #fff; line-height: 1.25;
+      display: flex; align-items: center; gap: 5px;
+      margin-bottom: 3px;
+    }
+    #club-sections-grid .club-desc,
+    #club-grid .club-desc {
+      font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; min-height: 17px; flex: 1; margin-bottom: 10px;
+    }
+    #club-grid .club-category-chip {
+      display: inline-block; align-self: flex-start;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      color: var(--accent, #6c63ff); background: rgba(108,99,255,0.14);
+      border: 1px solid rgba(108,99,255,0.28); border-radius: 6px;
+      padding: 2px 7px; margin-bottom: 6px;
+    }
+    #club-grid .club-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    #club-grid .club-meta > span {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11.5px; color: rgba(255,255,255,0.6); font-weight: 600;
+    }
+    #club-grid .club-card-members-btn {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      font-size: 11px; font-weight: 700; text-decoration: underline;
+      text-underline-offset: 2px; cursor: pointer; padding: 0;
+    }
+    #club-grid .club-join-btn {
+      border: none; border-radius: 999px; padding: 7px 14px;
+      font-size: 11.5px; font-weight: 800; cursor: pointer;
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #ff4ecd);
+      color: #fff; white-space: nowrap;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    #club-grid .club-join-btn:active { transform: scale(0.94); }
+    #club-grid .club-join-btn.joined {
+      background: rgba(46,204,113,0.16); color: #2ecc71;
+      border: 1px solid rgba(46,204,113,0.4);
+    }
+    #club-grid .club-star-btn { transition: transform 0.15s ease; }
+    #club-grid .club-star-btn:active { transform: scale(0.8); }
+
+    /* ── Confessions page (redesigned): hero banner + category-colored cards ── */
+    #view-confessions .confession-hero {
+      position: relative;
+      background: linear-gradient(135deg, rgba(108,99,255,0.16), rgba(255,78,205,0.12));
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    #view-confessions .confession-hero::before {
+      content: '👻';
+      position: absolute;
+      right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 54px; opacity: 0.1; pointer-events: none;
+    }
+    #view-confessions .confession-hero p {
+      margin: 0; position: relative; z-index: 1;
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85);
+      line-height: 1.5;
+    }
+    #view-confessions .confession-hero p:first-child { font-size: 14px; color: #fff; }
+    #view-confessions .confession-hero p:last-child { color: rgba(255,255,255,0.55); font-weight: 500; margin-top: 2px; }
+
+    #view-confessions .confession-card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-left: 3px solid var(--conf-accent, #8a8fa3);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    #view-confessions .confession-card.crush     { --conf-accent: #ff4ecd; }
+    #view-confessions .confession-card.academics { --conf-accent: #4fb3ff; }
+    #view-confessions .confession-card.hostel    { --conf-accent: #ffa53d; }
+    #view-confessions .confession-card.drama     { --conf-accent: #a970ff; }
+    #view-confessions .confession-card.funny     { --conf-accent: #ffd43d; }
+    #view-confessions .confession-card.general   { --conf-accent: #8a8fa3; }
+    #view-confessions .confession-card:active { transform: scale(0.99); }
+
+    #view-confessions .confession-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 800; text-transform: capitalize;
+      border-radius: 20px;
+      padding: 3px 10px;
+      margin-bottom: 8px;
+      color: var(--conf-accent, #8a8fa3);
+      background: rgba(138,143,163,0.16);
+      border: 1px solid rgba(138,143,163,0.35);
+    }
+    #view-confessions .confession-card.crush .confession-tag     { background: rgba(255,78,205,0.16);  border-color: rgba(255,78,205,0.35); }
+    #view-confessions .confession-card.academics .confession-tag { background: rgba(79,179,255,0.16);  border-color: rgba(79,179,255,0.35); }
+    #view-confessions .confession-card.hostel .confession-tag    { background: rgba(255,165,61,0.16);  border-color: rgba(255,165,61,0.35); }
+    #view-confessions .confession-card.drama .confession-tag     { background: rgba(169,112,255,0.16); border-color: rgba(169,112,255,0.35); }
+    #view-confessions .confession-card.funny .confession-tag     { background: rgba(255,212,61,0.16);  border-color: rgba(255,212,61,0.35); }
+    #view-confessions .confession-text {
+      font-size: 14.5px; line-height: 1.55; color: rgba(255,255,255,0.92);
+      margin: 0 0 6px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    #view-confessions .confession-footer {
+      display: flex; align-items: center; gap: 14px;
+      padding-top: 10px; margin-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px; color: rgba(255,255,255,0.45);
+    }
+    #view-confessions .confession-footer .action-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0;
+    }
+    #view-confessions .confession-footer .action-btn i { width: 15px; height: 15px; }
+    #view-confessions .confession-footer .conf-like.liked { color: #ff4ecd; }
+    #view-confessions .confession-footer .conf-like.liked i { fill: #ff4ecd; stroke: #ff4ecd; }
+    #view-confessions .confession-footer > span:last-child {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+      color: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px; padding: 3px 9px;
+    }
+    #view-confessions .confession-footer > span:last-child::before { content: '👻'; font-size: 11px; }
+
+    /* ── Post action menu (⋮ kebab → dropdown) ──────────────────────────
+       Replaces the old row of separate icon buttons (delete/block/ban) in
+       the post header with a single tidy menu button + polished dropdown. */
+    .post-menu-btn {
+      background: none; border: none; color: rgba(255,255,255,0.55);
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; margin-left: auto;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .post-menu-btn:hover, .post-menu-btn:active { background: rgba(255,255,255,0.08); color: #fff; }
+    .post-menu-btn i { width: 19px; height: 19px; }
+
+    .post-menu-dropdown {
+      position: fixed;
+      z-index: 100000;
+      min-width: 220px;
+      background: rgba(24,24,32,0.98);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+      padding: 6px;
+      opacity: 0; transform: translateY(-6px) scale(0.97);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+      pointer-events: none;
+    }
+    .post-menu-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .post-menu-item {
+      display: flex; align-items: center; gap: 11px;
+      width: 100%; background: none; border: none;
+      color: rgba(255,255,255,0.88); font-size: 13.5px; font-weight: 600;
+      text-align: left; padding: 10px 12px; border-radius: 10px;
+      cursor: pointer; transition: background 0.12s ease;
+    }
+    .post-menu-item:active { background: rgba(255,255,255,0.1); }
+    @media (hover: hover) { .post-menu-item:hover { background: rgba(255,255,255,0.07); } }
+    .post-menu-item i { width: 17px; height: 17px; flex-shrink: 0; color: rgba(255,255,255,0.55); }
+    .post-menu-item.danger { color: #ff5c5c; }
+    .post-menu-item.danger i { color: #ff5c5c; }
+    .post-menu-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 5px 8px; }
+    .post-menu-back {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+      color: rgba(255,255,255,0.45); padding: 8px 12px 4px; cursor: pointer;
+    }
+    .post-menu-back i { width: 14px; height: 14px; }
+
+    /* ── Polls page: recolored to match the app's actual signature palette
+       (indigo → pink gradient used everywhere else — avatars, buttons,
+       progress bars) instead of an unrelated orange/coral scheme.
+       Font Awesome icons throughout, no default blue anywhere. ── */
+    #poll-list .poll-card {
+      background: linear-gradient(165deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    #poll-list .poll-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent, #6c63ff), #ff4ecd);
+    }
+    #poll-list .poll-card .post-header { padding: 0 0 12px; }
+    #poll-list .poll-card .post-meta strong { color: #fff; font-size: 14px; }
+    #poll-list .poll-card .post-meta small { color: rgba(255,255,255,0.45); }
+    #poll-list .poll-question {
+      font-size: 16px; font-weight: 700; line-height: 1.4;
+      color: #fff; margin: 0 0 14px;
+      display: flex; align-items: flex-start; gap: 9px;
+    }
+    #poll-list .poll-question::before {
+      font-family: "Font Awesome 6 Free"; font-weight: 900; content: "\f681"; /* fa-square-poll-vertical */
+      font-size: 14px; color: var(--accent, #6c63ff);
+      background: rgba(108,99,255,0.16);
+      border: 1px solid rgba(108,99,255,0.32);
+      width: 26px; height: 26px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    #poll-list .poll-options { display: flex; flex-direction: column; gap: 9px; }
+    #poll-list .poll-option {
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      background: rgba(255,255,255,0.03);
+      transition: border-color 0.15s ease, background 0.15s ease;
+      padding: 0;
+    }
+    #poll-list .poll-option:active { transform: scale(0.99); }
+    @media (hover: hover) {
+      #poll-list .poll-option:not(.voted):hover { border-color: rgba(108,99,255,0.5); background: rgba(108,99,255,0.06); }
+    }
+    #poll-list .poll-option.voted { cursor: default; border-color: rgba(108,99,255,0.4); }
+    #poll-list .poll-option-bar {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      background: linear-gradient(90deg, rgba(108,99,255,0.32), rgba(255,78,205,0.32));
+      transition: width 0.5s cubic-bezier(.2,.8,.2,1);
+      z-index: 0;
+    }
+    #poll-list .poll-option-label {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; padding: 11px 14px;
+      font-size: 13.5px; font-weight: 600; color: rgba(255,255,255,0.9);
+    }
+    #poll-list .poll-option-label span:first-child { display: flex; align-items: center; gap: 8px; }
+    #poll-list .poll-option.voted .poll-option-label span:first-child::before {
+      font-family: "Font Awesome 6 Free"; font-weight: 900; content: "\f058"; /* fa-circle-check */
+      color: var(--accent, #6c63ff); font-size: 13px;
+    }
+    #poll-list .poll-option-pct {
+      font-weight: 800; color: var(--accent, #6c63ff); font-size: 13px;
+      background: rgba(108,99,255,0.14);
+      padding: 2px 9px; border-radius: 20px;
+    }
+    #poll-list .poll-footer {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 12px; font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.45);
+    }
+    #poll-list .poll-footer::before {
+      font-family: "Font Awesome 6 Free"; font-weight: 900; content: "\f080"; /* fa-chart-simple */
+      font-size: 11px; color: rgba(255,255,255,0.35);
+    }
+    #poll-list .poll-card .post-menu-btn,
+    #poll-list .poll-card .post-delete-btn {
+      background: none; border: none; color: rgba(255,255,255,0.4);
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; margin-left: auto; flex-shrink: 0;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    #poll-list .poll-card .post-delete-btn:hover { background: rgba(255,92,92,0.14); color: #ff5c5c; }
+
+    /* Polls view header — same indigo→pink icon badge as the rest of the app */
+    #polls-view-header h2 { display: flex; align-items: center; gap: 10px; }
+    #polls-view-header h2 i {
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--accent, #6c63ff);
+      background: rgba(108,99,255,0.16); border: 1px solid rgba(108,99,255,0.32);
+      border-radius: 9px;
+    }
+    #polls-view-header .btn-fab {
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #8b7bff) !important;
+      border: none !important; color: #fff !important;
+      box-shadow: 0 6px 18px rgba(108,99,255,0.35);
+    }
+
+    /* "New Poll" composer modal — same theme, no blue/orange mismatch */
+    #modal-poll-inner .modal-header h3 { display: flex; align-items: center; gap: 10px; }
+    #modal-poll-inner .modal-header h3 i {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: var(--accent, #6c63ff);
+      background: rgba(108,99,255,0.16); border: 1px solid rgba(108,99,255,0.32);
+      border-radius: 8px;
+    }
+    .poll-form-field { margin: 14px 0 0; }
+    .poll-form-field label {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+      color: rgba(255,255,255,0.5); margin-bottom: 7px;
+    }
+    .poll-form-field label i { font-size: 11px; color: var(--accent, #6c63ff); }
+    #poll-question {
+      width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+      color: #fff; font-size: 14px; transition: border-color 0.15s ease;
+    }
+    #poll-question:focus { outline: none; border-color: rgba(108,99,255,0.55); }
+    #poll-options-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .poll-option-input-row {
+      display: flex; align-items: center; gap: 10px;
+      border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+      border-radius: 12px; padding: 0 12px; transition: border-color 0.15s ease;
+    }
+    .poll-option-input-row:focus-within { border-color: rgba(108,99,255,0.55); }
+    .poll-option-input-row i.fa-circle { font-size: 9px; color: rgba(108,99,255,0.6); flex-shrink: 0; }
+    .poll-option-input {
+      flex: 1; min-width: 0; border: none; background: none; outline: none;
+      color: #fff; font-size: 13.5px; padding: 10px 0;
+    }
+    .poll-option-remove-btn {
+      background: none; border: none; color: rgba(255,255,255,0.35);
+      cursor: pointer; padding: 4px; flex-shrink: 0; display: flex; align-items: center;
+      transition: color 0.15s ease;
+    }
+    .poll-option-remove-btn:hover { color: #ff5c5c; }
+    .poll-option-remove-btn i { font-size: 12px; }
+    .poll-add-option-btn {
+      display: flex; align-items: center; gap: 7px; justify-content: center;
+      width: 100%; margin-top: 10px; padding: 9px 0;
+      background: rgba(108,99,255,0.1); border: 1px dashed rgba(108,99,255,0.4);
+      border-radius: 12px; color: var(--accent, #6c63ff); font-size: 12.5px; font-weight: 700;
+      cursor: pointer; transition: background 0.15s ease;
+    }
+    .poll-add-option-btn:hover { background: rgba(108,99,255,0.16); }
+    .poll-add-option-btn i { font-size: 11px; }
+    .poll-launch-btn {
+      display: flex; align-items: center; gap: 8px; justify-content: center;
+      width: 100%; padding: 13px 0; margin-top: 6px;
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #8b7bff); border: none; border-radius: 14px;
+      color: #fff; font-size: 14.5px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 8px 22px rgba(108,99,255,0.3);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .poll-launch-btn:active { transform: scale(0.98); }
+    .poll-launch-btn i { font-size: 13px; }
+
+    /* ══════════════════════════════════════════════════════════════
+       SONGS — classy music library: Girls/Boys/Favorites, most-played
+       ranking, mini player. Deep plum/indigo palette with a Playfair
+       Display wordmark so it reads as its own distinct, premium corner
+       of the app rather than a reskinned post list.
+       ══════════════════════════════════════════════════════════════ */
+    .songs-title-font {
+      font-family: 'Playfair Display', serif;
+      font-style: italic; font-weight: 700;
+      font-size: 26px; color: #fff; margin: 0; line-height: 1.1;
+      letter-spacing: .01em;
+    }
+    .songs-hero {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: radial-gradient(120% 140% at 15% 20%, rgba(108,99,255,0.35), transparent 60%),
+                  radial-gradient(120% 140% at 85% 80%, rgba(255,78,205,0.28), transparent 60%),
+                  linear-gradient(160deg, #1a1530, #0f0c1e);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px;
+      padding: 18px 18px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .songs-hero-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .songs-hero-sub { margin: 3px 0 0; font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 500; }
+    .songs-disc-icon {
+      font-size: 30px; color: rgba(255,255,255,0.85); flex-shrink: 0;
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: conic-gradient(from 180deg, var(--accent, #6c63ff), #ff4ecd, var(--accent, #6c63ff));
+      animation: songsDiscSpin 6s linear infinite;
+      box-shadow: 0 6px 20px rgba(108,99,255,0.4);
+    }
+    @keyframes songsDiscSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .songs-add-btn {
+      display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #8b7bff);
+      border: none; color: #fff; font-size: 12.5px; font-weight: 700;
+      padding: 10px 15px; border-radius: 12px; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(108,99,255,0.35);
+    }
+    .songs-add-btn i { font-size: 11px; }
+
+    .songs-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .songs-tab {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 700;
+      padding: 10px 0; border-radius: 13px; cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .songs-tab i { font-size: 12px; }
+    .songs-tab[data-cat="girls"].active { background: rgba(255,78,205,0.16); border-color: rgba(255,78,205,0.4); color: #ff88d9; }
+    .songs-tab[data-cat="boys"].active { background: rgba(108,99,255,0.18); border-color: rgba(108,99,255,0.45); color: #a9a1ff; }
+    .songs-tab[data-cat="favorites"].active { background: rgba(255,92,92,0.16); border-color: rgba(255,92,92,0.4); color: #ff8080; }
+    .songs-lang-filter { display: flex; gap: 7px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; -ms-overflow-style: none; scrollbar-width: none; }
+    .songs-lang-filter::-webkit-scrollbar { display: none; }
+    .songs-lang-chip {
+      flex-shrink: 0; padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.55);
+      display: flex; align-items: center; gap: 5px; white-space: nowrap;
+    }
+    .songs-lang-chip i { font-size: 10px; }
+    .songs-lang-chip.active { background: rgba(255,190,60,0.16); border-color: rgba(255,190,60,0.45); color: #ffcf6b; }
+
+    .songs-search-wrap {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 13px; padding: 0 14px; margin-bottom: 14px;
+    }
+    .songs-search-wrap i { color: rgba(255,255,255,0.4); font-size: 13px; }
+    .songs-search-wrap input {
+      flex: 1; border: none; background: none; outline: none;
+      color: #fff; font-size: 13.5px; padding: 11px 0;
+    }
+
+    .songs-list { display: flex; flex-direction: column; gap: 9px; padding-bottom: 90px; }
+    .song-row {
+      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 15px; padding: 9px 12px;
+      position: relative;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+    .song-row.playing { border-color: rgba(108,99,255,0.55); background: linear-gradient(180deg, rgba(108,99,255,0.1), rgba(255,78,205,0.04)); }
+    .song-row:active { transform: scale(0.99); }
+    .song-rank {
+      position: absolute; top: -6px; left: -6px;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: #1a1530;
+      background: linear-gradient(135deg, #ffd76e, #ff9d3d);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      z-index: 2;
+    }
+    .song-rank.rank-2 { background: linear-gradient(135deg, #e2e2e2, #b9b9c7); }
+    .song-rank.rank-3 { background: linear-gradient(135deg, #d8a06a, #a9713e); }
+    .song-cover-wrap { position: relative; width: 50px; height: 50px; flex-shrink: 0; border-radius: 12px; overflow: hidden; }
+    .song-cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .song-play-overlay {
+      position: absolute; inset: 0; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.35); color: #fff; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s ease;
+    }
+    .song-row:active .song-play-overlay, .song-row.playing .song-play-overlay { opacity: 1; }
+    .song-info { flex: 1; min-width: 0; }
+    .song-title { font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-sub {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11.5px; color: rgba(255,255,255,0.45); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .song-sub i { font-size: 10px; }
+    .song-fav-btn {
+      background: none; border: none; cursor: pointer; flex-shrink: 0;
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.35); font-size: 15px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+    .song-fav-btn.active { color: #ff4ecd; }
+    .song-fav-btn:active { background: rgba(255,78,205,0.12); }
+
+    .songs-empty { text-align: center; padding: 50px 20px; color: rgba(255,255,255,0.4); }
+    .songs-empty i { font-size: 34px; margin-bottom: 12px; display: block; color: rgba(255,255,255,0.2); }
+
+    .songs-mini-player {
+      position: sticky; bottom: 12px; z-index: 5;
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; box-sizing: border-box;
+      background: rgba(20,16,36,0.92); backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px; padding: 9px 14px 9px 9px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .smp-progress-track {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+      background: rgba(255,255,255,0.08);
+    }
+    .smp-progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent, #6c63ff), #ff4ecd);
+      transition: width 0.2s linear;
+    }
+    .smp-cover { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .smp-info { flex: 1; min-width: 0; }
+    .smp-title { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .smp-artist { font-size: 11px; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .smp-play-btn {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #ff4ecd);
+      border: none; color: #fff; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .smp-skip-btn {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(255,255,255,0.08);
+      border: none; color: #fff; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .smp-skip-btn:active { transform: scale(0.9); }
+    .smp-progress-track { cursor: pointer; }
+    .smp-progress-track:hover { height: 5px; }
+    .smp-clickable { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+
+    /* ── Full-screen "Now Playing" player (Spotify-style) ── */
+    .full-player-overlay {
+      position: fixed; inset: 0; z-index: 999;
+      background: linear-gradient(180deg, #241a3d, #100b1e 60%);
+      display: flex; flex-direction: column;
+      padding: env(safe-area-inset-top, 18px) 22px 26px;
+      transform: translateY(100%); transition: transform 0.32s cubic-bezier(.22,.9,.3,1), visibility 0s linear 0.32s;
+      /* visibility (not just the transform) hides this when closed — on
+         mobile, opening the keyboard shrinks the visual viewport and some
+         browsers don't recompute position:fixed + translateY(100%) against
+         the new height, so the panel's cover art peeked up from the bottom
+         above the keyboard even while "closed". visibility:hidden keeps it
+         fully out of the render regardless of viewport changes. */
+      visibility: hidden;
+    }
+    .full-player-overlay.open {
+      transform: translateY(0);
+      visibility: visible;
+      transition: transform 0.32s cubic-bezier(.22,.9,.3,1);
+    }
+    .fp-topbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 2px 8px; }
+    .fp-topbar button { background: none; border: none; color: #fff; font-size: 20px; width: 40px; height: 40px; display:flex; align-items:center; justify-content:center; cursor: pointer; }
+    .fp-topbar span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,0.55); font-weight: 700; }
+    .fp-cover-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px 8px 26px; min-height: 0; }
+    .fp-cover-wrap img { width: min(78vw, 340px); height: min(78vw, 340px); border-radius: 18px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,0.55); }
+    .fp-meta { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .fp-meta-text { min-width: 0; }
+    .fp-title { font-size: 21px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fp-artist { font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fp-fav-btn { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 22px; flex-shrink: 0; cursor: pointer; }
+    .fp-fav-btn.active { color: #ff4ecd; }
+    .fp-progress-track {
+      position: relative; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.15);
+      cursor: pointer; margin-bottom: 6px;
+    }
+    .fp-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; width: 0%; background: linear-gradient(90deg, var(--accent, #6c63ff), #ff4ecd); }
+    .fp-progress-handle {
+      position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%;
+      background: #fff; transform: translate(-50%,-50%); left: 0%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .fp-time-row { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; margin-bottom: 26px; }
+    .fp-controls { display: flex; align-items: center; justify-content: center; gap: 30px; }
+    .fp-controls button { background: none; border: none; color: #fff; cursor: pointer; display:flex; align-items:center; justify-content:center; }
+    .fp-skip-btn { font-size: 26px; }
+    .fp-skip-btn:active { opacity: 0.6; }
+    .fp-play-btn {
+      width: 66px; height: 66px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent, #6c63ff), #ff4ecd);
+      font-size: 22px; box-shadow: 0 8px 24px rgba(108,99,255,0.4);
+    }
+    .fp-play-btn:active { transform: scale(0.94); }
+
+    /* ── Small-screen tightening so the mini + full player never overflow ── */
+    @media (max-width: 380px) {
+      .songs-hero { padding: 14px; }
+      .songs-tab { padding: 8px 0; font-size: 12px; }
+      .songs-mini-player { padding: 7px 10px 7px 7px; gap: 8px; }
+      .smp-cover { width: 34px; height: 34px; }
+      .smp-play-btn { width: 32px; height: 32px; }
+      .smp-skip-btn { width: 26px; height: 26px; }
+      .fp-controls { gap: 18px; }
+      .fp-play-btn { width: 58px; height: 58px; }
+      .fp-title { font-size: 18px; }
+    }
+
+    /* Add Song modal category picker */
+    .song-cat-picker { display: flex; gap: 8px; }
+    .song-cat-option {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 700;
+      padding: 10px 0; border-radius: 12px; cursor: pointer;
+    }
+    .song-cat-option.active[data-cat="girls"] { background: rgba(255,78,205,0.16); border-color: rgba(255,78,205,0.45); color: #ff88d9; }
+    .song-cat-option.active[data-cat="boys"] { background: rgba(108,99,255,0.18); border-color: rgba(108,99,255,0.5); color: #a9a1ff; }
+
+    /* Let the mobile bottom nav scroll horizontally now that it has one
+       more icon than it was originally designed for */
+    .mobile-nav { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .mobile-nav::-webkit-scrollbar { display: none; }
+
 
     /* ── Admin-granted "Elite" profile frame ──────────────────────────
        A cosmetic, admin-only perk ("customize profile lobby") that can be
@@ -1798,7 +2470,7 @@ opacity: .4;
     /* ══════════════════════════════════════════════════════════
        Chat image lightbox (fullscreen viewer with a close button)
        ══════════════════════════════════════════════════════════ */
-    .chat-img-lightbox {
+    .chat-img-lightbox, .post-img-lightbox {
       display: none;
       position: fixed;
       inset: 0;
@@ -1809,15 +2481,20 @@ opacity: .4;
       padding: 24px;
       box-sizing: border-box;
     }
-    .chat-img-lightbox.open { display: flex; }
-    .chat-img-lightbox img {
+    .chat-img-lightbox.open, .post-img-lightbox.open { display: flex; }
+    .chat-img-lightbox img, .post-img-lightbox img {
       max-width: 100%;
       max-height: 100%;
       border-radius: 8px;
       object-fit: contain;
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     }
-    .chat-img-lightbox-close {
+    .post-img-lightbox img {
+      touch-action: none; /* we handle pinch/pan ourselves */
+      transform-origin: center center;
+      will-change: transform;
+    }
+    .chat-img-lightbox-close, .post-img-lightbox-close {
       position: absolute;
       top: 18px;
       right: 18px;
@@ -1833,8 +2510,9 @@ opacity: .4;
       cursor: pointer;
       z-index: 2;
     }
-    .chat-img-lightbox-close:hover { background: rgba(255,255,255,0.22); }
-    .chat-img-lightbox-close i { width: 22px; height: 22px; }
+    .chat-img-lightbox-close:hover, .post-img-lightbox-close:hover { background: rgba(255,255,255,0.22); }
+    .chat-img-lightbox-close i, .post-img-lightbox-close i { width: 22px; height: 22px; }
+    .post-media { cursor: zoom-in; }
     /* Force every text-entry field to at least 16px. Below that threshold,
        mobile Chrome/Safari auto-zoom the page on focus (to make the text
        legible) and — on Chrome especially — often don't zoom back out
@@ -1846,7 +2524,7 @@ opacity: .4;
        issue on both iOS Safari and Android Chrome. */
     input, textarea, select { font-size: 16px !important; }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap" rel="stylesheet"/>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -1979,6 +2657,9 @@ opacity: .4;
       <a class="nav-item" data-view="clubs">
         <i data-lucide="users"></i><span>Clubs</span>
       </a>
+      <a class="nav-item" data-view="songs">
+        <i data-lucide="music-2"></i><span>Songs</span>
+      </a>
       <a class="nav-item" data-view="chats">
         <i data-lucide="message-circle"></i><span>Chats</span><span class="badge" id="chat-badge" style="display:none">0</span>
       </a>
@@ -2003,6 +2684,7 @@ opacity: .4;
     <a class="mnav-item" data-view="confessions"><i data-lucide="ghost"></i><span>Confess</span></a>
     <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
+    <a class="mnav-item" data-view="songs"><i data-lucide="music-2"></i><span>Songs</span></a>
     <a class="mnav-item" data-view="friends">
       <i data-lucide="user-plus"></i><span>Friends</span>
       <span class="notif-badge-mobile" id="friend-req-badge-mobile" style="display:none">0</span>
@@ -2088,9 +2770,9 @@ opacity: .4;
 
     <!-- ── POLLS ── -->
     <section id="view-polls" class="view">
-      <div class="view-header">
-        <h2>📊 Polls</h2>
-        <button class="btn-fab" id="new-poll-btn"><i data-lucide="plus"></i></button>
+      <div class="view-header" id="polls-view-header">
+        <h2><i class="fa-solid fa-square-poll-vertical"></i> Polls</h2>
+        <button class="btn-fab" id="new-poll-btn"><i class="fa-solid fa-plus"></i></button>
       </div>
       <div class="post-list" id="poll-list">
         <div class="loading-spinner">Loading polls…</div>
@@ -2183,6 +2865,78 @@ opacity: .4;
         <div class="loading-spinner">Loading notes…</div>
       </div>
     </section>
+
+    <!-- ── SONGS ── -->
+    <section id="view-songs" class="view">
+      <div class="songs-hero">
+        <div class="songs-hero-left">
+          <i class="fa-solid fa-compact-disc songs-disc-icon"></i>
+          <div>
+            <h2 class="songs-title-font">Songs</h2>
+            <p class="songs-hero-sub">The campus playlist — curated, ranked by you</p>
+          </div>
+        </div>
+        <button class="songs-add-btn" id="songs-add-btn" style="display:none"><i class="fa-solid fa-plus"></i> Add song</button>
+      </div>
+
+      <div class="songs-tabs" id="songs-tabs">
+        <button class="songs-tab active" data-cat="girls"><i class="fa-solid fa-venus"></i> Girls</button>
+        <button class="songs-tab" data-cat="boys"><i class="fa-solid fa-mars"></i> Boys</button>
+        <button class="songs-tab" data-cat="favorites"><i class="fa-solid fa-heart"></i> Favorites</button>
+      </div>
+
+      <div class="songs-lang-filter" id="songs-lang-filter"></div>
+
+      <div class="songs-search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="songs-search-input" placeholder="Search songs or artists…" autocomplete="off"/>
+      </div>
+
+      <div class="songs-list" id="songs-list">
+        <div class="loading-spinner">Loading songs…</div>
+      </div>
+
+      <div class="songs-mini-player" id="songs-mini-player" style="display:none">
+        <div class="smp-progress-track" id="smp-progress-track"><div class="smp-progress-fill" id="smp-progress-fill"></div></div>
+        <div class="smp-clickable" id="smp-clickable">
+          <img class="smp-cover" id="smp-cover" src=""/>
+          <div class="smp-info">
+            <div class="smp-title" id="smp-title"></div>
+            <div class="smp-artist" id="smp-artist"></div>
+          </div>
+        </div>
+        <button class="smp-skip-btn" id="smp-prev-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+        <button class="smp-play-btn" id="smp-play-btn"><i class="fa-solid fa-pause"></i></button>
+        <button class="smp-skip-btn" id="smp-next-btn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+      </div>
+    </section>
+
+    <!-- ── Full-screen Now Playing player ── -->
+    <div class="full-player-overlay" id="full-player-overlay">
+      <div class="fp-topbar">
+        <button id="fp-close-btn"><i class="fa-solid fa-chevron-down"></i></button>
+        <span>Now Playing</span>
+        <span style="width:40px"></span>
+      </div>
+      <div class="fp-cover-wrap"><img id="fp-cover" src=""/></div>
+      <div class="fp-meta">
+        <div class="fp-meta-text">
+          <div class="fp-title" id="fp-title"></div>
+          <div class="fp-artist" id="fp-artist"></div>
+        </div>
+        <button class="fp-fav-btn" id="fp-fav-btn"><i class="fa-regular fa-heart"></i></button>
+      </div>
+      <div class="fp-progress-track" id="fp-progress-track">
+        <div class="fp-progress-fill" id="fp-progress-fill"></div>
+        <div class="fp-progress-handle" id="fp-progress-handle"></div>
+      </div>
+      <div class="fp-time-row"><span id="fp-time-current">0:00</span><span id="fp-time-duration">0:00</span></div>
+      <div class="fp-controls">
+        <button class="fp-skip-btn" id="fp-prev-btn"><i class="fa-solid fa-backward-step"></i></button>
+        <button class="fp-play-btn" id="fp-play-btn"><i class="fa-solid fa-pause"></i></button>
+        <button class="fp-skip-btn" id="fp-next-btn"><i class="fa-solid fa-forward-step"></i></button>
+      </div>
+    </div>
 
     <!-- ── CHATS ── -->
     <section id="view-chats" class="view" style="max-width:1200px">
@@ -2301,19 +3055,68 @@ opacity: .4;
 
 <!-- New Poll Modal -->
 <div class="modal-overlay" id="modal-poll">
-  <div class="modal">
+  <div class="modal" id="modal-poll-inner">
     <div class="modal-header">
-      <h3>📈 Add Poll</h3>
+      <h3><i class="fa-solid fa-square-poll-vertical"></i> New Poll</h3>
       <button class="modal-close" data-modal="modal-poll">✕</button>
     </div>
-    <input type="text" id="poll-question" placeholder="Ask a question…"/>
-    <div id="poll-options-wrap">
-      <input type="text" class="poll-option-input" placeholder="Option 1"/>
-      <input type="text" class="poll-option-input" placeholder="Option 2"/>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-comment-dots"></i> Question</label>
+      <input type="text" id="poll-question" placeholder="Ask something…"/>
     </div>
-    <button class="btn-sm" id="add-poll-option-btn">+ Add Option</button>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-list-check"></i> Options</label>
+      <div id="poll-options-wrap">
+        <div class="poll-option-input-row"><i class="fa-regular fa-circle"></i><input type="text" class="poll-option-input" placeholder="Option 1"/></div>
+        <div class="poll-option-input-row"><i class="fa-regular fa-circle"></i><input type="text" class="poll-option-input" placeholder="Option 2"/></div>
+      </div>
+    </div>
+    <button class="poll-add-option-btn" id="add-poll-option-btn"><i class="fa-solid fa-plus"></i> Add option</button>
     <div class="modal-actions">
-      <button class="btn-primary" id="submit-poll-btn">Launch Poll</button>
+      <button class="poll-launch-btn" id="submit-poll-btn"><i class="fa-solid fa-paper-plane"></i> Launch Poll</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Song (admin-only) -->
+<div class="modal-overlay" id="modal-add-song">
+  <div class="modal" id="modal-add-song-inner">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-compact-disc"></i> Add Song</h3>
+      <button class="modal-close" data-modal="modal-add-song">✕</button>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-music"></i> Song title</label>
+      <input type="text" id="song-title-input" placeholder="e.g. Midnight Drive"/>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-user-pen"></i> Artist (optional)</label>
+      <input type="text" id="song-artist-input" placeholder="e.g. Luna Rey"/>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-tags"></i> Category</label>
+      <div class="song-cat-picker" id="song-cat-picker">
+        <button type="button" class="song-cat-option active" data-cat="girls"><i class="fa-solid fa-venus"></i> Girls</button>
+        <button type="button" class="song-cat-option" data-cat="boys"><i class="fa-solid fa-mars"></i> Boys</button>
+      </div>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-language"></i> Language</label>
+      <select id="song-lang-select" style="width:100%;padding:11px 12px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:13px;"></select>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-image"></i> Cover image</label>
+      <input type="file" id="song-cover-file-input" accept="image/*"/>
+    </div>
+    <div id="song-cover-preview-wrap" style="display:none;margin-top:8px">
+      <img id="song-cover-preview" style="width:64px;height:64px;object-fit:cover;border-radius:10px"/>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-file-audio"></i> Audio file</label>
+      <input type="file" id="song-audio-file-input" accept="audio/*"/>
+    </div>
+    <div class="modal-actions">
+      <button class="poll-launch-btn" id="submit-song-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Song</button>
     </div>
   </div>
 </div>
@@ -2517,6 +3320,14 @@ opacity: .4;
         <i data-lucide="shield"></i><span>Blocked Users</span><i data-lucide="chevron-right" class="settings-row-chevron"></i>
       </button>
       <div id="blocked-users-list" style="display:none;margin:2px 0 10px;padding:0 4px 4px;"></div>
+      <button class="settings-row" id="settings-muted-toggle">
+        <i data-lucide="volume-x"></i><span>Muted Users</span><i data-lucide="chevron-right" class="settings-row-chevron"></i>
+      </button>
+      <div id="muted-users-list" style="display:none;margin:2px 0 10px;padding:0 4px 4px;"></div>
+      <button class="settings-row" id="settings-hidden-toggle">
+        <i data-lucide="eye-off"></i><span>Hidden Posts</span><i data-lucide="chevron-right" class="settings-row-chevron"></i>
+      </button>
+      <div id="hidden-posts-list" style="display:none;margin:2px 0 10px;padding:0 4px 4px;"></div>
 
       <div class="settings-section-label">Notifications</div>
       <div class="settings-row settings-row-toggle">
@@ -2648,6 +3459,14 @@ opacity: .4;
   <img id="chat-img-lightbox-img" src="" alt=""/>
 </div>
 
+<!-- Post image lightbox: tap a feed post's image to view it fullscreen -->
+<div class="post-img-lightbox" id="post-img-lightbox">
+  <button class="post-img-lightbox-close" id="post-img-lightbox-close" title="Close" aria-label="Close">
+    <i data-lucide="x"></i>
+  </button>
+  <img id="post-img-lightbox-img" src="" alt=""/>
+</div>
+
 <!-- Friend-chat voice/video call overlay (outgoing / incoming / active states) -->
 <div id="call-overlay">
   <video id="call-remote-video" class="call-remote-video" autoplay playsinline></video>
@@ -2740,6 +3559,10 @@ opacity: .4;
     <div class="field">
       <label>Username</label>
       <input type="text" id="edit-profile-username" placeholder="username (no @)"/>
+    </div>
+    <div class="field">
+      <label>College</label>
+      <input type="text" id="edit-profile-college" placeholder="e.g. Delhi University"/>
     </div>
     <div class="field">
       <label>Bio</label>
@@ -3439,6 +4262,63 @@ function showBannedScreen(reason) {
   requestAnimationFrame(() => overlay.classList.add('show'));
 }
 
+function showIpBlockedScreen(reason) {
+  document.querySelector('.cv-banned-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'cv-banned-overlay';
+  overlay.innerHTML = `
+    <div class="cv-banned-box">
+      <div class="cv-banned-icon">🌐🚫</div>
+      <h2>Access blocked</h2>
+      <p>${escHtml(reason || 'Access from your current network has been blocked by an admin.')}</p>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+}
+
+// ── IP CAPTURE + BLOCK CHECK ──────────────────────────────────────────
+// Records the user's public IP on their profile (for admin visibility/abuse
+// tracking) and checks it against the blockedIps collection so an admin can
+// cut off a network even for accounts/devices they don't otherwise know.
+// Note: this is a client-reported IP — a determined user can spoof or evade
+// it (VPN, proxy), so it's a moderation aid, not a hard security boundary.
+let _cachedClientIp = null;
+async function getClientIp() {
+  if (_cachedClientIp) return _cachedClientIp;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    _cachedClientIp = data.ip || null;
+  } catch (e) {
+    _cachedClientIp = null;
+  }
+  return _cachedClientIp;
+}
+
+async function captureAndCheckIp(uid) {
+  const ip = await getClientIp();
+  if (!ip) return { blocked: false };
+
+  try {
+    const blockSnap = await db.collection('blockedIps').doc(ip).get();
+    if (blockSnap.exists) {
+      return { blocked: true, reason: blockSnap.data()?.reason || '' };
+    }
+  } catch (e) {
+    // If the block-list read fails (e.g. offline), fail open rather than
+    // locking legitimate users out.
+  }
+
+  // Record it on the user's profile so admins can see/block it later.
+  db.collection('users').doc(uid).set({
+    lastIp: ip,
+    ipUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    ipHistory: firebase.firestore.FieldValue.arrayUnion(ip)
+  }, { merge: true }).catch(() => {});
+
+  return { blocked: false, ip };
+}
+
 // ── BAN LISTENER (real-time — kicks user out the moment they're banned) ──
 let _banListenerUnsub = null;
 function startBanListener(uid) {
@@ -3474,6 +4354,26 @@ function stopBanListener() {
   if (_banListenerUnsub) { _banListenerUnsub(); _banListenerUnsub = null; }
 }
 
+// ── IP BLOCK LISTENER (real-time — kicks user out if their IP gets blocked
+// mid-session, e.g. an admin blocks it while they're already logged in) ──
+let _ipBlockListenerUnsub = null;
+function startIpBlockListener(ip) {
+  stopIpBlockListener();
+  if (!ip) return;
+  _ipBlockListenerUnsub = db.collection('blockedIps').doc(ip).onSnapshot(snap => {
+    if (snap.exists) {
+      stopIpBlockListener();
+      stopBanListener();
+      stopPresence();
+      const reason = snap.data()?.reason || '';
+      auth.signOut().finally(() => showIpBlockedScreen(reason));
+    }
+  }, err => console.error('IP block listener error:', err));
+}
+function stopIpBlockListener() {
+  if (_ipBlockListenerUnsub) { _ipBlockListenerUnsub(); _ipBlockListenerUnsub = null; }
+}
+
 // ── PRESENCE (RTDB — online/offline + last seen) ─────────────────────
 let _presenceRef = null;
 function startPresence(uid, profile) {
@@ -3482,14 +4382,23 @@ function startPresence(uid, profile) {
   const connectedRef = rtdb.ref('.info/connected');
   connectedRef.on('value', snap => {
     if (!snap.val()) return;
-    _presenceRef.onDisconnect().set({
+    // IMPORTANT: use update(), not set(), for both the disconnect payload and
+    // the "I'm online" payload. set() replaces the ENTIRE presence/{uid} node,
+    // which would silently wipe out currentClub (see below) every time the
+    // socket reconnects (app backgrounded/foregrounded, network blip, etc.)
+    // even while the user is still sitting inside a club. update() only
+    // touches the keys listed here and leaves currentClub alone — except on
+    // disconnect, where we explicitly null it out because a dropped
+    // connection always means "no longer active in any club".
+    _presenceRef.onDisconnect().update({
       online: false,
       lastSeen: firebase.database.ServerValue.TIMESTAMP,
+      currentClub: null,
       name: profile?.name || 'Student',
       avatar: profile?.avatar || '',
       profilePic: profile?.profilePic || ''
     }).then(() => {
-      _presenceRef.set({
+      _presenceRef.update({
         online: true,
         lastSeen: firebase.database.ServerValue.TIMESTAMP,
         name: profile?.name || 'Student',
@@ -3500,8 +4409,21 @@ function startPresence(uid, profile) {
   });
 }
 function stopPresence() {
-  if (_presenceRef) { _presenceRef.set({ online: false, lastSeen: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{}); _presenceRef = null; }
+  if (_presenceRef) { _presenceRef.update({ online: false, lastSeen: firebase.database.ServerValue.TIMESTAMP, currentClub: null }).catch(()=>{}); _presenceRef = null; }
   rtdb.ref('.info/connected').off();
+}
+
+// ── PRESENCE: which club (if any) the user is currently inside ───────
+// Written whenever a club dashboard opens/closes so admin (and the
+// "X online" badges below) can tell "actually in this club right now"
+// apart from "just has the app open somewhere else".
+function setPresenceCurrentClub(clubId) {
+  if (!currentUser) return;
+  rtdb.ref('presence/' + currentUser.uid).update({ currentClub: clubId || null }).catch(()=>{});
+}
+function clearPresenceCurrentClub() {
+  if (!currentUser) return;
+  rtdb.ref('presence/' + currentUser.uid).update({ currentClub: null }).catch(()=>{});
 }
 
 // ── CLUBS PRESENCE (shared cache — powers "🟢 X online" on club cards/dashboard) ──
@@ -3523,8 +4445,10 @@ function stopClubsPresenceWatch() {
   if (_clubsPresenceRef) { _clubsPresenceRef.off(); _clubsPresenceRef = null; }
   _clubsPresenceCache = {};
 }
-function countClubOnline(memberUids) {
-  return (memberUids || []).filter(uid => _clubsPresenceCache?.[uid]?.online).length;
+// Counts members actually inside THIS club right now (currentClub === clubId),
+// not just anyone with the app open somewhere. Pass clubId explicitly.
+function countClubOnline(memberUids, clubId) {
+  return (memberUids || []).filter(uid => _clubsPresenceCache?.[uid]?.online && _clubsPresenceCache?.[uid]?.currentClub === clubId).length;
 }
 
 // ── PINNED FEED MESSAGE ───────────────────────────────────────────────
@@ -3623,6 +4547,7 @@ auth.onAuthStateChanged(async user => {
       return;
     }
     currentUser = user;
+    let ipCheck = { blocked: false, ip: null };
     try {
       // Check ban status BEFORE loading the app
       const preSnap = await db.collection('users').doc(user.uid).get();
@@ -3631,6 +4556,16 @@ auth.onAuthStateChanged(async user => {
         await auth.signOut();
         hideSplash();
         showBannedScreen(reason);
+        return;
+      }
+
+      // Check IP block status BEFORE loading the app (also records the IP
+      // on the user's doc for admin visibility going forward)
+      ipCheck = await captureAndCheckIp(user.uid);
+      if (ipCheck.blocked) {
+        await auth.signOut();
+        hideSplash();
+        showIpBlockedScreen(ipCheck.reason);
         return;
       }
 
@@ -3660,6 +4595,7 @@ auth.onAuthStateChanged(async user => {
     lucide.createIcons();
     initApp();
     startBanListener(user.uid);
+    if (ipCheck.ip) startIpBlockListener(ipCheck.ip);
     startPresence(user.uid, currentUserData);
     startClubsPresenceWatch();
     applyAdminUiGates();
@@ -3667,6 +4603,7 @@ auth.onAuthStateChanged(async user => {
     setupBroadcastListener();
   } else {
     stopBanListener();
+    stopIpBlockListener();
     stopPresence();
     stopClubsPresenceWatch();
     if (_incomingCallListener) { _incomingCallListener(); _incomingCallListener = null; }
@@ -3719,6 +4656,71 @@ async function loadBlockList() {
 function isBlocked(uid) {
   if (!uid) return false;
   return blockedByMe.has(uid) || blockedMe.has(uid);
+}
+
+// Mute: one-directional, doesn't affect messaging/notifications for the
+// other person (unlike Block) — it only hides their future posts from MY
+// feed. Stored on my own user doc so it's just a personal filter.
+function isMuted(uid) {
+  if (!uid || !currentUserData) return false;
+  return (currentUserData.mutedUsers || []).includes(uid);
+}
+async function muteUser(uid, name) {
+  if (!uid || uid === currentUser.uid) return;
+  showConfirmDialog(`Mute ${name || 'this user'}? You won't see their posts in your feed anymore, but you can still message each other and they won't be notified.`, async () => {
+    try {
+      await db.collection('users').doc(currentUser.uid).update({
+        mutedUsers: firebase.firestore.FieldValue.arrayUnion(uid)
+      });
+      currentUserData.mutedUsers = [...(currentUserData.mutedUsers || []), uid];
+      toast(`${name || 'User'} muted 🔇`, 'success');
+      document.querySelectorAll(`.post-card[data-uid="${uid}"]`).forEach(el => el.remove());
+      renderMutedList();
+    } catch (e) { toast('Failed: ' + e.message, 'error'); }
+  });
+}
+async function unmuteUser(uid) {
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      mutedUsers: firebase.firestore.FieldValue.arrayRemove(uid)
+    });
+    currentUserData.mutedUsers = (currentUserData.mutedUsers || []).filter(u => u !== uid);
+    toast('User unmuted', 'success');
+    renderMutedList();
+    loadFeed();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// "Not interested" — hides one specific post from my feed without muting
+// or blocking the person at all. Personal + permanent (stored on my user doc).
+function isPostHidden(postId) {
+  if (!postId || !currentUserData) return false;
+  return (currentUserData.hiddenPosts || []).includes(postId);
+}
+async function hidePost(postId, cardEl) {
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      hiddenPosts: firebase.firestore.FieldValue.arrayUnion(postId)
+    });
+    currentUserData.hiddenPosts = [...(currentUserData.hiddenPosts || []), postId];
+    if (cardEl) cardEl.remove();
+    toast("Post hidden — you won't see this again", 'success');
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// Report a post for moderator review. Lightweight — just logs it with a
+// reason; admins can review the `reports` collection.
+async function submitPostReport(postId, postUid, postText, reason) {
+  try {
+    await db.collection('reports').add({
+      postId, postUid: postUid || '',
+      postTextSnippet: (postText || '').slice(0, 200),
+      reporterUid: currentUser.uid,
+      reason: reason || 'Other',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast("Reported — thanks, our team will take a look 🚩", 'success');
+  } catch (e) { toast('Failed to report: ' + e.message, 'error'); }
 }
 
 async function banUserFromApp(uid, name) {
@@ -3788,6 +4790,23 @@ function setupSettings() {
     if (!showing) renderBlockedList();
   });
 
+  // Muted Users — same pattern as Blocked Users
+  $('settings-muted-toggle')?.addEventListener('click', () => {
+    const listEl = $('muted-users-list');
+    const showing = listEl.style.display !== 'none';
+    listEl.style.display = showing ? 'none' : 'block';
+    if (!showing) renderMutedList();
+  });
+
+  // Hidden Posts ("Not interested") — lets the user review and un-hide
+  // posts they dismissed from their feed
+  $('settings-hidden-toggle')?.addEventListener('click', () => {
+    const listEl = $('hidden-posts-list');
+    const showing = listEl.style.display !== 'none';
+    listEl.style.display = showing ? 'none' : 'block';
+    if (!showing) renderHiddenPostsList();
+  });
+
   // Edit Profile — close settings, open the existing edit-profile flow
   $('settings-edit-profile-row')?.addEventListener('click', () => {
     closeModal('modal-settings');
@@ -3849,9 +4868,515 @@ function openSettingsModal() {
   $('settings-notif-clubs').checked     = s.clubNotifs       !== false;
   $('settings-privacy-private').checked = s.privateProfile   === true;
   $('blocked-users-list').style.display = 'none';
+  $('muted-users-list').style.display = 'none';
+  $('hidden-posts-list').style.display = 'none';
   openModal('modal-settings');
   lucide.createIcons();
 }
+
+async function renderMutedList() {
+  const container = $('muted-users-list');
+  if (!container) return;
+  const mutedUids = currentUserData?.mutedUsers || [];
+  if (mutedUids.length === 0) {
+    container.innerHTML = `<p style="color:var(--muted,#aaa);font-size:13px;margin:6px 0 0">You haven't muted anyone.</p>`;
+    return;
+  }
+  container.innerHTML = `<div class="loading-spinner">Loading…</div>`;
+  const users = await fetchUsersByUids(mutedUids);
+  container.innerHTML = users.map(u => `
+    <div class="blocked-user-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border,rgba(255,255,255,0.08))">
+      <span style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${renderAvatarHtml(u.avatar, u.profilePic, 28)}</span>
+      <span style="flex:1;font-size:13.5px;color:var(--text,#fff)">${escHtml(u.name || 'Student')}</span>
+      <button class="btn-sm unmute-btn" data-uid="${u.uid}" style="background:var(--surface2,rgba(255,255,255,0.08));border:1px solid var(--border,rgba(255,255,255,0.12));color:var(--text,#fff);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px">Unmute</button>
+    </div>`).join('');
+  container.querySelectorAll('.unmute-btn').forEach(btn => {
+    btn.addEventListener('click', () => unmuteUser(btn.dataset.uid));
+  });
+}
+
+async function renderHiddenPostsList() {
+  const container = $('hidden-posts-list');
+  if (!container) return;
+  const hiddenIds = currentUserData?.hiddenPosts || [];
+  if (hiddenIds.length === 0) {
+    container.innerHTML = `<p style="color:var(--muted,#aaa);font-size:13px;margin:6px 0 0">No hidden posts. Posts you mark "Not interested" show up here.</p>`;
+    return;
+  }
+  container.innerHTML = `<div class="loading-spinner">Loading…</div>`;
+  const snaps = await Promise.all(hiddenIds.map(id => db.collection('posts').doc(id).get().catch(() => null)));
+  const rows = snaps.map((snap, i) => ({ id: hiddenIds[i], data: snap && snap.exists ? snap.data() : null }));
+  const stillExist = rows.filter(r => r.data);
+  // Clean up ids pointing at posts that were since deleted, so the list doesn't grow stale
+  const goneIds = rows.filter(r => !r.data).map(r => r.id);
+  if (goneIds.length) {
+    db.collection('users').doc(currentUser.uid).update({
+      hiddenPosts: firebase.firestore.FieldValue.arrayRemove(...goneIds)
+    }).catch(() => {});
+    currentUserData.hiddenPosts = (currentUserData.hiddenPosts || []).filter(id => !goneIds.includes(id));
+  }
+  if (stillExist.length === 0) {
+    container.innerHTML = `<p style="color:var(--muted,#aaa);font-size:13px;margin:6px 0 0">No hidden posts. Posts you mark "Not interested" show up here.</p>`;
+    return;
+  }
+  container.innerHTML = stillExist.map(({ id, data: p }) => {
+    const snippet = p.text ? escHtml(p.text.slice(0, 60)) + (p.text.length > 60 ? '…' : '') : (p.mediaUrl ? (p.isVideo ? '🎬 Video post' : '🖼️ Photo post') : 'Post');
+    return `
+    <div class="blocked-user-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border,rgba(255,255,255,0.08))">
+      <span style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${renderAvatarHtml(p.avatar, p.profilePic, 28)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;color:var(--text,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${snippet}</div>
+        <div style="font-size:11px;color:var(--muted,#888)">by ${escHtml(p.name || 'Student')}</div>
+      </div>
+      <button class="btn-sm unhide-post-btn" data-id="${id}" style="background:var(--surface2,rgba(255,255,255,0.08));border:1px solid var(--border,rgba(255,255,255,0.12));color:var(--text,#fff);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;flex-shrink:0">Unhide</button>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.unhide-post-btn').forEach(btn => {
+    btn.addEventListener('click', () => unhidePost(btn.dataset.id));
+  });
+}
+
+async function unhidePost(postId) {
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      hiddenPosts: firebase.firestore.FieldValue.arrayRemove(postId)
+    });
+    currentUserData.hiddenPosts = (currentUserData.hiddenPosts || []).filter(id => id !== postId);
+    toast('Post unhidden — it may reappear in your feed', 'success');
+    renderHiddenPostsList();
+    loadFeed();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SONGS — Girls / Boys / Favorites library, most-played ranking,
+// a single shared <audio> element + mini player, admin-only uploads.
+// ══════════════════════════════════════════════════════════════════
+let _allSongsCache = [];
+let _songsUnsub = null;
+let _songsCategory = 'girls';
+let _songsLanguage = 'all';
+let _songLanguages = ['hindi', 'marathi', 'punjabi', 'english', 'other']; // fallback default, kept in sync with config/songLanguages
+let _songLangUnsub = null;
+let _songsAudioEl = null;      // the one shared <audio> element
+let _currentSongId = null;     // which song is loaded right now
+let _songsPlayCounted = new Set(); // song ids already counted this session, so resuming/seeking doesn't re-increment
+
+function watchSongsFeed() {
+  if (_songsUnsub) return; // already watching
+  _songsUnsub = db.collection('songs').onSnapshot(snap => {
+    _allSongsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSongsList();
+  }, err => {
+    $('songs-list').innerHTML = `<div class="songs-empty"><i class="fa-solid fa-triangle-exclamation"></i>Couldn't load songs: ${escHtml(err.message)}</div>`;
+  });
+}
+
+function loadSongsView() {
+  if ($('songs-add-btn')) $('songs-add-btn').style.display = isCurrentUserAdmin() ? 'flex' : 'none';
+  watchSongLanguages();
+  watchSongsFeed();
+  renderSongsList();
+}
+
+function isSongFavorited(songId) {
+  return !!(currentUserData && (currentUserData.favoriteSongs || []).includes(songId));
+}
+
+// Language list is admin-managed (config/songLanguages, field "languages": [string]),
+// so new languages added from the admin panel show up here live.
+function watchSongLanguages() {
+  if (_songLangUnsub) return;
+  _songLangUnsub = db.collection('config').doc('songLanguages').onSnapshot(snap => {
+    const data = snap.exists ? snap.data() : null;
+    if (data && Array.isArray(data.languages) && data.languages.length) {
+      _songLanguages = data.languages;
+    }
+    renderSongLangFilter();
+    populateSongLangSelect();
+  }, () => { renderSongLangFilter(); populateSongLangSelect(); });
+}
+
+function renderSongLangFilter() {
+  const wrap = $('songs-lang-filter');
+  if (!wrap) return;
+  const chips = [{ id: 'all', label: 'All' }, ...(_songLanguages.map(l => ({ id: l, label: l.charAt(0).toUpperCase() + l.slice(1) })))];
+  wrap.innerHTML = chips.map(c => `<button type="button" class="songs-lang-chip${_songsLanguage === c.id ? ' active' : ''}" data-lang="${escHtml(c.id)}"><i class="fa-solid fa-globe"></i> ${escHtml(c.label)}</button>`).join('');
+  wrap.querySelectorAll('.songs-lang-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      _songsLanguage = chip.dataset.lang;
+      wrap.querySelectorAll('.songs-lang-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderSongsList();
+    });
+  });
+}
+
+function populateSongLangSelect() {
+  const sel = $('song-lang-select');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = _songLanguages.map(l => `<option value="${escHtml(l)}">${escHtml(l.charAt(0).toUpperCase() + l.slice(1))}</option>`).join('');
+  if (prev && _songLanguages.includes(prev)) sel.value = prev;
+}
+
+function filterSongsByLanguage(songs) {
+  if (_songsLanguage === 'all') return songs;
+  return songs.filter(s => (s.language || 'other') === _songsLanguage);
+}
+
+function renderSongsList() {
+  const list = $('songs-list');
+  if (!list) return;
+  const query = ($('songs-search-input')?.value || '').trim().toLowerCase();
+
+  let songs;
+  if (_songsCategory === 'favorites') {
+    const favIds = currentUserData?.favoriteSongs || [];
+    songs = _allSongsCache.filter(s => favIds.includes(s.id));
+  } else {
+    songs = _allSongsCache.filter(s => s.category === _songsCategory);
+  }
+  songs = filterSongsByLanguage(songs);
+  if (query) {
+    songs = songs.filter(s => (s.title||'').toLowerCase().includes(query) || (s.artist||'').toLowerCase().includes(query));
+  }
+  // Most-listened rises to the top, as requested
+  songs = [...songs].sort((a, b) => (b.plays||0) - (a.plays||0));
+
+  if (!songs.length) {
+    const msg = _songsCategory === 'favorites'
+      ? "No favorites yet — tap the heart on a song to save it here."
+      : (query ? "No songs match your search." : "No songs here yet.");
+    list.innerHTML = `<div class="songs-empty"><i class="fa-solid fa-compact-disc"></i>${escHtml(msg)}</div>`;
+    return;
+  }
+
+  list.innerHTML = songs.map((s, i) => {
+    const rank = (!query && i < 3) ? i + 1 : 0;
+    const isPlaying = _currentSongId === s.id;
+    const isFav = isSongFavorited(s.id);
+    return `
+    <div class="song-row${isPlaying ? ' playing' : ''}" data-id="${s.id}">
+      ${rank ? `<div class="song-rank rank-${rank}">${rank}</div>` : ''}
+      <div class="song-cover-wrap">
+        <img src="${escHtml(s.imageUrl || DEFAULT_AVATAR)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}'"/>
+        <button class="song-play-overlay" data-id="${s.id}"><i class="fa-solid ${isPlaying && !_songsAudioEl?.paused ? 'fa-pause' : 'fa-play'}"></i></button>
+      </div>
+      <div class="song-info">
+        <div class="song-title">${escHtml(s.title)}</div>
+        <div class="song-sub"><i class="fa-solid fa-headphones-simple"></i> ${(s.plays||0).toLocaleString()}${s.artist ? ' · ' + escHtml(s.artist) : ''}${s.language ? ' · ' + escHtml(s.language.charAt(0).toUpperCase() + s.language.slice(1)) : ''}</div>
+      </div>
+      <button class="song-fav-btn${isFav ? ' active' : ''}" data-id="${s.id}"><i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i></button>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.song-play-overlay').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const song = _allSongsCache.find(x => x.id === btn.dataset.id);
+      if (song) toggleSongPlayback(song);
+    });
+  });
+  list.querySelectorAll('.song-fav-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFavoriteSong(btn.dataset.id);
+    });
+  });
+}
+
+function ensureSongsAudioEl() {
+  if (_songsAudioEl) return _songsAudioEl;
+  _songsAudioEl = new Audio();
+  _songsAudioEl.addEventListener('timeupdate', () => {
+    if (!_songsAudioEl.duration) return;
+    const pct = (_songsAudioEl.currentTime / _songsAudioEl.duration) * 100;
+    const fill = $('smp-progress-fill');
+    if (fill) fill.style.width = pct + '%';
+    const fpFill = $('fp-progress-fill');
+    const fpHandle = $('fp-progress-handle');
+    if (fpFill) fpFill.style.width = pct + '%';
+    if (fpHandle) fpHandle.style.left = pct + '%';
+    const cur = $('fp-time-current');
+    const dur = $('fp-time-duration');
+    if (cur) cur.textContent = formatSongTime(_songsAudioEl.currentTime);
+    if (dur) dur.textContent = formatSongTime(_songsAudioEl.duration);
+  });
+  _songsAudioEl.addEventListener('ended', () => {
+    playSongOffset(1, true);
+  });
+  return _songsAudioEl;
+}
+
+function formatSongTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+// Returns the song list in the same order currently shown in the Songs view,
+// so next/prev skip through what the user is actually looking at.
+function getCurrentSongsQueue() {
+  const query = ($('songs-search-input')?.value || '').trim().toLowerCase();
+  let songs;
+  if (_songsCategory === 'favorites') {
+    const favIds = currentUserData?.favoriteSongs || [];
+    songs = _allSongsCache.filter(s => favIds.includes(s.id));
+  } else {
+    songs = _allSongsCache.filter(s => s.category === _songsCategory);
+  }
+  songs = filterSongsByLanguage(songs);
+  if (query) {
+    songs = songs.filter(s => (s.title||'').toLowerCase().includes(query) || (s.artist||'').toLowerCase().includes(query));
+  }
+  return [...songs].sort((a, b) => (b.plays||0) - (a.plays||0));
+}
+
+// Skip forward/back by `dir` (1 or -1) within the current queue.
+// autoAdvance=true (song ended naturally) stops at the end of the queue instead of looping.
+function playSongOffset(dir, autoAdvance) {
+  const queue = getCurrentSongsQueue();
+  if (!queue.length) return;
+  const idx = queue.findIndex(s => s.id === _currentSongId);
+  let nextIdx;
+  if (idx === -1) {
+    nextIdx = 0;
+  } else {
+    nextIdx = idx + dir;
+    if (nextIdx < 0) nextIdx = queue.length - 1;
+    if (nextIdx >= queue.length) {
+      if (autoAdvance) {
+        $('smp-play-btn').innerHTML = '<i class="fa-solid fa-play"></i>';
+        updateFullPlayerPlayIcon();
+        renderSongsList();
+        return;
+      }
+      nextIdx = 0;
+    }
+  }
+  toggleSongPlayback(queue[nextIdx]);
+}
+
+function toggleSongPlayback(song) {
+  const audio = ensureSongsAudioEl();
+  if (_currentSongId === song.id) {
+    // Same track — just toggle play/pause
+    if (audio.paused) { audio.muted = false; audio.play(); } else { audio.pause(); }
+    updateMiniPlayerPlayIcon();
+    updateFullPlayerPlayIcon();
+    renderSongsList();
+    return;
+  }
+  // Switching to a different track
+  audio.pause();
+  audio.muted = false; // defensive: guarantee audio is audible even if something upstream muted the shared element
+  audio.src = song.audioUrl;
+  audio.play().catch(() => {}); // autoplay can be blocked silently on some browsers — UI still reflects intent
+  _currentSongId = song.id;
+
+  if (!_songsPlayCounted.has(song.id)) {
+    _songsPlayCounted.add(song.id);
+    db.collection('songs').doc(song.id).update({
+      plays: firebase.firestore.FieldValue.increment(1)
+    }).catch(() => {});
+  }
+
+  const player = $('songs-mini-player');
+  player.style.display = 'flex';
+  $('smp-cover').src = song.imageUrl || DEFAULT_AVATAR;
+  $('smp-title').textContent = song.title;
+  $('smp-artist').textContent = song.artist || '';
+  updateMiniPlayerPlayIcon();
+  updateFullPlayerInfo(song);
+  renderSongsList();
+}
+
+function updateMiniPlayerPlayIcon() {
+  const btn = $('smp-play-btn');
+  if (!btn || !_songsAudioEl) return;
+  btn.innerHTML = _songsAudioEl.paused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+}
+
+// ── Full-screen "Now Playing" player ──
+function updateFullPlayerPlayIcon() {
+  const btn = $('fp-play-btn');
+  if (!btn || !_songsAudioEl) return;
+  btn.innerHTML = _songsAudioEl.paused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+}
+
+function updateFullPlayerInfo(song) {
+  if (!song) return;
+  $('fp-cover').src = song.imageUrl || DEFAULT_AVATAR;
+  $('fp-title').textContent = song.title;
+  $('fp-artist').textContent = song.artist || '';
+  const favBtn = $('fp-fav-btn');
+  if (favBtn) {
+    const isFav = isSongFavorited(song.id);
+    favBtn.classList.toggle('active', isFav);
+    favBtn.innerHTML = `<i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>`;
+  }
+  updateFullPlayerPlayIcon();
+}
+
+function openFullPlayer() {
+  if (!_currentSongId) return;
+  const song = _allSongsCache.find(s => s.id === _currentSongId);
+  if (song) updateFullPlayerInfo(song);
+  $('full-player-overlay')?.classList.add('open');
+}
+
+function closeFullPlayer() {
+  $('full-player-overlay')?.classList.remove('open');
+}
+
+function seekSongsAudio(clientX, trackEl) {
+  if (!_songsAudioEl || !_songsAudioEl.duration || !trackEl) return;
+  const rect = trackEl.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+  _songsAudioEl.currentTime = ratio * _songsAudioEl.duration;
+}
+
+async function toggleFavoriteSong(songId) {
+  const isFav = isSongFavorited(songId);
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      favoriteSongs: isFav
+        ? firebase.firestore.FieldValue.arrayRemove(songId)
+        : firebase.firestore.FieldValue.arrayUnion(songId)
+    });
+    currentUserData.favoriteSongs = isFav
+      ? (currentUserData.favoriteSongs || []).filter(id => id !== songId)
+      : [...(currentUserData.favoriteSongs || []), songId];
+    renderSongsList();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+(function setupSongsUi() {
+  const tabsWrap = $('songs-tabs');
+  if (tabsWrap) {
+    tabsWrap.querySelectorAll('.songs-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabsWrap.querySelectorAll('.songs-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        _songsCategory = tab.dataset.cat;
+        renderSongsList();
+      });
+    });
+  }
+  $('songs-search-input')?.addEventListener('input', () => renderSongsList());
+  $('smp-play-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!_songsAudioEl) return;
+    if (_songsAudioEl.paused) _songsAudioEl.play(); else _songsAudioEl.pause();
+    updateMiniPlayerPlayIcon();
+    updateFullPlayerPlayIcon();
+    renderSongsList();
+  });
+  $('smp-prev-btn')?.addEventListener('click', (e) => { e.stopPropagation(); playSongOffset(-1, false); });
+  $('smp-next-btn')?.addEventListener('click', (e) => { e.stopPropagation(); playSongOffset(1, false); });
+  $('songs-add-btn')?.addEventListener('click', () => {
+    if (!isCurrentUserAdmin()) { toast('Only admins can add songs', 'error'); return; }
+    populateSongLangSelect();
+    openModal('modal-add-song');
+  });
+
+  // Tap the mini progress bar to seek
+  $('smp-progress-track')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    seekSongsAudio(e.clientX, $('smp-progress-track'));
+  });
+
+  // Tap cover/title area to open the full "Now Playing" player
+  $('smp-clickable')?.addEventListener('click', () => openFullPlayer());
+
+  // Full player controls
+  $('fp-close-btn')?.addEventListener('click', closeFullPlayer);
+  $('fp-play-btn')?.addEventListener('click', () => {
+    if (!_songsAudioEl) return;
+    if (_songsAudioEl.paused) _songsAudioEl.play(); else _songsAudioEl.pause();
+    updateMiniPlayerPlayIcon();
+    updateFullPlayerPlayIcon();
+    renderSongsList();
+  });
+  $('fp-prev-btn')?.addEventListener('click', () => playSongOffset(-1, false));
+  $('fp-next-btn')?.addEventListener('click', () => playSongOffset(1, false));
+  $('fp-fav-btn')?.addEventListener('click', () => {
+    if (_currentSongId) toggleFavoriteSong(_currentSongId).then(() => {
+      const song = _allSongsCache.find(s => s.id === _currentSongId);
+      if (song) updateFullPlayerInfo(song);
+    });
+  });
+  $('fp-progress-track')?.addEventListener('click', (e) => {
+    seekSongsAudio(e.clientX, $('fp-progress-track'));
+  });
+})();
+
+(function setupAddSongComposer() {
+  let selectedCat = 'girls';
+  let selectedCoverFile = null;
+  let selectedAudioFile = null;
+
+  $('song-cat-picker')?.querySelectorAll('.song-cat-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('song-cat-picker').querySelectorAll('.song-cat-option').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCat = btn.dataset.cat;
+    });
+  });
+
+  $('song-cover-file-input')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedCoverFile = file;
+    $('song-cover-preview').src = URL.createObjectURL(file);
+    $('song-cover-preview-wrap').style.display = 'block';
+  });
+
+  $('song-audio-file-input')?.addEventListener('change', e => {
+    selectedAudioFile = e.target.files[0] || null;
+  });
+
+  $('submit-song-btn')?.addEventListener('click', async () => {
+    if (!isCurrentUserAdmin()) { toast('Only admins can add songs', 'error'); return; }
+    const title = ($('song-title-input').value || '').trim();
+    const artist = ($('song-artist-input').value || '').trim();
+    if (!title) return toast('Enter a song title', 'error');
+    if (!selectedAudioFile) return toast('Choose an audio file', 'error');
+
+    const btn = $('submit-song-btn');
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = 'Uploading…';
+    try {
+      let imageUrl = '';
+      if (selectedCoverFile) imageUrl = await uploadToCloudinary(selectedCoverFile, 'image', '📸 Uploading cover…');
+      const audioUrl = await uploadToCloudinary(selectedAudioFile, 'video', '🎵 Uploading song…'); // Cloudinary hosts audio under the "video" resource type
+
+      const language = ($('song-lang-select')?.value) || 'other';
+      await db.collection('songs').add({
+        title, artist, category: selectedCat, language, imageUrl, audioUrl,
+        plays: 0,
+        addedBy: currentUser.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      $('song-title-input').value = '';
+      $('song-artist-input').value = '';
+      selectedCoverFile = null;
+      selectedAudioFile = null;
+      $('song-cover-file-input').value = '';
+      $('song-audio-file-input').value = '';
+      $('song-cover-preview-wrap').style.display = 'none';
+      closeModal('modal-add-song');
+      toast(`"${title}" added 🎵`, 'success');
+    } catch (e) { toast('Failed: ' + e.message, 'error'); }
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    lucide.createIcons();
+  });
+})();
 
 async function renderBlockedList() {
   const container = $('blocked-users-list');
@@ -3900,6 +5425,13 @@ function setupNav() {
 function switchView(view) {
   // Stop all playing videos/audio before switching
   pauseAllMedia();
+  // The Songs mini player uses a dynamically-created <audio> that isn't in
+  // the DOM, so pauseAllMedia() above can't find/stop it — without this,
+  // music would keep playing invisibly after leaving the Songs tab.
+  if (view !== 'songs' && typeof _songsAudioEl !== 'undefined' && _songsAudioEl) {
+    _songsAudioEl.pause();
+    if (typeof updateMiniPlayerPlayIcon === 'function') updateMiniPlayerPlayIcon();
+  }
 
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(`view-${view}`)?.classList.add('active');
@@ -3913,6 +5445,7 @@ function switchView(view) {
   if (view === 'chats') loadChatList();
   if (view === 'friends') loadFriendsView();
   if (view === 'profile') loadProfile();
+  if (view === 'songs') loadSongsView();
   lucide.createIcons();
 }
 
@@ -3925,7 +5458,13 @@ function switchView(view) {
 // when switching the whole app view, not when just backing out of the
 // chat modal itself, so audio kept playing silently in the background.
 function pauseAllMedia() {
+  // The Songs mini player's <audio> is intentionally not in the DOM (see
+  // switchView above) so it's never matched by this querySelectorAll — but
+  // guard anyway. Also: never permanently mute it here — pausing is enough;
+  // setting muted=true used to stick forever since nothing ever unmuted it,
+  // making every song silent after the very first modal close.
   document.querySelectorAll('video, audio').forEach(el => {
+    if (typeof _songsAudioEl !== 'undefined' && el === _songsAudioEl) return;
     try { el.pause(); el.muted = true; } catch(e) {}
   });
   document.querySelectorAll('.post-video-wrap.playing').forEach(w => w.classList.remove('playing'));
@@ -4342,7 +5881,7 @@ function loadFeed() {
         }
         if (change.type === 'added' && !renderedIds.has(docId)) {
           const pd = change.doc.data();
-          if (isBlocked(pd.uid)) return; // hide posts from blocked/blocked-by users
+          if (isBlocked(pd.uid) || isMuted(pd.uid) || isPostHidden(docId)) return; // hide posts from blocked/muted users or explicitly hidden posts
           const card = buildPostCard(docId, pd);
           card.dataset.postId = docId;
           if (change.newIndex === 0) list.prepend(card);
@@ -4352,6 +5891,79 @@ function loadFeed() {
         }
       });
     });
+}
+
+// ── Reusable post action menu (⋮ kebab dropdown) ──────────────────────
+// items: [{icon, label, danger, onClick}] or {divider:true}
+// Report uses `keepOpen` + a custom sub-list so it can swap in reasons
+// without closing the menu first.
+let _postMenuEl = null;
+function closePostActionMenu() {
+  if (_postMenuEl) { _postMenuEl.remove(); _postMenuEl = null; }
+  document.removeEventListener('click', _postMenuOutsideHandler, true);
+  window.removeEventListener('scroll', closePostActionMenu, true);
+}
+function _postMenuOutsideHandler(e) {
+  if (_postMenuEl && !_postMenuEl.contains(e.target)) closePostActionMenu();
+}
+function renderPostMenuItems(menuEl, items) {
+  menuEl.innerHTML = '';
+  items.forEach(item => {
+    if (item.divider) {
+      const div = document.createElement('div');
+      div.className = 'post-menu-divider';
+      menuEl.appendChild(div);
+      return;
+    }
+    const btn = document.createElement('button');
+    btn.className = 'post-menu-item' + (item.danger ? ' danger' : '');
+    btn.innerHTML = `<i data-lucide="${item.icon}"></i><span>${item.label}</span>`;
+    btn.addEventListener('click', () => {
+      if (item.keepOpen) { item.onClick(); return; }
+      closePostActionMenu();
+      item.onClick();
+    });
+    menuEl.appendChild(btn);
+  });
+  lucide.createIcons();
+}
+function openPostActionMenu(anchorBtn, items) {
+  closePostActionMenu();
+  const menu = document.createElement('div');
+  menu.className = 'post-menu-dropdown';
+  document.body.appendChild(menu);
+  renderPostMenuItems(menu, items);
+  _postMenuEl = menu;
+
+  // Position near the anchor button, flipping up if it'd overflow the bottom
+  const rect = anchorBtn.getBoundingClientRect();
+  const menuHeight = menu.offsetHeight || 220;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const top = spaceBelow > menuHeight + 12 ? rect.bottom + 6 : Math.max(8, rect.top - menuHeight - 6);
+  const left = Math.min(window.innerWidth - 232, Math.max(8, rect.right - 220));
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
+
+  requestAnimationFrame(() => menu.classList.add('open'));
+  setTimeout(() => document.addEventListener('click', _postMenuOutsideHandler, true), 0);
+  window.addEventListener('scroll', closePostActionMenu, true);
+}
+
+const REPORT_REASONS = ['Spam', 'Harassment or bullying', 'Inappropriate content', 'Something else'];
+function showReportReasonMenu(postId, postUid, postText) {
+  if (!_postMenuEl) return;
+  const backRow = document.createElement('div');
+  backRow.className = 'post-menu-back';
+  backRow.innerHTML = `<i data-lucide="chevron-left"></i><span>Why are you reporting this?</span>`;
+  const items = REPORT_REASONS.map(reason => ({
+    icon: 'flag',
+    label: reason,
+    danger: true,
+    onClick: () => submitPostReport(postId, postUid, postText, reason)
+  }));
+  renderPostMenuItems(_postMenuEl, items);
+  _postMenuEl.prepend(backRow);
+  lucide.createIcons();
 }
 
 function buildPostCard(id, d, showDelete = null) {
@@ -4369,10 +5981,7 @@ function buildPostCard(id, d, showDelete = null) {
         <strong>${d.name || 'Student'}</strong>
         <small>@${d.username || 'user'} · ${timeAgo(d.createdAt)}</small>
       </div>
-      ${isOwner
-        ? `<button class="post-delete-btn" data-id="${id}" title="Delete post"><i data-lucide="trash-2"></i></button>`
-        : `<button class="post-block-btn" data-uid="${d.uid}" data-name="${escHtml(d.name || 'this user')}" title="Block user"><i data-lucide="user-x"></i></button>
-           <button class="post-ban-btn" data-uid="${d.uid}" data-name="${escHtml(d.name || 'this user')}" title="Ban user from app" style="display:${isCurrentUserAppMod() ? '' : 'none'}"><i data-lucide="ban"></i></button>`}
+      <button class="post-menu-btn" data-id="${id}" title="More options"><i data-lucide="more-vertical"></i></button>
     </div>
     ${d.text ? `<div class="post-body">${highlightHashtags(d.text)}</div>` : ''}
     ${d.mediaUrl ? (d.isVideo
@@ -4410,37 +6019,51 @@ function buildPostCard(id, d, showDelete = null) {
     </div>
   `;
 
-  // Delete post
-  if (isOwner) {
-    card.querySelector('.post-delete-btn')?.addEventListener('click', async e => {
-      e.stopPropagation();
-      showConfirmDialog('Delete this post?', async () => {
-      try {
-        await db.collection('posts').doc(id).delete();
-        await db.collection('users').doc(currentUser.uid).update({
-          posts: firebase.firestore.FieldValue.increment(-1)
+  // Post options menu (⋮): delete (own post) or report/mute/block/hide (others),
+  // plus ban-from-app for app moderators.
+  card.querySelector('.post-menu-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const btn = e.currentTarget;
+    const items = [];
+
+    if (isOwner) {
+      items.push({ icon: 'trash-2', label: 'Delete post', danger: true, onClick: () => {
+        showConfirmDialog('Delete this post?', async () => {
+          try {
+            await db.collection('posts').doc(id).delete();
+            await db.collection('users').doc(currentUser.uid).update({
+              posts: firebase.firestore.FieldValue.increment(-1)
+            });
+            currentUserData.posts = Math.max(0, (currentUserData.posts || 1) - 1);
+            card.remove();
+            toast('Post deleted', 'success');
+            updateProfileStats();
+          } catch(err) { toast(err.message, 'error'); }
         });
-        currentUserData.posts = Math.max(0, (currentUserData.posts || 1) - 1);
-        card.remove();
-        toast('Post deleted', 'success');
-        updateProfileStats();
-      } catch(e) { toast(e.message, 'error'); }
-      });
+      }});
+    } else {
+      items.push({ icon: 'flag', label: 'Report post', keepOpen: true, onClick: () => showReportReasonMenu(id, d.uid, d.text) });
+      items.push({ icon: 'volume-x', label: 'Mute user', onClick: () => muteUser(d.uid, d.name) });
+      items.push({ icon: 'user-x', label: 'Block user', danger: true, onClick: () => blockUser(d.uid, d.name) });
+      if (isCurrentUserAppMod()) {
+        items.push({ divider: true });
+        items.push({ icon: 'ban', label: 'Ban user from app', danger: true, onClick: () => banUserFromApp(d.uid, d.name) });
+      }
+    }
+    items.push({ divider: true });
+    items.push({ icon: 'eye-off', label: 'Not interested', onClick: () => hidePost(id, card) });
+
+    openPostActionMenu(btn, items);
+  });
+
+  // Image — tap to view fullscreen
+  const mediaImg = card.querySelector('.post-media');
+  if (mediaImg) {
+    mediaImg.addEventListener('click', e => {
+      e.stopPropagation();
+      openPostImageLightbox(mediaImg.src);
     });
   }
-
-  // Block user
-  card.querySelector('.post-block-btn')?.addEventListener('click', e => {
-    e.stopPropagation();
-    blockUser(d.uid, d.name);
-  });
-
-  // Ban user from app (admins + app moderators only)
-  card.querySelector('.post-ban-btn')?.addEventListener('click', e => {
-    e.stopPropagation();
-    if (!isCurrentUserAppMod()) { toast('You no longer have moderator access.', 'error'); return; }
-    banUserFromApp(d.uid, d.name);
-  });
 
   // Video play — custom player, only one video at a time
   const videoWrap = card.querySelector('.post-video-wrap');
@@ -5232,12 +6855,24 @@ $('submit-confession-btn').addEventListener('click', async () => {
     if (confessionFile) {
       imageUrl = await uploadToCloudinary(confessionFile, 'image', '📎 Uploading image…');
     }
-    await db.collection('confessions').add({
+    const confRef = await db.collection('confessions').add({
       text, category, imageUrl: imageUrl || '',
       college: currentUserData.college || '',
       likes: [], comments: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    // The confession itself stays fully anonymous to other users — no uid or
+    // name is ever written to that document. Who posted it is recorded
+    // separately in `confessionAuthors/{confessionId}`, a collection meant to
+    // be locked down to admin-only reads (see Firestore rules), so regular
+    // users still can never see it even by inspecting network traffic.
+    db.collection('confessionAuthors').doc(confRef.id).set({
+      uid: currentUser.uid,
+      name: currentUserData.name || '',
+      username: currentUserData.username || '',
+      email: currentUserData.email || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {}); // best-effort — never block the post over this
     $('confession-text').value = '';
     confessionFile = null;
     $('confession-preview-wrap').innerHTML = '';
@@ -5489,11 +7124,13 @@ async function syncConfessionReplyCount(confessionId) {
 $('new-poll-btn').addEventListener('click', () => openModal('modal-poll'));
 $('add-poll-option-btn').addEventListener('click', () => {
   const wrap = $('poll-options-wrap');
-  const count = wrap.querySelectorAll('input').length + 1;
+  const count = wrap.querySelectorAll('.poll-option-input').length + 1;
   if (count > 5) return toast('Max 5 options');
-  const inp = document.createElement('input');
-  inp.type = 'text'; inp.className = 'poll-option-input'; inp.placeholder = `Option ${count}`;
-  wrap.appendChild(inp);
+  const row = document.createElement('div');
+  row.className = 'poll-option-input-row';
+  row.innerHTML = `<i class="fa-regular fa-circle"></i><input type="text" class="poll-option-input" placeholder="Option ${count}"/><button type="button" class="poll-option-remove-btn" title="Remove option"><i class="fa-solid fa-xmark"></i></button>`;
+  row.querySelector('.poll-option-remove-btn').addEventListener('click', () => row.remove());
+  wrap.appendChild(row);
 });
 
 $('submit-poll-btn').addEventListener('click', async () => {
@@ -5518,7 +7155,7 @@ $('submit-poll-btn').addEventListener('click', async () => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     $('poll-question').value = '';
-    $('poll-options-wrap').innerHTML = `<input type="text" class="poll-option-input" placeholder="Option 1"/><input type="text" class="poll-option-input" placeholder="Option 2"/>`;
+    $('poll-options-wrap').innerHTML = `<div class="poll-option-input-row"><i class="fa-regular fa-circle"></i><input type="text" class="poll-option-input" placeholder="Option 1"/></div><div class="poll-option-input-row"><i class="fa-regular fa-circle"></i><input type="text" class="poll-option-input" placeholder="Option 2"/></div>`;
     closeModal('modal-poll');
     toast('Poll launched! 📊', 'success');
     loadPolls();
@@ -5552,7 +7189,7 @@ function buildPollCard(id, d) {
       <div class="poll-option ${myVote ? 'voted' : ''}" data-opt="${escHtml(opt)}">
         <div class="poll-option-bar" style="width:${myVote ? pct : 0}%"></div>
         <div class="poll-option-label">
-          <span>${voted ? '✓ ' : ''}${escHtml(opt)}</span>
+          <span>${escHtml(opt)}</span>
           ${myVote ? `<span class="poll-option-pct">${pct}%</span>` : ''}
         </div>
       </div>`;
@@ -5682,24 +7319,38 @@ function loadClubSections() {
   grid.innerHTML = '<div class="loading-spinner">Loading sections…</div>';
 
   db.collection('clubSections').orderBy('createdAt', 'asc').get()
-    .then(snap => {
+    .then(async snap => {
       const custom = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderClubSections([...DEFAULT_CLUB_SECTIONS, ...custom]);
+      const sections = [...DEFAULT_CLUB_SECTIONS, ...custom];
+      // One-time fetch to compute a real "N clubs" count per section instead
+      // of the old static "Tap to view clubs" placeholder — small collection,
+      // cheap to pull once when the Clubs tab opens.
+      let counts = {};
+      try {
+        const clubsSnap = await db.collection('clubs').get();
+        clubsSnap.forEach(doc => {
+          const sec = doc.data().section || 'unassigned';
+          counts[sec] = (counts[sec] || 0) + 1;
+        });
+      } catch (e) { /* fall back to no counts shown */ }
+      renderClubSections(sections, counts);
     })
-    .catch(() => renderClubSections(DEFAULT_CLUB_SECTIONS));
+    .catch(() => renderClubSections(DEFAULT_CLUB_SECTIONS, {}));
 }
 
-function renderClubSections(sections) {
+function renderClubSections(sections, counts) {
+  counts = counts || {};
   const grid = $('club-sections-grid');
   grid.innerHTML = '';
   sections.forEach(sec => {
+    const n = counts[sec.id] || 0;
     const card = document.createElement('div');
     card.className = 'club-card';
     card.style.cursor = 'pointer';
     card.innerHTML = `
       <div class="club-emoji">${sec.emoji || '🏫'}</div>
       <div class="club-name">${escHtml(sec.name)}</div>
-      <div class="club-desc">Tap to view clubs</div>`;
+      <div class="club-desc">${n > 0 ? `${n} club${n === 1 ? '' : 's'}` : 'No clubs yet'}</div>`;
     card.addEventListener('click', () => openClubSection(sec));
     grid.appendChild(card);
   });
@@ -5853,7 +7504,7 @@ function renderClubGrid() {
   list.forEach(({ id, d }) => {
     const joined = d.members?.includes(currentUser.uid);
     const isStarred = starred.has(id);
-    const onlineNow = countClubOnline(d.members);
+    const onlineNow = countClubOnline(d.members, id);
     const card = document.createElement('div');
     card.className = 'club-card';
     card.style.position = 'relative';
@@ -5867,7 +7518,8 @@ function renderClubGrid() {
         </button>
       </div>
       <div class="club-emoji">${d.emoji || '🏛️'}</div>
-      <div class="club-name">${escHtml(d.name)} ${d.private ? '<span title="Private club" style="font-size:12px">🔒</span>' : ''}</div>
+      <div class="club-name">${escHtml(d.name)} ${d.private ? '<span title="Private club" style="font-size:12px">🔒</span>' : ''} ${d.official ? '<span title="Official club" style="font-size:12px">📌</span>' : ''}</div>
+      ${d.category ? `<div class="club-category-chip">${escHtml(d.category)}</div>` : ''}
       <div class="club-desc">${escHtml(d.desc || '')}</div>
       <div class="club-meta">
         <span>
@@ -6063,6 +7715,17 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
       return;
     }
 
+    // Show who's actually active in the club first, then online elsewhere, then offline
+    allUsers.sort((a, b) => {
+      const rank = (u) => {
+        const p = _clubsPresenceCache?.[u.uid];
+        if (p?.online && p.currentClub === clubId) return 0;
+        if (p?.online) return 1;
+        return 2;
+      };
+      return rank(a) - rank(b);
+    });
+
     // (No re-clear here — the owner/moderator banner appended above should stay.)
 
     // If privileged, show banned section header
@@ -6094,13 +7757,23 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
 
       const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover"/>`;
 
+      const pres = _clubsPresenceCache?.[u.uid];
+      const inClubNow = !!(pres && pres.online && pres.currentClub === clubId);
+      const onlineElsewhere = !!(pres && pres.online && !inClubNow);
+      const statusHtml = inClubNow
+        ? '<span style="font-size:11px;color:#2ecc71;font-weight:600">🟢 In this club now</span>'
+        : onlineElsewhere
+          ? '<span style="font-size:11px;color:var(--muted)">🟡 Online elsewhere</span>'
+          : '';
+
       row.innerHTML = `
-        <div style="flex-shrink:0">${avatarHtml}</div>
+        <div style="flex-shrink:0;position:relative">${avatarHtml}${inClubNow ? '<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:#2ecc71;border:2px solid var(--bg,#111)"></span>' : ''}</div>
         <div style="flex:1;min-width:0">
           <strong style="font-size:14px">${escHtml(u.name||'Student')}</strong>
           ${isAdmin ? '<span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px">Owner</span>' : ''}
           ${isMod && !isAdmin ? '<span style="font-size:10px;background:var(--accent)33;color:var(--accent);padding:2px 6px;border-radius:99px;margin-left:4px">Club Mod</span>' : ''}
           <div style="font-size:12px;color:var(--muted)">@${escHtml(u.username||'user')}</div>
+          ${statusHtml ? `<div style="margin-top:2px">${statusHtml}</div>` : ''}
         </div>
         ${actionBtns}
       `;
@@ -6397,6 +8070,7 @@ function openClubDashboard(clubId, clubData) {
     modal.classList.remove('open');
     if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
     if (isMember) markClubRead(clubId);
+    clearPresenceCurrentClub();
     _openClubDashboard = null;
   });
   // NOTE: intentionally no "click outside to close" handler here anymore.
@@ -6409,6 +8083,7 @@ function openClubDashboard(clubId, clubData) {
 
   modal.classList.add('open');
   _openClubDashboard = { id: clubId, members: clubData.members || [] };
+  setPresenceCurrentClub(clubId);
   updateOpenClubDashboardOnlineCount();
   renderClubTab(0, clubId, clubData, isOwner, isMember, isAppMod);
 }
@@ -6418,7 +8093,7 @@ function updateOpenClubDashboardOnlineCount() {
   if (!_openClubDashboard) return;
   const badge = document.getElementById('club-dash-online-badge');
   if (!badge) { _openClubDashboard = null; return; }
-  const onlineNow = countClubOnline(_openClubDashboard.members);
+  const onlineNow = countClubOnline(_openClubDashboard.members, _openClubDashboard.id);
   badge.innerHTML = onlineNow > 0
     ? `<span class="club-dash-online-chip"><span class="pulse-dot"></span>${onlineNow} online</span>`
     : '';
@@ -11118,7 +12793,106 @@ function closeChatImageLightbox() {
   if (closeBtn) closeBtn.addEventListener('click', closeChatImageLightbox);
   // Clicking the dark backdrop (but not the image itself) also closes it
   if (box) box.addEventListener('click', e => { if (e.target === box) closeChatImageLightbox(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChatImageLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeChatImageLightbox(); closePostImageLightbox(); } });
+})();
+
+// ── Post image lightbox: tap a feed post's image to view it fullscreen ──
+function openPostImageLightbox(url) {
+  if (!url) return;
+  const box = $('post-img-lightbox');
+  const img = $('post-img-lightbox-img');
+  if (!box || !img) return;
+  img.src = url;
+  box.classList.add('open');
+  if (typeof window._resetPostImageZoom === 'function') window._resetPostImageZoom();
+}
+function closePostImageLightbox() {
+  const box = $('post-img-lightbox');
+  const img = $('post-img-lightbox-img');
+  if (!box) return;
+  box.classList.remove('open');
+  if (img) img.src = '';
+  if (typeof window._resetPostImageZoom === 'function') window._resetPostImageZoom();
+}
+(function wirePostImageLightbox() {
+  const closeBtn = $('post-img-lightbox-close');
+  const box = $('post-img-lightbox');
+  if (closeBtn) closeBtn.addEventListener('click', closePostImageLightbox);
+  if (box) box.addEventListener('click', e => { if (e.target === box) closePostImageLightbox(); });
+})();
+
+// ── Pinch-to-zoom + pan for the post image lightbox ──────────────────
+// Two fingers pinch in/out to zoom (1x–4x); with one finger you can then
+// drag to pan around while zoomed in. A double-tap on the image resets it.
+// Scoped to the post lightbox only (not the chat one) per the request.
+(function setupPostImagePinchZoom() {
+  const img = $('post-img-lightbox-img');
+  const box = $('post-img-lightbox');
+  if (!img || !box) return;
+
+  let scale = 1, lastScale = 1;
+  let panX = 0, panY = 0, lastPanX = 0, lastPanY = 0;
+  let startDist = 0;
+  let isPanning = false;
+  let panStartX = 0, panStartY = 0;
+
+  function applyTransform() {
+    img.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  }
+  function resetZoom() {
+    scale = 1; lastScale = 1; panX = 0; panY = 0; lastPanX = 0; lastPanY = 0;
+    img.style.transform = '';
+  }
+  window._resetPostImageZoom = resetZoom;
+
+  function getDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  box.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      startDist = getDistance(e.touches);
+      lastScale = scale;
+      isPanning = false;
+    } else if (e.touches.length === 1 && scale > 1) {
+      isPanning = true;
+      panStartX = e.touches[0].clientX - lastPanX;
+      panStartY = e.touches[0].clientY - lastPanY;
+    }
+  }, { passive: true });
+
+  box.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && startDist > 0) {
+      e.preventDefault();
+      const dist = getDistance(e.touches);
+      scale = Math.min(4, Math.max(1, lastScale * (dist / startDist)));
+      applyTransform();
+    } else if (e.touches.length === 1 && isPanning && scale > 1) {
+      e.preventDefault();
+      lastPanX = e.touches[0].clientX - panStartX;
+      lastPanY = e.touches[0].clientY - panStartY;
+      panX = lastPanX; panY = lastPanY;
+      applyTransform();
+    }
+  }, { passive: false });
+
+  box.addEventListener('touchend', e => {
+    if (e.touches.length === 0) {
+      isPanning = false;
+      startDist = 0;
+      if (scale <= 1.02) resetZoom(); // snap back if barely zoomed
+    }
+  });
+
+  // Double-tap the image to reset zoom
+  let lastTapTime = 0;
+  img.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTapTime < 300) resetZoom();
+    lastTapTime = now;
+  });
 })();
 
 // ── Incremental chat message renderer ──────────────────────────────────
@@ -11652,6 +13426,7 @@ function openEditProfileModal() {
   if (!currentUserData) return;
   var nameEl  = $('edit-profile-name');
   var userEl  = $('edit-profile-username');
+  var collegeEl = $('edit-profile-college');
   var bioEl   = $('edit-profile-bio');
   var picPrev = $('edit-pic-preview');
   var yearEl  = $('edit-profile-year');
@@ -11659,6 +13434,7 @@ function openEditProfileModal() {
   var skillsEl = $('edit-profile-skills');
   if (nameEl) nameEl.value = currentUserData.name || '';
   if (userEl) userEl.value = currentUserData.username || '';
+  if (collegeEl) collegeEl.value = currentUserData.college || '';
   if (bioEl)  bioEl.value  = currentUserData.bio  || '';
   if (yearEl) yearEl.value = currentUserData.year || '';
   if (branchEl) branchEl.value = currentUserData.branch || '';
@@ -11687,6 +13463,7 @@ $('edit-profile-pic-input') && $('edit-profile-pic-input').addEventListener('cha
 $('save-profile-btn') && $('save-profile-btn').addEventListener('click', async function() {
   var name     = ($('edit-profile-name') ? $('edit-profile-name').value  : '').trim();
   var username = ($('edit-profile-username') ? $('edit-profile-username').value : '').trim().replace('@','');
+  var college  = ($('edit-profile-college') ? $('edit-profile-college').value : '').trim();
   var bio      = ($('edit-profile-bio')  ? $('edit-profile-bio').value   : '').trim();
   var year     = ($('edit-profile-year') ? $('edit-profile-year').value : '').trim();
   var branch   = ($('edit-profile-branch') ? $('edit-profile-branch').value : '').trim();
@@ -11701,7 +13478,7 @@ $('save-profile-btn') && $('save-profile-btn').addEventListener('click', async f
   if (!name) return toast('Name cannot be empty', 'error');
   showLoading();
   try {
-    var updates = { name: name, username: username, bio: bio, year: year, branch: branch, skills: skills, socialLinks: socialLinks };
+    var updates = { name: name, username: username, college: college, bio: bio, year: year, branch: branch, skills: skills, socialLinks: socialLinks };
     if (_editProfilePicFile) {
       var picUrl = await uploadToCloudinary(_editProfilePicFile, 'image', 'Uploading profile picture...');
       updates.profilePic = picUrl;
@@ -11711,6 +13488,7 @@ $('save-profile-btn') && $('save-profile-btn').addEventListener('click', async f
     Object.assign(currentUserData, updates);
     if ($('profile-name'))    $('profile-name').textContent    = name;
     if ($('profile-username')) $('profile-username').textContent = '@' + username;
+    if ($('profile-college')) $('profile-college').textContent = `🎓 ${college || 'My College'}`;
     if ($('profile-bio'))     $('profile-bio').value            = bio;
     renderProfileYearBranch(currentUserData);
     renderProfileSkills(currentUserData);
