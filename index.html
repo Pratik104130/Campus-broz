@@ -27,42 +27,98 @@
         max-width: 100vw !important;
       }
     }
-    /* ── Club Dashboard: header + scrollable tab bar (upgraded UI) ── */
+    /* ══════════════════════════════════════════════════════════════
+       Club Dashboard v2 — classy, edge-to-edge redesign
+       Fullscreen on mobile (no floating card / rounded corners so it
+       reads as its own app screen, not a modal popup), a richer layered
+       header with a proper display typeface for the club name, and a
+       refined pill tab bar that no longer clips its last item under the
+       scroll-fade. Desktop keeps a centered card with soft corners.
+       ══════════════════════════════════════════════════════════════ */
+    #modal-club-dashboard .modal.modal-fullscreen {
+      max-width: 100vw !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-height: 100vh !important;
+      max-height: 100dvh !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      background: var(--bg, #0b0b12);
+    }
+    @media (min-width: 720px) {
+      #modal-club-dashboard .modal.modal-fullscreen {
+        width: min(94vw, 760px) !important;
+        height: min(94vh, 880px) !important;
+        max-height: 94vh !important;
+        border-radius: 22px !important;
+        margin: 3vh auto !important;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+        overflow: hidden;
+      }
+    }
+
     .club-dash-header {
       position: relative;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+      overflow: hidden;
+      padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 10px !important;
+      border-radius: 0 0 26px 26px;
+      background:
+        radial-gradient(120% 160% at 8% -20%, rgba(255,255,255,0.28), transparent 55%),
+        radial-gradient(90% 140% at 100% 120%, rgba(0,0,0,0.28), transparent 60%),
+        linear-gradient(120deg, var(--accent, #6c63ff) 0%, #a24bff 45%, #ff4ecd 100%) !important;
+      box-shadow: 0 8px 26px rgba(0,0,0,0.35);
     }
+    /* Faint dot-grid texture for a premium, "printed" feel instead of a flat gradient block */
     .club-dash-header::before {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(circle at 15% -10%, rgba(255,255,255,0.22), transparent 55%);
+      background-image: radial-gradient(rgba(255,255,255,0.16) 1px, transparent 1px);
+      background-size: 16px 16px;
+      background-position: -4px -4px;
+      opacity: 0.5;
       pointer-events: none;
     }
-    .club-dash-topline { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+    .club-dash-header::after {
+      content: '';
+      position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+      pointer-events: none;
+    }
+    .club-dash-topline { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
     .club-dash-emoji {
-      font-size: 26px; line-height: 1; flex-shrink: 0;
-      width: 46px; height: 46px; border-radius: 14px;
-      background: rgba(255,255,255,0.2);
-      border: 1px solid rgba(255,255,255,0.25);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+      font-size: 27px; line-height: 1; flex-shrink: 0;
+      width: 50px; height: 50px; border-radius: 16px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.32), rgba(255,255,255,0.1));
+      border: 1px solid rgba(255,255,255,0.35);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 16px rgba(0,0,0,0.22);
       display: flex; align-items: center; justify-content: center;
     }
     .club-dash-titles { flex: 1; min-width: 0; }
+    .club-dash-eyebrow {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.7); margin: 0 0 1px; line-height: 1;
+    }
     .club-dash-name {
-      color: #fff; font-size: 17px; font-weight: 800; margin: 0; line-height: 1.25;
+      font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;
+      color: #fff; font-size: 20px; margin: 0; line-height: 1.22;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      letter-spacing: 0.01em;
     }
     .club-dash-meta {
       display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
-      color: rgba(255,255,255,0.85); font-size: 11.5px; margin-top: 2px;
+      font-family: 'Space Grotesk', sans-serif;
+      color: rgba(255,255,255,0.88); font-size: 11.5px; margin-top: 3px;
       white-space: nowrap; overflow: hidden;
     }
-    .club-dash-meta .dot-sep { opacity: 0.6; }
+    .club-dash-meta .dot-sep { opacity: 0.55; }
     .club-dash-online-chip {
       display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(0,0,0,0.18); color: #7CFFB2; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px; font-size: 10.5px;
+      background: rgba(0,0,0,0.2); color: #7CFFB2; font-weight: 700;
+      padding: 2px 9px; border-radius: 20px; font-size: 10.5px;
+      border: 1px solid rgba(124,255,178,0.3);
     }
     .club-dash-online-chip .pulse-dot {
       width: 6px; height: 6px; border-radius: 50%; background: #2ecc71;
@@ -70,49 +126,40 @@
       animation: presencePulse 2s infinite;
     }
     .club-dash-close {
-      background: rgba(255,255,255,0.2); border: none; color: #fff;
-      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.22); color: #fff;
+      width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
       font-size: 14px; flex-shrink: 0; display: flex; align-items: center;
       justify-content: center; transition: background 0.15s ease, transform 0.15s ease;
     }
-    .club-dash-close:hover { background: rgba(255,255,255,0.32); }
+    .club-dash-close:hover { background: rgba(255,255,255,0.3); }
     .club-dash-close:active { transform: scale(0.9); }
 
-    .club-tab-bar-wrap { position: relative; margin-top: 10px; }
+    .club-tab-bar-wrap { position: relative; margin-top: 14px; z-index: 1; }
     .club-tab-bar {
-      display: flex; gap: 7px; overflow-x: auto; overflow-y: hidden;
-      padding: 2px 18px 8px; margin: 0 -18px;
+      display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden;
+      padding: 2px 16px 10px; margin: 0 -16px;
       scrollbar-width: none; -ms-overflow-style: none;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-x: contain;
+      scroll-padding: 0 16px;
       contain: layout paint;
       transform: translateZ(0);
     }
     .club-tab-bar::-webkit-scrollbar { display: none; }
-    .club-tab-bar-wrap::before,
-    .club-tab-bar-wrap::after {
-      content: ''; position: absolute; top: 0; bottom: 8px; width: 20px;
-      pointer-events: none; z-index: 2;
-    }
-    .club-tab-bar-wrap::before {
-      left: 0;
-      background: linear-gradient(to right, var(--accent), transparent);
-    }
-    .club-tab-bar-wrap::after {
-      right: 0;
-      background: linear-gradient(to left, #ff4ecd, transparent);
-    }
     .club-tab-btn {
-      white-space: nowrap; flex-shrink: 0; padding: 7px 14px;
-      border-radius: 20px; border: none; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0; padding: 8px 15px;
+      border-radius: 20px; border: 1px solid rgba(255,255,255,0.14); cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 12px; font-weight: 700; letter-spacing: 0.1px;
-      background: rgba(255,255,255,0.16); color: #fff;
-      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+      background: rgba(255,255,255,0.12); color: #fff;
+      scroll-snap-align: start;
+      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     }
-    .club-tab-btn:active { opacity: 0.8; }
+    .club-tab-bar { scroll-snap-type: x proximity; }
+    .club-tab-btn:active { opacity: 0.8; transform: scale(0.97); }
     .club-tab-btn.active {
-      background: #fff; color: var(--accent);
-      box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+      background: #fff; color: var(--accent, #6c63ff); border-color: #fff;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
     }
 
     /* ── Club browse pages: sections grid + club grid (redesigned cards) ──
@@ -204,6 +251,11 @@
       background: rgba(46,204,113,0.16); color: #2ecc71;
       border: 1px solid rgba(46,204,113,0.4);
     }
+    #club-grid .club-join-btn.pending {
+      background: rgba(255,183,77,0.16); color: #ffb74d;
+      border: 1px solid rgba(255,183,77,0.4); cursor: default;
+    }
+    #club-grid .club-join-btn:disabled { opacity: 0.85; }
     #club-grid .club-star-btn { transition: transform 0.15s ease; }
     #club-grid .club-star-btn:active { transform: scale(0.8); }
 
@@ -563,6 +615,14 @@
     .songs-tab[data-cat="girls"].active { background: rgba(255,78,205,0.16); border-color: rgba(255,78,205,0.4); color: #ff88d9; }
     .songs-tab[data-cat="boys"].active { background: rgba(108,99,255,0.18); border-color: rgba(108,99,255,0.45); color: #a9a1ff; }
     .songs-tab[data-cat="favorites"].active { background: rgba(255,92,92,0.16); border-color: rgba(255,92,92,0.4); color: #ff8080; }
+    .songs-tab[data-cat="gifted"] { position: relative; }
+    .songs-tab[data-cat="gifted"].active { background: rgba(255,190,60,0.18); border-color: rgba(255,190,60,0.45); color: #ffcf6b; }
+    .songs-gifted-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 15px; height: 15px; padding: 0 4px; margin-left: 5px;
+      border-radius: 999px; background: #ff4ecd; color: #fff;
+      font-size: 10px; font-weight: 800; line-height: 15px; vertical-align: 2px;
+    }
     .songs-lang-filter { display: flex; gap: 7px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; -ms-overflow-style: none; scrollbar-width: none; }
     .songs-lang-filter::-webkit-scrollbar { display: none; }
     .songs-lang-chip {
@@ -584,7 +644,34 @@
       color: #fff; font-size: 13.5px; padding: 11px 0;
     }
 
-    .songs-list { display: flex; flex-direction: column; gap: 9px; padding-bottom: 90px; }
+    /* Songs page: header (hero + tabs + language chips + search) stays pinned
+       at the top while only the song list scrolls underneath it. Using
+       position:sticky here (rather than trying to carve out a fixed-height
+       flex scroll region) works regardless of how the outer page/app-content
+       container is sized — sticky just pins the header within whatever
+       scroll parent is actually scrolling. */
+    /* Songs page: header (hero + tabs + language chips + search) stays put;
+       only .songs-list scrolls. position:sticky depends on how the outer
+       page/app-content container is set up in style.css (unknown to us,
+       and evidently not cooperating), so instead we give songs-list an
+       explicit pixel height computed in JS (see layoutSongsList()) — that
+       makes it its own bounded scroll box no matter what the rest of the
+       layout does. */
+    .songs-sticky-header { position: relative; z-index: 6; }
+    .songs-list {
+      display: flex; flex-direction: column; gap: 9px;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 8px 6px 16px; /* top+left padding so the rank-badge's negative
+                                 offset (-6px) never gets clipped by this
+                                 scroll box's edge */
+      /* Scroll performance: isolate this box's paint/layout from the rest
+         of the page and give it its own compositor layer, so scrolling it
+         doesn't force the browser to repaint/reflow everything else on
+         every frame (the main cause of the jank). */
+      contain: layout style paint;
+      overscroll-behavior: contain;
+      transform: translateZ(0);
+    }
     .song-row {
       display: flex; align-items: center; gap: 12px;
       background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
@@ -592,6 +679,7 @@
       border-radius: 15px; padding: 9px 12px;
       position: relative;
       transition: border-color 0.15s ease, transform 0.1s ease;
+      contain: layout style; /* (not paint — that would clip the rank badge's negative offset) */
     }
     .song-row.playing { border-color: rgba(108,99,255,0.55); background: linear-gradient(180deg, rgba(108,99,255,0.1), rgba(255,78,205,0.04)); }
     .song-row:active { transform: scale(0.99); }
@@ -637,14 +725,23 @@
     .songs-empty i { font-size: 34px; margin-bottom: 12px; display: block; color: rgba(255,255,255,0.2); }
 
     .songs-mini-player {
-      position: sticky; bottom: 12px; z-index: 5;
+      /* Fixed to the viewport (not sticky in normal flow) so it's always
+         pinned just above the bottom nav bar, regardless of how tall the
+         song list above it is or how far the page has scrolled — its exact
+         "bottom" offset is set inline by JS (positionSongsMiniPlayer) once
+         the real bottom-nav height is known. */
+      position: fixed; left: 12px; right: 12px; bottom: 76px; z-index: 40;
       display: flex; align-items: center; gap: 12px;
-      width: 100%; box-sizing: border-box;
+      width: auto; box-sizing: border-box;
       background: rgba(20,16,36,0.92); backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 16px; padding: 9px 14px 9px 9px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
       overflow: hidden;
+      /* Its own compositor layer so the blurred backdrop doesn't get
+         recomposited every time content scrolls underneath it. */
+      transform: translateZ(0);
+      will-change: transform;
     }
     .smp-progress-track {
       position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
@@ -718,7 +815,10 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.4);
     }
     .fp-time-row { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; margin-bottom: 26px; }
-    .fp-controls { display: flex; align-items: center; justify-content: center; gap: 30px; }
+    .fp-controls {
+      display: grid; grid-template-columns: 34px 1fr 34px; align-items: center;
+    }
+    .fp-controls-center { display: flex; align-items: center; justify-content: center; gap: 30px; }
     .fp-controls button { background: none; border: none; color: #fff; cursor: pointer; display:flex; align-items:center; justify-content:center; }
     .fp-skip-btn { font-size: 26px; }
     .fp-skip-btn:active { opacity: 0.6; }
@@ -727,7 +827,39 @@
       background: linear-gradient(135deg, var(--accent, #6c63ff), #ff4ecd);
       font-size: 22px; box-shadow: 0 8px 24px rgba(108,99,255,0.4);
     }
-    .fp-play-btn:active { transform: scale(0.94); }
+    .fp-loop-btn {
+      font-size: 17px; color: rgba(255,255,255,0.45); position: relative;
+      transition: color 0.15s ease;
+    }
+    .fp-loop-btn:active { opacity: 0.6; }
+    .fp-loop-btn.active { color: #a78bff; }
+    .fp-loop-btn.mode-one::after {
+      content: '1'; position: absolute; top: -3px; right: -6px;
+      font-size: 8px; font-weight: 800; color: #a78bff;
+      background: #1a1530; border-radius: 50%; width: 12px; height: 12px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 1px rgba(167,139,255,0.5);
+    }
+    .song-new-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
+      color: #1a1030;
+      background: linear-gradient(135deg, #ffe07a, #ff9ae0 55%, #a78bff);
+      background-size: 200% 200%;
+      padding: 2.5px 7px 2.5px 6px; border-radius: 999px; vertical-align: middle; margin-left: 6px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset, 0 2px 8px rgba(255,138,224,0.35);
+      animation: songNewShine 2.4s ease-in-out infinite;
+    }
+    .song-new-tag::before {
+      content: '\2726'; font-size: 8px; line-height: 1;
+    }
+    @keyframes songNewShine {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .song-new-tag { animation: none; }
+    }
 
     /* ── Small-screen tightening so the mini + full player never overflow ── */
     @media (max-width: 380px) {
@@ -737,7 +869,8 @@
       .smp-cover { width: 34px; height: 34px; }
       .smp-play-btn { width: 32px; height: 32px; }
       .smp-skip-btn { width: 26px; height: 26px; }
-      .fp-controls { gap: 18px; }
+      .fp-controls { grid-template-columns: 28px 1fr 28px; }
+      .fp-controls-center { gap: 18px; }
       .fp-play-btn { width: 58px; height: 58px; }
       .fp-title { font-size: 18px; }
     }
@@ -1859,6 +1992,132 @@ opacity: .4;
     .friend-avatar { position: relative; }
     .friend-avatar .presence-dot { width: 11px; height: 11px; bottom: 0; right: 0; border-width: 2px; }
 
+    /* Chat list: reuse the same presence-dot pattern on avatars so "online"
+       status is visible at a glance while scanning conversations, not just
+       on the Friends tab. */
+    .chat-list-avatar { position: relative; }
+    .chat-list-avatar .presence-dot { width: 11px; height: 11px; bottom: -1px; right: -1px; border-width: 2px; }
+
+    /* ══════════════════════════════════════════════════════════════
+       Profile "Friends" / "Clubs" list modal — opened from the stat
+       row (Posts / Friends / Clubs) on both the own-profile view and
+       the Instagram-style user-profile modal. Two content modes
+       (people rows vs club cards) sharing one shell.
+       ══════════════════════════════════════════════════════════════ */
+    #modal-profile-list .modal { max-width: 420px; width: 92vw; max-height: 78vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+    .plist-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px 12px; border-bottom: 1px solid var(--border, rgba(255,255,255,0.08)); flex-shrink: 0;
+    }
+    .plist-header h3 { margin: 0; font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .plist-header .plist-count {
+      font-size: 11.5px; font-weight: 700; color: var(--muted, #9aa0a6);
+      background: rgba(127,127,127,0.14); padding: 2px 9px; border-radius: 20px;
+    }
+    .plist-close {
+      background: rgba(127,127,127,0.14); border: none; width: 30px; height: 30px; border-radius: 50%;
+      color: var(--text, #fff); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0; transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .plist-close:hover { background: rgba(127,127,127,0.26); }
+    .plist-close:active { transform: scale(0.9); }
+    .plist-search-wrap { padding: 10px 18px; flex-shrink: 0; }
+    .plist-search-wrap input {
+      width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 12px;
+      border: 1px solid var(--border, rgba(255,255,255,0.12)); background: rgba(127,127,127,0.08);
+      color: var(--text, #fff); font-size: 13px; outline: none;
+    }
+    .plist-search-wrap input:focus { border-color: var(--accent, #6c63ff); }
+    .plist-body { overflow-y: auto; padding: 4px 10px 16px; flex: 1; }
+    .plist-empty { text-align: center; padding: 40px 20px; color: var(--muted, #9aa0a6); }
+    .plist-empty span { font-size: 34px; display: block; margin-bottom: 8px; }
+
+    .plist-person-row {
+      display: flex; align-items: center; gap: 11px; padding: 9px 8px; border-radius: 14px;
+      cursor: pointer; transition: background 0.15s ease;
+    }
+    .plist-person-row:hover { background: rgba(127,127,127,0.1); }
+    .plist-person-row:active { transform: scale(0.99); }
+    .plist-person-avatar { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+    .plist-person-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+    .plist-person-avatar .presence-dot { width: 12px; height: 12px; bottom: -1px; right: -1px; border-width: 2px; }
+    .plist-person-info { flex: 1; min-width: 0; line-height: 1.28; }
+    .plist-person-info strong { font-size: 13.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .plist-person-info small { color: var(--muted, #9aa0a6); font-size: 11.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .plist-person-status { font-size: 10.5px; font-weight: 700; flex-shrink: 0; padding: 3px 9px; border-radius: 20px; }
+    .plist-person-status.online { color: #2ecc71; background: rgba(46,204,113,0.14); }
+    .plist-person-status.offline { color: var(--muted, #9aa0a6); background: rgba(127,127,127,0.12); }
+
+    .plist-club-card {
+      display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 16px;
+      cursor: pointer; margin: 4px 0; background: rgba(127,127,127,0.06);
+      border: 1px solid var(--border, rgba(255,255,255,0.07));
+      transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    }
+    .plist-club-card:hover { background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.2); }
+    .plist-club-card:active { transform: scale(0.99); }
+    .plist-club-emoji {
+      width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(150deg, var(--accent, #6c63ff), #a24bff);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 10px rgba(0,0,0,0.18);
+      color: #fff;
+    }
+    .plist-club-info { flex: 1; min-width: 0; line-height: 1.3; }
+    .plist-club-info strong { font-size: 13.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .plist-club-info small { color: var(--muted, #9aa0a6); font-size: 11.5px; display: flex; align-items: center; gap: 5px; }
+    .plist-club-arrow { color: var(--muted, #9aa0a6); flex-shrink: 0; }
+    .ig-profile-stats div, .profile-stats div { cursor: pointer; transition: opacity 0.15s ease; border-radius: 10px; padding: 2px 4px; }
+    .ig-profile-stats div:active, .profile-stats div:active { opacity: 0.6; }
+
+    /* Campus map: nearby (non-friend) suggestion rows */
+    .campus-nearby-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px;
+      cursor: pointer; background: var(--surface2, rgba(255,255,255,0.05));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      transition: background 0.15s ease;
+    }
+    .campus-nearby-row:hover { background: var(--surface3, rgba(255,255,255,0.09)); }
+    .campus-nearby-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .campus-nearby-info { flex: 1; min-width: 0; line-height: 1.25; }
+    .campus-nearby-info strong { font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .campus-nearby-info small { color: var(--muted, #9aa0a6); font-size: 11px; }
+    .campus-nearby-add-btn {
+      flex-shrink: 0; background: var(--accent, #6c63ff); color: #fff; border: none;
+      padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .campus-nearby-add-btn:active { transform: scale(0.94); }
+    .campus-nearby-add-btn:disabled { opacity: 0.55; cursor: default; }
+
+    /* ── Club Activity tab: combined feed card ── */
+    .club-activity-card {
+      display: flex; gap: 12px; padding: 13px; border-radius: 14px; margin-bottom: 10px;
+      background: var(--surface2, rgba(255,255,255,0.05)); border: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+    .club-activity-icon {
+      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; font-size: 18px;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 3px 8px rgba(0,0,0,0.16);
+      background-size: cover; background-position: center;
+    }
+    .club-activity-icon-photo { background-color: var(--surface3, rgba(255,255,255,0.1)); }
+    .club-activity-body { flex: 1; min-width: 0; }
+    .club-activity-meta { font-size: 12px; color: var(--muted, #9aa0a6); margin-bottom: 3px; }
+    .club-activity-meta strong { color: var(--text, #fff); }
+    .club-activity-time { color: var(--muted, #9aa0a6); }
+    .club-activity-text { font-size: 13.5px; line-height: 1.4; }
+
+    /* Mutual clubs chip on a user's profile — quick common-ground signal */
+    .mutual-clubs-chip {
+      display: inline-flex; align-items: center; gap: 5px; margin-top: 6px;
+      background: rgba(108,99,255,0.14); color: var(--accent, #6c63ff);
+      border: 1px solid rgba(108,99,255,0.3); border-radius: 20px; padding: 4px 11px;
+      font-size: 11.5px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .mutual-clubs-chip:hover { background: rgba(108,99,255,0.22); }
+    .mutual-clubs-chip:active { transform: scale(0.95); }
+
     /* ── Profile: year/branch, badges, skills, social links ── */
     .profile-year-branch { font-size: 12.5px; margin-top: -2px; }
     .profile-badges {
@@ -2513,6 +2772,23 @@ opacity: .4;
     .chat-img-lightbox-close:hover, .post-img-lightbox-close:hover { background: rgba(255,255,255,0.22); }
     .chat-img-lightbox-close i, .post-img-lightbox-close i { width: 22px; height: 22px; }
     .post-media { cursor: zoom-in; }
+    /* ── Kill the mobile "tap flash" ──────────────────────────────────
+       Mobile browsers (esp. Chrome/Samsung Internet on Android) show a
+       grey/blue highlight overlay for a split second on any tap of a
+       button, link, or other clickable element unless this is disabled.
+       That's the "blink" on tapping buttons/pointer areas — remove it
+       app-wide via a universal selector so it covers every current and
+       future clickable element without having to list each one. */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+    }
+    button, a, [role="button"] {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
     /* Force every text-entry field to at least 16px. Below that threshold,
        mobile Chrome/Safari auto-zoom the page on focus (to make the text
        legible) and — on Chrome especially — often don't zoom back out
@@ -2682,7 +2958,7 @@ opacity: .4;
   <nav class="mobile-nav">
     <a class="mnav-item active" data-view="feed"><i data-lucide="home"></i><span>Feed</span></a>
     <a class="mnav-item" data-view="confessions"><i data-lucide="ghost"></i><span>Confess</span></a>
-    <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a>
+   <!-- <a class="mnav-item" data-view="polls"><i data-lucide="bar-chart-2"></i><span>Polls</span></a> -->
     <a class="mnav-item" data-view="clubs"><i data-lucide="users"></i><span>Clubs</span></a>
     <a class="mnav-item" data-view="songs"><i data-lucide="music-2"></i><span>Songs</span></a>
     <a class="mnav-item" data-view="friends">
@@ -2868,28 +3144,32 @@ opacity: .4;
 
     <!-- ── SONGS ── -->
     <section id="view-songs" class="view">
-      <div class="songs-hero">
-        <div class="songs-hero-left">
-          <i class="fa-solid fa-compact-disc songs-disc-icon"></i>
-          <div>
-            <h2 class="songs-title-font">Songs</h2>
-            <p class="songs-hero-sub">The campus playlist — curated, ranked by you</p>
+      <div class="songs-sticky-header">
+        <div class="songs-hero">
+          <div class="songs-hero-left">
+            <i class="fa-solid fa-compact-disc songs-disc-icon"></i>
+            <div>
+              <h2 class="songs-title-font">Songs</h2>
+              <p class="songs-hero-sub">The campus playlist — curated, ranked by you</p>
+            </div>
           </div>
+          <button class="songs-add-btn" id="songs-request-btn"><i class="fa-solid fa-headphones"></i> Request a song</button>
+          <button class="songs-add-btn" id="songs-add-btn" style="display:none"><i class="fa-solid fa-plus"></i> Add song</button>
         </div>
-        <button class="songs-add-btn" id="songs-add-btn" style="display:none"><i class="fa-solid fa-plus"></i> Add song</button>
-      </div>
 
-      <div class="songs-tabs" id="songs-tabs">
-        <button class="songs-tab active" data-cat="girls"><i class="fa-solid fa-venus"></i> Girls</button>
-        <button class="songs-tab" data-cat="boys"><i class="fa-solid fa-mars"></i> Boys</button>
-        <button class="songs-tab" data-cat="favorites"><i class="fa-solid fa-heart"></i> Favorites</button>
-      </div>
+        <div class="songs-tabs" id="songs-tabs">
+          <button class="songs-tab active" data-cat="girls"><i class="fa-solid fa-venus"></i> Girls</button>
+          <button class="songs-tab" data-cat="boys"><i class="fa-solid fa-mars"></i> Boys</button>
+          <button class="songs-tab" data-cat="favorites"><i class="fa-solid fa-heart"></i> Favorites</button>
+          <button class="songs-tab" data-cat="gifted" id="songs-gifted-tab" style="display:none"><i class="fa-solid fa-gift"></i> Gifted<span class="songs-gifted-badge" id="songs-gifted-badge" style="display:none">0</span></button>
+        </div>
 
-      <div class="songs-lang-filter" id="songs-lang-filter"></div>
+        <div class="songs-lang-filter" id="songs-lang-filter"></div>
 
-      <div class="songs-search-wrap">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="songs-search-input" placeholder="Search songs or artists…" autocomplete="off"/>
+        <div class="songs-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="songs-search-input" placeholder="Search songs or artists…" autocomplete="off"/>
+        </div>
       </div>
 
       <div class="songs-list" id="songs-list">
@@ -2932,16 +3212,21 @@ opacity: .4;
       </div>
       <div class="fp-time-row"><span id="fp-time-current">0:00</span><span id="fp-time-duration">0:00</span></div>
       <div class="fp-controls">
-        <button class="fp-skip-btn" id="fp-prev-btn"><i class="fa-solid fa-backward-step"></i></button>
-        <button class="fp-play-btn" id="fp-play-btn"><i class="fa-solid fa-pause"></i></button>
-        <button class="fp-skip-btn" id="fp-next-btn"><i class="fa-solid fa-forward-step"></i></button>
+        <span></span>
+        <div class="fp-controls-center">
+          <button class="fp-skip-btn" id="fp-prev-btn"><i class="fa-solid fa-backward-step"></i></button>
+          <button class="fp-play-btn" id="fp-play-btn"><i class="fa-solid fa-pause"></i></button>
+          <button class="fp-skip-btn" id="fp-next-btn"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+        <button class="fp-loop-btn" id="fp-loop-btn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
       </div>
     </div>
 
     <!-- ── CHATS ── -->
     <section id="view-chats" class="view" style="max-width:1200px">
-      <div class="view-header">
+      <div class="view-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <h2>💬 Chats</h2>
+        <button class="btn-sm" id="new-group-chat-btn" title="Start a group DM with friends">👥 New Group</button>
       </div>
       <div class="chat-layout">
         <div class="chat-list" id="chat-list">
@@ -2980,11 +3265,12 @@ opacity: .4;
         <p id="profile-year-branch" class="muted profile-year-branch"></p>
         <div class="profile-stats">
           <div><span id="stat-posts">0</span><small>Posts</small></div>
-          <div><span id="stat-friends">0</span><small>Friends</small></div>
-          <div><span id="stat-clubs">0</span><small>Clubs</small></div>
+          <div id="profile-stat-friends"><span id="stat-friends">0</span><small>Friends</small></div>
+          <div id="profile-stat-clubs"><span id="stat-clubs">0</span><small>Clubs</small></div>
         </div>
         <div style="display:flex;gap:8px;width:100%;justify-content:center">
           <button class="btn-edit-profile" id="edit-profile-btn"><i data-lucide="pencil"></i> Edit Profile</button>
+          <button class="btn-edit-profile" id="open-scheduled-posts-btn" style="flex:0 0 auto;width:44px;padding:0;display:flex;align-items:center;justify-content:center" title="Scheduled Posts"><i data-lucide="clock"></i></button>
           <button class="btn-edit-profile" id="open-settings-btn" style="flex:0 0 auto;width:44px;padding:0;display:flex;align-items:center;justify-content:center" title="Settings"><i data-lucide="settings"></i></button>
         </div>
         <div class="profile-badges" id="profile-badges"></div>
@@ -3012,12 +3298,45 @@ opacity: .4;
     </div>
     <textarea id="post-text" placeholder="What's on your mind? Use #hashtags!" rows="6"></textarea>
     <div class="modal-media-preview" id="post-media-preview"></div>
+    <div id="post-schedule-wrap" style="display:none;margin-top:10px">
+      <label style="font-size:11.5px;color:var(--muted,#9aa0a6);font-weight:700;display:block;margin-bottom:5px">🕒 Publish at</label>
+      <input type="datetime-local" id="post-schedule-input" style="width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,0.14));background:var(--surface,rgba(0,0,0,0.2));color:inherit;font-size:13px"/>
+    </div>
     <div class="modal-actions">
       <label class="btn-icon" title="Add Image/Video">
         <i data-lucide="image"></i>
         <input type="file" id="post-media-input" accept="image/*,video/*" hidden/>
       </label>
+      <button class="btn-icon" id="post-schedule-toggle-btn" title="Schedule for later"><i data-lucide="clock"></i></button>
       <button class="btn-primary" id="submit-post-btn">Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scheduled Posts modal — view/cancel posts queued for future publish -->
+<div class="modal-overlay" id="modal-scheduled-posts">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>🕒 Scheduled Posts</h3>
+      <button class="modal-close" data-modal="modal-scheduled-posts">✕</button>
+    </div>
+    <div id="scheduled-posts-list" style="max-height:60vh;overflow-y:auto">
+      <div class="loading-spinner">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- New Group DM Modal (friends only, not tied to any club) -->
+<div class="modal-overlay" id="modal-new-group">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>👥 New Group DM</h3>
+      <button class="modal-close" data-modal="modal-new-group">✕</button>
+    </div>
+    <input type="text" id="new-group-name-input" placeholder="Group name (e.g. Weekend Squad)" maxlength="40" style="width:100%;margin-bottom:10px"/>
+    <div id="new-group-friends-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-new-group-btn">Create Group</button>
     </div>
   </div>
 </div>
@@ -3121,6 +3440,31 @@ opacity: .4;
   </div>
 </div>
 
+<!-- Request a Song Modal (any student) -->
+<div class="modal-overlay" id="modal-request-song">
+  <div class="modal" id="modal-request-song-inner">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-headphones"></i> Request a Song</h3>
+      <button class="modal-close" data-modal="modal-request-song">✕</button>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-music"></i> Song title</label>
+      <input type="text" id="song-request-title-input" placeholder="e.g. Midnight Drive"/>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-user-pen"></i> Artist (optional)</label>
+      <input type="text" id="song-request-artist-input" placeholder="e.g. Luna Rey"/>
+    </div>
+    <div class="poll-form-field">
+      <label><i class="fa-solid fa-note-sticky"></i> Note for admins (optional)</label>
+      <textarea id="song-request-note-input" placeholder="Link, reason, or anything else that helps" rows="2"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="poll-launch-btn" id="submit-song-request-btn"><i class="fa-solid fa-paper-plane"></i> Send Request</button>
+    </div>
+  </div>
+</div>
+
 <!-- New Section Modal (admin-only) -->
 <div class="modal-overlay" id="modal-section">
   <div class="modal">
@@ -3161,8 +3505,27 @@ opacity: .4;
     <div class="field" id="club-password-wrap" style="display:none">
       <input type="text" id="club-password" placeholder="Set a join password"/>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;margin:10px 2px 4px;font-size:13.5px;cursor:pointer;user-select:none">
+      <input type="checkbox" id="club-approval-toggle" style="width:16px;height:16px;accent-color:var(--accent,#6c63ff)"/>
+      🧾 Require approval to join (review applications before adding members)
+    </label>
     <div class="modal-actions">
       <button class="btn-primary" id="submit-club-btn">Create Club</button>
+    </div>
+  </div>
+</div>
+
+<!-- Club Application Modal (member applies to an approval-required club) -->
+<div class="modal-overlay" id="modal-club-apply">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="club-apply-title">🧾 Apply to Join</h3>
+      <button class="modal-close" data-modal="modal-club-apply">✕</button>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted,#9aa0a6);margin:0 0 10px">The club owner will review your request before adding you.</p>
+    <textarea id="club-apply-message" placeholder="Why do you want to join? (optional)" rows="3"></textarea>
+    <div class="modal-actions">
+      <button class="btn-primary" id="submit-club-apply-btn">Send Application</button>
     </div>
   </div>
 </div>
@@ -3297,6 +3660,14 @@ opacity: .4;
     <div id="campus-map-list" style="display:flex;flex-direction:column;gap:14px;max-height:50vh;overflow-y:auto">
       <div class="loading-spinner">Loading…</div>
     </div>
+
+    <!-- Nearby, non-friend suggestions at the same spot -->
+    <div id="campus-map-nearby-wrap" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border,rgba(255,255,255,0.1))">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <span>👋 People near you right now</span>
+      </div>
+      <div id="campus-map-nearby-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
   </div>
 </div>
 
@@ -3380,6 +3751,23 @@ opacity: .4;
     </div>
     <div id="ig-profile-body">
       <div class="loading-spinner">Loading profile…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Friends / Clubs list modal — opened from profile stat row -->
+<div class="modal-overlay" id="modal-profile-list">
+  <div class="modal">
+    <div class="plist-header">
+      <h3 id="plist-title-icon">👥 Friends</h3>
+      <span class="plist-count" id="plist-count">0</span>
+      <button class="plist-close modal-close" data-modal="modal-profile-list">✕</button>
+    </div>
+    <div class="plist-search-wrap" id="plist-search-wrap" style="display:none">
+      <input type="text" id="plist-search-input" placeholder="Search…"/>
+    </div>
+    <div class="plist-body" id="plist-body">
+      <div class="loading-spinner">Loading…</div>
     </div>
   </div>
 </div>
@@ -3929,11 +4317,20 @@ function extractHashtags(text) {
   return [...new Set(matches.map(t => t.toLowerCase()))];
 }
 
-// Highlight hashtags in text
+// Highlight hashtags and @mentions in text
 function highlightHashtags(text) {
   if (!text) return '';
-  return escHtml(text).replace(/#([a-zA-Z0-9_]+)/g,
-    '<span style="color:var(--accent3);font-weight:600">#$1</span>');
+  return escHtml(text)
+    .replace(/#([a-zA-Z0-9_]+)/g, '<span style="color:var(--accent3);font-weight:600">#$1</span>')
+    .replace(/@([a-zA-Z0-9_.]{2,30})/g, '<span class="mention-tag" style="color:#4f8ef7;font-weight:600;cursor:pointer" data-mention-username="$1">@$1</span>');
+}
+
+// Highlight @mentions only (no hashtag styling) — used for chat bubbles and
+// comments where hashtags aren't a thing but mentions still should render blue.
+function highlightMentions(text) {
+  if (!text) return '';
+  return escHtml(text).replace(/@([a-zA-Z0-9_.]{2,30})/g,
+    '<span class="mention-tag" style="color:#4f8ef7;font-weight:600;cursor:pointer" data-mention-username="$1">@$1</span>');
 }
 
 // ── CLOUDINARY UPLOAD ────────────────────────────
@@ -4439,6 +4836,12 @@ function startClubsPresenceWatch() {
       renderClubGrid();
     }
     if (typeof updateOpenClubDashboardOnlineCount === 'function') updateOpenClubDashboardOnlineCount();
+  }, err => {
+    // Surface this instead of failing silently — without an error handler,
+    // a permission-denied here (e.g. from RTDB rules) leaves the cache
+    // permanently empty and everyone shows as "Offline" with no signal
+    // that anything went wrong.
+    console.error('Presence watch error:', err);
   });
 }
 function stopClubsPresenceWatch() {
@@ -4601,6 +5004,7 @@ auth.onAuthStateChanged(async user => {
     applyAdminUiGates();
     loadPinnedMessage();
     setupBroadcastListener();
+    checkAndPublishScheduledPosts();
   } else {
     stopBanListener();
     stopIpBlockListener();
@@ -4781,6 +5185,7 @@ async function unblockUser(uid) {
 // ══════════════════════════════════════
 function setupSettings() {
   $('open-settings-btn')?.addEventListener('click', openSettingsModal);
+  $('open-scheduled-posts-btn')?.addEventListener('click', openScheduledPostsModal);
 
   // Blocked Users — expand/collapse in place (reuses existing renderBlockedList)
   $('settings-blocked-toggle')?.addEventListener('click', () => {
@@ -4965,11 +5370,87 @@ let _songsPlayCounted = new Set(); // song ids already counted this session, so 
 function watchSongsFeed() {
   if (_songsUnsub) return; // already watching
   _songsUnsub = db.collection('songs').onSnapshot(snap => {
-    _allSongsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Gifted songs (giftedTo non-empty) only show to their intended recipient(s);
+    // regular songs (no giftedTo, or empty array) show to everyone, same as before.
+    _allSongsCache = all.filter(s => !s.giftedTo || !s.giftedTo.length || s.giftedTo.includes(currentUser.uid));
+    notifyNewGiftedSongs(_allSongsCache);
+    updateGiftedSongsBadge(_allSongsCache);
     renderSongsList();
   }, err => {
     $('songs-list').innerHTML = `<div class="songs-empty"><i class="fa-solid fa-triangle-exclamation"></i>Couldn't load songs: ${escHtml(err.message)}</div>`;
   });
+}
+
+// Alerts the user with a toast the moment a song gifted to them shows up,
+// then remembers it (per-account, in localStorage) so re-opening the app
+// or re-syncing the feed never re-shows the same alert twice.
+function giftedSongsSeenKey() {
+  return `giftedSongsSeen_${currentUser?.uid || 'anon'}`;
+}
+function getSeenGiftedSongIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(giftedSongsSeenKey()) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function markGiftedSongsSeen(ids) {
+  const seen = getSeenGiftedSongIds();
+  ids.forEach(id => seen.add(id));
+  try { localStorage.setItem(giftedSongsSeenKey(), JSON.stringify([...seen])); } catch (e) {}
+}
+function notifyNewGiftedSongs(allSongs) {
+  if (!currentUser) return;
+  const giftedToMe = allSongs.filter(s => s.giftedTo && s.giftedTo.includes(currentUser.uid));
+  if (!giftedToMe.length) return;
+  const seen = getSeenGiftedSongIds();
+  const freshOnes = giftedToMe.filter(s => !seen.has(s.id));
+  if (freshOnes.length) {
+    const msg = freshOnes.length === 1
+      ? `🎁 You got a gifted song: "${freshOnes[0].title}"!`
+      : `🎁 You got ${freshOnes.length} gifted songs!`;
+    toast(msg, 'success');
+    markGiftedSongsSeen(freshOnes.map(s => s.id));
+  }
+}
+// Shows/hides the "Gifted" tab itself — it only appears for users who
+// actually have at least one song gifted to them — plus a small count
+// badge so it's obvious at a glance that something's waiting.
+function updateGiftedSongsBadge(allSongs) {
+  const tab = $('songs-gifted-tab');
+  const badge = $('songs-gifted-badge');
+  if (!tab || !badge || !currentUser) return;
+  const wasVisible = tab.style.display !== 'none';
+  const count = allSongs.filter(s => s.giftedTo && s.giftedTo.includes(currentUser.uid)).length;
+  if (count > 0) {
+    tab.style.display = 'inline-flex';
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.style.display = 'inline-flex';
+  } else {
+    tab.style.display = 'none';
+    badge.style.display = 'none';
+    // If they were sitting on the Gifted tab and their last gifted song
+    // just got removed/unfiltered, fall back to Girls so they're not
+    // left staring at a hidden, empty tab.
+    if (_songsCategory === 'gifted') {
+      _songsCategory = 'girls';
+      tab.classList.remove('active');
+      const girlsTab = document.querySelector('.songs-tab[data-cat="girls"]');
+      if (girlsTab) {
+        document.querySelectorAll('.songs-tab').forEach(t => t.classList.remove('active'));
+        girlsTab.classList.add('active');
+      }
+      renderSongsList();
+    }
+  }
+  // The tab appearing/disappearing changes the header's height (it can wrap
+  // onto a second line), which shifts where the header ends. layoutSongsList()
+  // already ran once against the OLD header height by the time this Firestore
+  // callback fires, so its cached measurement is now stale — without
+  // recomputing here, the song list keeps the old (too-tall) height and its
+  // last row ends up hidden underneath the bottom nav. Re-measure once the
+  // tab bar has actually reflowed.
+  if ((tab.style.display !== 'none') !== wasVisible) {
+    requestAnimationFrame(() => layoutSongsList());
+  }
 }
 
 function loadSongsView() {
@@ -4977,7 +5458,43 @@ function loadSongsView() {
   watchSongLanguages();
   watchSongsFeed();
   renderSongsList();
+  layoutSongsList();
+  setTimeout(layoutSongsList, 150); // re-measure once icon fonts/images have settled
 }
+
+// Gives .songs-list an explicit pixel height so it becomes its own bounded
+// scroll box — the header above it, the mobile nav / mini player below it,
+// and only the list itself moves when the user scrolls. Recomputed on
+// resize/orientation change and whenever the mini player toggles, since
+// that changes how much vertical space is left.
+function layoutSongsList() {
+  const section = $('view-songs');
+  const header  = document.querySelector('.songs-sticky-header');
+  const list    = $('songs-list');
+  if (!section || !header || !list || !section.classList.contains('active')) return;
+  const mobileNav = document.querySelector('.mobile-nav');
+  const miniPlayer = $('songs-mini-player');
+  const headerRect = header.getBoundingClientRect();
+  const navH = (mobileNav && getComputedStyle(mobileNav).display !== 'none') ? mobileNav.getBoundingClientRect().height : 0;
+  const miniVisible = !!(miniPlayer && miniPlayer.style.display !== 'none');
+
+  // Pin the mini player just above the bottom nav, regardless of how tall
+  // the nav actually is on this device — this is what stops it from
+  // drifting far down where it was hard to find.
+  if (miniPlayer) miniPlayer.style.bottom = (navH + 10) + 'px';
+  const miniH = miniVisible ? miniPlayer.getBoundingClientRect().height : 0;
+
+  const available = window.innerHeight - headerRect.bottom - navH - 8; // 8px breathing room
+  list.style.height = Math.max(150, available) + 'px';
+  list.style.maxHeight = list.style.height;
+  // Reserve room at the bottom of the scrollable list so the last song row
+  // never sits underneath the floating mini player or the bottom nav —
+  // this needs a bit more cushion than the mini player's own height,
+  // since some devices (notch/gesture-bar safe areas) eat into that gap.
+  list.style.paddingBottom = (miniVisible ? miniH + 28 : 28) + 'px';
+}
+window.addEventListener('resize', () => layoutSongsList());
+window.addEventListener('orientationchange', () => setTimeout(layoutSongsList, 200));
 
 function isSongFavorited(songId) {
   return !!(currentUserData && (currentUserData.favoriteSongs || []).includes(songId));
@@ -5025,6 +5542,13 @@ function filterSongsByLanguage(songs) {
   return songs.filter(s => (s.language || 'other') === _songsLanguage);
 }
 
+function isSongNew(s) {
+  // createdAt is a Firestore Timestamp (has .toMillis); guard for the brief
+  // window right after add() before the server timestamp resolves locally.
+  if (!s.createdAt || typeof s.createdAt.toMillis !== 'function') return false;
+  return (Date.now() - s.createdAt.toMillis()) < 12 * 60 * 60 * 1000; // 12 hours
+}
+
 function renderSongsList() {
   const list = $('songs-list');
   if (!list) return;
@@ -5034,6 +5558,8 @@ function renderSongsList() {
   if (_songsCategory === 'favorites') {
     const favIds = currentUserData?.favoriteSongs || [];
     songs = _allSongsCache.filter(s => favIds.includes(s.id));
+  } else if (_songsCategory === 'gifted') {
+    songs = _allSongsCache.filter(s => s.giftedTo && s.giftedTo.includes(currentUser.uid));
   } else {
     songs = _allSongsCache.filter(s => s.category === _songsCategory);
   }
@@ -5047,6 +5573,8 @@ function renderSongsList() {
   if (!songs.length) {
     const msg = _songsCategory === 'favorites'
       ? "No favorites yet — tap the heart on a song to save it here."
+      : _songsCategory === 'gifted'
+      ? "No gifted songs yet — songs gifted to you 🎁 will show up here."
       : (query ? "No songs match your search." : "No songs here yet.");
     list.innerHTML = `<div class="songs-empty"><i class="fa-solid fa-compact-disc"></i>${escHtml(msg)}</div>`;
     return;
@@ -5056,6 +5584,7 @@ function renderSongsList() {
     const rank = (!query && i < 3) ? i + 1 : 0;
     const isPlaying = _currentSongId === s.id;
     const isFav = isSongFavorited(s.id);
+    const isGiftedToMe = !!(s.giftedTo && s.giftedTo.length);
     return `
     <div class="song-row${isPlaying ? ' playing' : ''}" data-id="${s.id}">
       ${rank ? `<div class="song-rank rank-${rank}">${rank}</div>` : ''}
@@ -5064,7 +5593,7 @@ function renderSongsList() {
         <button class="song-play-overlay" data-id="${s.id}"><i class="fa-solid ${isPlaying && !_songsAudioEl?.paused ? 'fa-pause' : 'fa-play'}"></i></button>
       </div>
       <div class="song-info">
-        <div class="song-title">${escHtml(s.title)}</div>
+        <div class="song-title">${escHtml(s.title)}${isSongNew(s) ? ' <span class="song-new-tag">NEW</span>' : ''}${isGiftedToMe ? ' <span class="song-new-tag" style="background:rgba(255,190,60,0.18);color:#ffcf6b;border-color:rgba(255,190,60,0.4)">🎁 FOR YOU</span>' : ''}</div>
         <div class="song-sub"><i class="fa-solid fa-headphones-simple"></i> ${(s.plays||0).toLocaleString()}${s.artist ? ' · ' + escHtml(s.artist) : ''}${s.language ? ' · ' + escHtml(s.language.charAt(0).toUpperCase() + s.language.slice(1)) : ''}</div>
       </div>
       <button class="song-fav-btn${isFav ? ' active' : ''}" data-id="${s.id}"><i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i></button>
@@ -5104,6 +5633,11 @@ function ensureSongsAudioEl() {
     if (dur) dur.textContent = formatSongTime(_songsAudioEl.duration);
   });
   _songsAudioEl.addEventListener('ended', () => {
+    if (_songsLoopMode === 'one') {
+      _songsAudioEl.currentTime = 0;
+      _songsAudioEl.play().catch(() => {});
+      return;
+    }
     playSongOffset(1, true);
   });
   return _songsAudioEl;
@@ -5136,6 +5670,24 @@ function getCurrentSongsQueue() {
 
 // Skip forward/back by `dir` (1 or -1) within the current queue.
 // autoAdvance=true (song ended naturally) stops at the end of the queue instead of looping.
+// 'off' = stop after the last song in the queue; 'all' = wrap back to the
+// first song; 'one' = keep repeating the current song (handled in the
+// 'ended' listener above, before it ever reaches playSongOffset).
+let _songsLoopMode = 'off';
+
+function cycleSongsLoopMode() {
+  _songsLoopMode = _songsLoopMode === 'off' ? 'all' : (_songsLoopMode === 'all' ? 'one' : 'off');
+  updateLoopBtnUI();
+}
+
+function updateLoopBtnUI() {
+  const btn = $('fp-loop-btn');
+  if (!btn) return;
+  btn.classList.toggle('active', _songsLoopMode !== 'off');
+  btn.classList.toggle('mode-one', _songsLoopMode === 'one');
+  btn.title = _songsLoopMode === 'off' ? 'Repeat: off' : (_songsLoopMode === 'all' ? 'Repeat: all' : 'Repeat: one');
+}
+
 function playSongOffset(dir, autoAdvance) {
   const queue = getCurrentSongsQueue();
   if (!queue.length) return;
@@ -5147,13 +5699,13 @@ function playSongOffset(dir, autoAdvance) {
     nextIdx = idx + dir;
     if (nextIdx < 0) nextIdx = queue.length - 1;
     if (nextIdx >= queue.length) {
-      if (autoAdvance) {
+      if (autoAdvance && _songsLoopMode !== 'all') {
         $('smp-play-btn').innerHTML = '<i class="fa-solid fa-play"></i>';
         updateFullPlayerPlayIcon();
         renderSongsList();
         return;
       }
-      nextIdx = 0;
+      nextIdx = 0; // loop mode 'all' (or manual next/prev past the end) wraps around
     }
   }
   toggleSongPlayback(queue[nextIdx]);
@@ -5191,6 +5743,7 @@ function toggleSongPlayback(song) {
   updateMiniPlayerPlayIcon();
   updateFullPlayerInfo(song);
   renderSongsList();
+  layoutSongsList(); // mini player just appeared — recompute available list height
 }
 
 function updateMiniPlayerPlayIcon() {
@@ -5302,6 +5855,8 @@ async function toggleFavoriteSong(songId) {
   });
   $('fp-prev-btn')?.addEventListener('click', () => playSongOffset(-1, false));
   $('fp-next-btn')?.addEventListener('click', () => playSongOffset(1, false));
+  $('fp-loop-btn')?.addEventListener('click', () => cycleSongsLoopMode());
+  updateLoopBtnUI();
   $('fp-fav-btn')?.addEventListener('click', () => {
     if (_currentSongId) toggleFavoriteSong(_currentSongId).then(() => {
       const song = _allSongsCache.find(s => s.id === _currentSongId);
@@ -5371,6 +5926,43 @@ async function toggleFavoriteSong(songId) {
       $('song-cover-preview-wrap').style.display = 'none';
       closeModal('modal-add-song');
       toast(`"${title}" added 🎵`, 'success');
+    } catch (e) { toast('Failed: ' + e.message, 'error'); }
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    lucide.createIcons();
+  });
+})();
+
+(function setupSongRequestComposer() {
+  $('songs-request-btn')?.addEventListener('click', () => {
+    openModal('modal-request-song');
+  });
+
+  $('submit-song-request-btn')?.addEventListener('click', async () => {
+    const title  = ($('song-request-title-input').value || '').trim();
+    const artist = ($('song-request-artist-input').value || '').trim();
+    const note   = ($('song-request-note-input').value || '').trim();
+    if (!title) return toast('Enter a song title', 'error');
+
+    const btn = $('submit-song-request-btn');
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = 'Sending…';
+    try {
+      await db.collection('songRequests').add({
+        title, artist, note,
+        status: 'pending',
+        requestedByUid:  currentUser.uid,
+        requestedByName: currentUserData?.name       || 'Anonymous',
+        requestedByPic:  currentUserData?.profilePic || null,
+        college: currentUserData?.college || '',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      $('song-request-title-input').value = '';
+      $('song-request-artist-input').value = '';
+      $('song-request-note-input').value = '';
+      closeModal('modal-request-song');
+      toast(`Requested "${title}" 🎧`, 'success');
     } catch (e) { toast('Failed: ' + e.message, 'error'); }
     btn.disabled = false;
     btn.innerHTML = originalHtml;
@@ -5477,6 +6069,7 @@ document.querySelectorAll('.modal-close').forEach(btn => {
     if (btn.dataset.modal === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
     if (btn.dataset.modal === 'modal-qr-friend' && typeof stopQrScan === 'function') stopQrScan();
     if (btn.dataset.modal === 'modal-campus-map' && typeof stopCampusMapWatch === 'function') stopCampusMapWatch();
+    if (btn.dataset.modal === 'modal-profile-list' && typeof _plistDetachPresence === 'function') _plistDetachPresence();
     if (btn.dataset.modal === 'modal-chat-window') {
       if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
       if (chatPresenceInterval) { clearInterval(chatPresenceInterval); chatPresenceInterval = null; }
@@ -5496,6 +6089,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       if (overlay.id === 'modal-club' && typeof destroyVoiceBar === 'function') destroyVoiceBar();
       if (overlay.id === 'modal-qr-friend' && typeof stopQrScan === 'function') stopQrScan();
       if (overlay.id === 'modal-campus-map' && typeof stopCampusMapWatch === 'function') stopCampusMapWatch();
+      if (overlay.id === 'modal-profile-list' && typeof _plistDetachPresence === 'function') _plistDetachPresence();
       overlay.classList.remove('open');
     }
   });
@@ -5774,7 +6368,34 @@ function renderSearchResults(results, q) {
 // ══════════════════════════════════════
 // FEED
 // ══════════════════════════════════════
-$('new-post-btn').addEventListener('click', () => openModal('modal-post'));
+$('new-post-btn').addEventListener('click', () => {
+  openModal('modal-post');
+  // Restore an offline/unsent draft, if any
+  const draft = loadDraft('draft-post');
+  if (draft && !$('post-text').value) $('post-text').value = draft;
+  // Reset scheduling UI each time the composer opens
+  $('post-schedule-wrap').style.display = 'none';
+  $('post-schedule-input').value = '';
+});
+wireMentionAutocomplete($('post-text'));
+wireDraftAutosave($('post-text'), 'draft-post');
+
+$('post-schedule-toggle-btn').addEventListener('click', () => {
+  const wrap = $('post-schedule-wrap');
+  const showing = wrap.style.display !== 'none';
+  wrap.style.display = showing ? 'none' : 'block';
+  $('submit-post-btn').textContent = showing ? 'Post' : 'Schedule';
+  if (!showing && !$('post-schedule-input').value) {
+    // Default to 1 hour from now for convenience
+    const d = new Date(Date.now() + 60 * 60000);
+    d.setSeconds(0, 0);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    $('post-schedule-input').value = d.toISOString().slice(0, 16);
+  }
+});
+$('post-schedule-input').addEventListener('change', (e) => {
+  $('submit-post-btn').textContent = e.target.value ? 'Schedule' : 'Post';
+});
 
 let postMediaFile = null;
 $('post-media-input').addEventListener('change', e => {
@@ -5798,12 +6419,22 @@ $('post-media-input').addEventListener('change', e => {
 $('submit-post-btn').addEventListener('click', async () => {
   const text = $('post-text').value.trim();
   if (!text && !postMediaFile) return toast('Write something!', 'error');
+
+  const scheduleWrap = $('post-schedule-wrap');
+  const isScheduling = scheduleWrap.style.display !== 'none' && $('post-schedule-input').value;
+  let publishAt = null;
+  if (isScheduling) {
+    publishAt = new Date($('post-schedule-input').value).getTime();
+    if (!publishAt || isNaN(publishAt)) return toast('Pick a valid publish time', 'error');
+    if (publishAt <= Date.now()) return toast('Scheduled time must be in the future', 'error');
+  }
+
   try {
     let mediaUrl = '';
     let isVideo  = false;
     if (postMediaFile) {
       const rtype = postMediaFile.type.startsWith('video') ? 'video' : 'image';
-      mediaUrl = await uploadToCloudinary(postMediaFile, rtype, '📝 Posting…');
+      mediaUrl = await uploadToCloudinary(postMediaFile, rtype, isScheduling ? '🕒 Scheduling…' : '📝 Posting…');
       isVideo  = postMediaFile.type.startsWith('video');
     }
     const hashtags = extractHashtags(text);
@@ -5820,22 +6451,120 @@ $('submit-post-btn').addEventListener('click', async () => {
       mediaUrl: mediaUrl || '',
       isVideo:  isVideo,
       likes:    [],
-      comments: 0,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      comments: 0
     };
-    await db.collection('posts').add(postData);
+
+    if (isScheduling) {
+      await db.collection('scheduledPosts').add({
+        ...postData,
+        publishAt,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      $('post-text').value = '';
+      $('post-media-preview').innerHTML = '';
+      postMediaFile = null;
+      clearDraft('draft-post');
+      scheduleWrap.style.display = 'none';
+      $('post-schedule-input').value = '';
+      $('submit-post-btn').textContent = 'Post';
+      closeModal('modal-post');
+      toast(`Post scheduled for ${new Date(publishAt).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} 🕒`, 'success');
+      return;
+    }
+
+    postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    const newPostRef = await db.collection('posts').add(postData);
     await db.collection('users').doc(currentUser.uid).update({
       posts: firebase.firestore.FieldValue.increment(1)
     });
     currentUserData.posts = (currentUserData.posts || 0) + 1;
+    // @mentions in the post — notify any mentioned friend
+    notifyMentions(text, { postId: newPostRef.id, contextLabel: 'in a post' }).catch(() => {});
     $('post-text').value = '';
     $('post-media-preview').innerHTML = '';
     postMediaFile = null;
+    clearDraft('draft-post');
     closeModal('modal-post');
     toast('Posted! 🔥', 'success');
     updateProfileStats();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) {
+    saveDraft('draft-post', $('post-text').value);
+    toast(!navigator.onLine ? 'You\'re offline — your post was saved as a draft.' : e.message, 'error');
+  }
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// FEATURE: POST SCHEDULING — publish a written post at a future time.
+// Since there's no server-side cron here, "due" scheduled posts are
+// published client-side: whenever the author's own client is active
+// (on login and every 60s while the app is open), it checks its own
+// scheduledPosts for anything due and moves it into the real posts feed.
+// ══════════════════════════════════════════════════════════════════════
+async function checkAndPublishScheduledPosts() {
+  if (!currentUser) return;
+  try {
+    const now = Date.now();
+    const snap = await db.collection('scheduledPosts')
+      .where('uid', '==', currentUser.uid)
+      .where('publishAt', '<=', now)
+      .limit(10).get();
+    if (snap.empty) return;
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      const { publishAt, ...postData } = d;
+      postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('posts').add(postData);
+      await db.collection('users').doc(currentUser.uid).update({
+        posts: firebase.firestore.FieldValue.increment(1)
+      }).catch(() => {});
+      await doc.ref.delete().catch(() => {});
+    }
+    if (typeof currentUserData === 'object' && currentUserData) {
+      currentUserData.posts = (currentUserData.posts || 0) + snap.docs.length;
+    }
+  } catch (e) { /* silent — will retry on next check */ }
+}
+setInterval(checkAndPublishScheduledPosts, 60000);
+
+function openScheduledPostsModal() {
+  openModal('modal-scheduled-posts');
+  loadScheduledPosts();
+}
+
+function loadScheduledPosts() {
+  const el = $('scheduled-posts-list');
+  if (!el || !currentUser) return;
+  el.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  db.collection('scheduledPosts')
+    .where('uid', '==', currentUser.uid)
+    .orderBy('publishAt', 'asc').limit(30).get()
+    .then(snap => {
+      if (snap.empty) {
+        el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:34px;margin-bottom:8px">🕒</div><p>No scheduled posts.</p></div>`;
+        return;
+      }
+      el.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const when = d.publishAt ? new Date(d.publishAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        const row = document.createElement('div');
+        row.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px';
+        row.innerHTML = `
+          <div style="font-size:11.5px;color:var(--accent);font-weight:700;margin-bottom:6px">🕒 Publishing ${escHtml(when)}</div>
+          <div style="font-size:13.5px;margin-bottom:${d.mediaUrl ? '8px' : '10px'}">${escHtml(d.text || '')}</div>
+          ${d.mediaUrl ? (d.isVideo
+            ? `<video src="${escHtml(d.mediaUrl)}" style="width:100%;max-height:160px;border-radius:8px;object-fit:cover;margin-bottom:10px" muted></video>`
+            : `<img src="${escHtml(d.mediaUrl)}" style="width:100%;max-height:160px;border-radius:8px;object-fit:cover;margin-bottom:10px"/>`) : ''}
+          <button class="cancel-scheduled-post-btn" style="background:rgba(255,68,68,0.14);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">Cancel</button>`;
+        row.querySelector('.cancel-scheduled-post-btn').addEventListener('click', async () => {
+          try { await doc.ref.delete(); row.remove(); toast('Scheduled post cancelled', 'success'); }
+          catch (e) { toast(e.message, 'error'); }
+        });
+        el.appendChild(row);
+      });
+    }).catch(e => { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
+}
 
 function loadFeed() {
   const list = $('feed-list');
@@ -6239,6 +6968,9 @@ function buildPostCard(id, d, showDelete = null) {
     if (c.classList.contains('open')) loadComments(id);
   });
 
+  // @mentions autocomplete on this post's comment box
+  wireMentionAutocomplete($(`ci-${id}`));
+
   // Submit comment — no page reload
   card.querySelector('.comment-submit').addEventListener('click', async () => {
     const inp = $(`ci-${id}`);
@@ -6260,6 +6992,8 @@ function buildPostCard(id, d, showDelete = null) {
       if (d.uid && d.uid !== currentUser.uid) {
         sendNotification(d.uid, 'comment', `commented: "${txt.slice(0,40)}" 💬`, null, id);
       }
+      // @mentions in the comment — notify any mentioned friend
+      notifyMentions(txt, { postId: id, contextLabel: 'in a comment' }).catch(() => {});
     } catch(e) { toast(e.message, 'error'); }
   });
 
@@ -6296,7 +7030,7 @@ function loadComments(postId) {
             <strong>${escHtml(c.name || 'Student')}</strong>
             ${c.gifUrl
               ? `<img src="${escHtml(c.gifUrl)}" class="comment-gif-img" loading="lazy" alt="gif"/>`
-              : escHtml(c.text)}
+              : highlightMentions(c.text)}
           </div>
           ${isCommentOwner ? `<button class="comment-delete-btn" title="Delete comment" style="margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;opacity:0.6" data-comment-id="${doc.id}" data-post-id="${postId}">✖</button>` : ''}
         `;
@@ -6823,7 +7557,12 @@ document.getElementById('modal-story-view')?.addEventListener('click', e => {
 // ══════════════════════════════════════
 // CONFESSIONS
 // ══════════════════════════════════════
-$('new-confession-btn').addEventListener('click', () => openModal('modal-confession'));
+$('new-confession-btn').addEventListener('click', () => {
+  openModal('modal-confession');
+  const draft = loadDraft('draft-confession');
+  if (draft && !$('confession-text').value) $('confession-text').value = draft;
+});
+wireDraftAutosave($('confession-text'), 'draft-confession');
 
 let confessionFile = null;
 $('confession-upload-zone').addEventListener('click', () => $('confession-file-input').click());
@@ -6877,9 +7616,13 @@ $('submit-confession-btn').addEventListener('click', async () => {
     confessionFile = null;
     $('confession-preview-wrap').innerHTML = '';
     $('confession-file-input').value = '';
+    clearDraft('draft-confession');
     closeModal('modal-confession');
     toast('Confession posted anonymously 👻', 'success');
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) {
+    saveDraft('draft-confession', $('confession-text').value);
+    toast(!navigator.onLine ? 'You\'re offline — your confession was saved as a draft.' : e.message, 'error');
+  }
   btn.disabled = false;
 });
 
@@ -7404,6 +8147,7 @@ $('new-club-btn').addEventListener('click', () => {
   $('club-private-toggle').checked = false;
   $('club-password-wrap').style.display = 'none';
   $('club-password').value = '';
+  $('club-approval-toggle').checked = false;
   openModal('modal-club');
 });
 $('club-private-toggle').addEventListener('change', (e) => {
@@ -7416,6 +8160,7 @@ $('submit-club-btn').addEventListener('click', async () => {
   const cat  = $('club-category').value;
   const isPrivate = $('club-private-toggle').checked;
   const password = $('club-password').value.trim();
+  const approvalRequired = $('club-approval-toggle').checked;
   if (!name) return toast('Club name required', 'error');
   if (isPrivate && !password) return toast('Set a password for a private club', 'error');
   showLoading();
@@ -7432,6 +8177,8 @@ $('submit-club-btn').addEventListener('click', async () => {
       members: [currentUser.uid],
       private: isPrivate,
       password: isPrivate ? password : null,
+      approvalRequired: approvalRequired,
+      pendingApplicants: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     // Update user clubs array
@@ -7441,6 +8188,7 @@ $('submit-club-btn').addEventListener('click', async () => {
     currentUserData.clubs = [...(currentUserData.clubs||[]), clubRef.id];
     $('club-name').value = ''; $('club-desc').value = '';
     $('club-private-toggle').checked = false; $('club-password-wrap').style.display = 'none'; $('club-password').value = '';
+    $('club-approval-toggle').checked = false;
     closeModal('modal-club');
     toast(isPrivate ? 'Private club created! 🔒' : 'Club created! 🏛️', 'success');
     loadClubs();
@@ -7503,6 +8251,7 @@ function renderClubGrid() {
   stopAllClubUnreadListeners();
   list.forEach(({ id, d }) => {
     const joined = d.members?.includes(currentUser.uid);
+    const isPendingApplicant = (d.pendingApplicants || []).includes(currentUser.uid);
     const isStarred = starred.has(id);
     const onlineNow = countClubOnline(d.members, id);
     const card = document.createElement('div');
@@ -7529,8 +8278,8 @@ function renderClubGrid() {
           </button>
           ${d.createdBy === currentUser.uid ? `<button class="club-card-ban-btn" data-id="${id}" style="margin-left:4px;background:#ff000018;border:1px solid #ff000030;color:#ff4444;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer">🚫 Banned</button>` : ''}
         </span>
-        <button class="club-join-btn ${joined?'joined':''}" data-id="${id}" data-joined="${joined}">
-          ${joined ? 'Joined ✓' : (d.private ? '🔒 Join' : 'Join')}
+        <button class="club-join-btn ${joined?'joined':''} ${isPendingApplicant?'pending':''}" data-id="${id}" data-joined="${joined}" ${isPendingApplicant ? 'disabled' : ''}>
+          ${joined ? 'Joined ✓' : (isPendingApplicant ? '⏳ Pending' : (d.private ? '🔒 Join' : (d.approvalRequired ? '🧾 Apply' : 'Join')))}
         </button>
       </div>`;
 
@@ -7582,13 +8331,22 @@ function renderClubGrid() {
     // Join/Leave
     card.querySelector('.club-join-btn').addEventListener('click', async e => {
       e.stopPropagation();
-      const isJoined = e.target.closest('.club-join-btn').dataset.joined === 'true';
+      const btn = e.target.closest('.club-join-btn');
+      if (btn.disabled) return;
+      const isJoined = btn.dataset.joined === 'true';
       if (isJoined) { leaveClub(id, d); return; }
       if (d.private) {
         _pendingPrivateJoin = { id, d };
         $('club-password-input').value = '';
         $('club-password-modal-note').textContent = `"${d.name}" is private. Enter the password to join.`;
         openModal('modal-club-password');
+        return;
+      }
+      if (d.approvalRequired) {
+        _pendingClubApplication = { id, d };
+        $('club-apply-title').textContent = `🧾 Apply to Join ${d.name}`;
+        $('club-apply-message').value = '';
+        openModal('modal-club-apply');
         return;
       }
       joinClub(id, d);
@@ -7654,8 +8412,49 @@ $('club-password-submit-btn').addEventListener('click', async () => {
     return;
   }
   closeModal('modal-club-password');
-  await joinClub(id, d);
   _pendingPrivateJoin = null;
+  if (d.approvalRequired) {
+    _pendingClubApplication = { id, d };
+    $('club-apply-title').textContent = `🧾 Apply to Join ${d.name}`;
+    $('club-apply-message').value = '';
+    openModal('modal-club-apply');
+    return;
+  }
+  await joinClub(id, d);
+});
+
+let _pendingClubApplication = null; // {id, d} awaiting application submit
+$('submit-club-apply-btn').addEventListener('click', async () => {
+  if (!_pendingClubApplication) return;
+  const { id, d } = _pendingClubApplication;
+  const message = $('club-apply-message').value.trim();
+  const btn = $('submit-club-apply-btn');
+  btn.disabled = true;
+  try {
+    await db.collection('clubs').doc(id).collection('applications').doc(currentUser.uid).set({
+      uid: currentUser.uid,
+      name: currentUserData.name || 'Student',
+      username: currentUserData.username || 'user',
+      avatar: currentUserData.avatar || '',
+      profilePic: currentUserData.profilePic || '',
+      message: message || '',
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection('clubs').doc(id).update({
+      pendingApplicants: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+    });
+    if (d.createdBy && d.createdBy !== currentUser.uid) {
+      sendNotification(d.createdBy, 'club_application', `applied to join ${d.emoji||'🏛️'} ${d.name}`, null);
+    }
+    closeModal('modal-club-apply');
+    toast('Application sent — you\'ll be notified once reviewed 🧾', 'success');
+    _pendingClubApplication = null;
+    loadClubs();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+  btn.disabled = false;
 });
 
 async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
@@ -7757,17 +8556,22 @@ async function showClubMembers(clubId, clubName, emoji, memberUids, createdBy) {
 
       const avatarHtml = `<img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover"/>`;
 
-      const pres = _clubsPresenceCache?.[u.uid];
+      // The viewer is, by definition, online and currently in this club
+      // right now — don't rely on the RTDB presence cache for their own
+      // row, since that snapshot can lag a moment after the dashboard
+      // opens and would otherwise show "Offline" for yourself.
+      const pres = isSelf ? { online: true, currentClub: clubId } : _clubsPresenceCache?.[u.uid];
       const inClubNow = !!(pres && pres.online && pres.currentClub === clubId);
       const onlineElsewhere = !!(pres && pres.online && !inClubNow);
       const statusHtml = inClubNow
-        ? '<span style="font-size:11px;color:#2ecc71;font-weight:600">🟢 In this club now</span>'
+        ? '<span style="font-size:11px;color:#2ecc71;font-weight:600">🟢 ' + (isSelf ? 'You — online now' : 'In this club now') + '</span>'
         : onlineElsewhere
-          ? '<span style="font-size:11px;color:var(--muted)">🟡 Online elsewhere</span>'
-          : '';
+          ? '<span style="font-size:11px;color:#f5c542;font-weight:600">🟡 Online elsewhere</span>'
+          : '<span style="font-size:11px;color:var(--muted)">⚪ Offline' + (pres && pres.lastSeen ? ' · ' + presenceStatusText(pres).replace('Active ', '') : '') + '</span>';
 
+      const dotColor = inClubNow ? '#2ecc71' : (onlineElsewhere ? '#f5c542' : '#6b6b76');
       row.innerHTML = `
-        <div style="flex-shrink:0;position:relative">${avatarHtml}${inClubNow ? '<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:#2ecc71;border:2px solid var(--bg,#111)"></span>' : ''}</div>
+        <div style="flex-shrink:0;position:relative">${avatarHtml}<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:${dotColor};border:2px solid var(--bg,#111)"></span></div>
         <div style="flex:1;min-width:0">
           <strong style="font-size:14px">${escHtml(u.name||'Student')}</strong>
           ${isAdmin ? '<span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px">Owner</span>' : ''}
@@ -7978,7 +8782,7 @@ function buildClubMsgBubble(m, key, clubId, isPrivileged) {
   wrap.innerHTML = `
     ${!mine ? `<div class="msg-avatar">${renderAvatarHtml(m.avatar, m.profilePic, 32)}</div>` : ''}
     <div class="msg-inner">
-      ${!mine ? `<div style="font-size:11px;color:var(--muted);margin-bottom:2px">${escHtml(m.name||'Student')}</div>` : ''}
+      ${!mine ? `<div style="font-size:11.5px;font-weight:700;color:#c9b8ff;margin:0 4px 3px">${escHtml(m.name||'Student')}</div>` : ''}
       <div class="msg-bubble">${escHtml(m.text || '')}</div>
       <div class="msg-time">${new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
     </div>
@@ -8027,11 +8831,12 @@ function openClubDashboard(clubId, clubData) {
   const isAppMod = isCurrentUserAppMod();
 
   modal.innerHTML = `
-    <div class="modal modal-fullscreen" style="max-width:700px;display:flex;flex-direction:column;height:95vh;padding:0">
-      <div class="club-dash-header" style="background:linear-gradient(135deg,var(--accent),#ff4ecd);padding:12px 14px 8px;flex-shrink:0;border-radius:var(--radius) var(--radius) 0 0">
+    <div class="modal modal-fullscreen" style="display:flex;flex-direction:column;padding:0">
+      <div class="club-dash-header" style="flex-shrink:0">
         <div class="club-dash-topline">
           <span class="club-dash-emoji">${clubData.emoji||'🏛️'}</span>
           <div class="club-dash-titles">
+            <p class="club-dash-eyebrow">Club</p>
             <h2 class="club-dash-name">${escHtml(clubData.name)}</h2>
             <div class="club-dash-meta">
               <span>👥 ${(clubData.members||[]).length}</span>
@@ -8044,9 +8849,14 @@ function openClubDashboard(clubId, clubData) {
         </div>
         <div class="club-tab-bar-wrap">
           <div class="club-tab-bar" id="club-tab-bar">
-            ${['💬 Chat','📢 Announce','📅 Events','🗳️ Polls','🖼️ Gallery','📝 Notes','✅ Projects','🎮 Games','👥 Members'].map((t,i)=>`
-              <button class="club-tab-btn ${i===0?'active':''}" data-tab="${i}">${t}</button>
-            `).join('')}
+            ${(() => {
+              const tabs = ['💬 Chat','🔥 Activity','📢 Announce','📅 Events','🗳️ Polls','🖼️ Gallery','📝 Notes','✅ Projects','🎮 Games','👥 Members'];
+              if (isOwner && clubData.approvalRequired) {
+                const pendingCount = (clubData.pendingApplicants || []).length;
+                tabs.push(pendingCount > 0 ? `🧾 Requests (${pendingCount})` : '🧾 Requests');
+              }
+              return tabs.map((t,i) => `<button class="club-tab-btn ${i===0?'active':''}" data-tab="${i}">${t}</button>`).join('');
+            })()}
           </div>
         </div>
       </div>
@@ -8102,19 +8912,21 @@ function updateOpenClubDashboardOnlineCount() {
 function renderClubTab(tab, clubId, clubData, isOwner, isMember, isAppMod) {
   const body = document.getElementById('club-dash-body');
   if (!body) return;
-  if (tab !== 7 && typeof destroyVoiceBar === 'function') destroyVoiceBar(); // leaving Games tab — hang up the mic
-  if (tab !== 7 && typeof exitAppFullscreen === 'function') exitAppFullscreen();
+  if (tab !== 8 && typeof destroyVoiceBar === 'function') destroyVoiceBar(); // leaving Games tab — hang up the mic
+  if (tab !== 8 && typeof exitAppFullscreen === 'function') exitAppFullscreen();
   if (tab !== 0 && clubChatListener) { clubChatListener.off(); clubChatListener = null; }
 
   if (tab === 0) renderClubChat(body, clubId, clubData, isMember, isOwner, isAppMod);
-  else if (tab === 1) renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod);
-  else if (tab === 2) renderClubEvents(body, clubId, clubData, isOwner);
-  else if (tab === 3) renderClubPolls(body, clubId, clubData, isMember);
-  else if (tab === 4) renderClubGallery(body, clubId, clubData, isMember, isOwner);
-  else if (tab === 5) renderClubNotes(body, clubId, clubData, isMember, isOwner);
-  else if (tab === 6) renderClubProjects(body, clubId, clubData, isMember, isOwner);
-  else if (tab === 7) renderClubGames(body, clubId, clubData);
-  else if (tab === 8) showClubMembers(clubId, clubData.name, clubData.emoji, clubData.members || [], clubData.createdBy);
+  else if (tab === 1) renderClubActivity(body, clubId, clubData, isMember);
+  else if (tab === 2) renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod);
+  else if (tab === 3) renderClubEvents(body, clubId, clubData, isOwner);
+  else if (tab === 4) renderClubPolls(body, clubId, clubData, isMember);
+  else if (tab === 5) renderClubGallery(body, clubId, clubData, isMember, isOwner);
+  else if (tab === 6) renderClubNotes(body, clubId, clubData, isMember, isOwner);
+  else if (tab === 7) renderClubProjects(body, clubId, clubData, isMember, isOwner);
+  else if (tab === 8) renderClubGames(body, clubId, clubData);
+  else if (tab === 9) showClubMembers(clubId, clubData.name, clubData.emoji, clubData.members || [], clubData.createdBy);
+  else if (tab === 10) renderClubRequests(body, clubId, clubData, isOwner);
 }
 
 // ── Club Chat Tab ──
@@ -8122,14 +8934,15 @@ function renderClubChat(body, clubId, clubData, isMember, isPrivileged, isAppMod
   const viewOnly = !isMember && !!isAppMod; // moderator peeking into a club they haven't joined
   if (!isMember && !viewOnly) { body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Join the club to chat 💬</div>'; return; }
   body.innerHTML = `
-    <div style="display:flex;flex-direction:column;height:100%">
+    <div style="display:flex;flex-direction:column;height:100%;background:#000">
       ${viewOnly ? `<div style="background:#6c47ff22;border-bottom:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:600;padding:8px 14px;text-align:center;flex-shrink:0">🛠️ Viewing as App Moderator — read-only, you haven't joined this club</div>` : ''}
-      <div class="chat-messages" id="club-dash-msgs" style="flex:1;overflow-y:auto;padding:12px;min-height:200px;max-height:calc(95vh - 240px)"></div>
-      ${viewOnly ? '' : `<div style="padding:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
-        <input type="text" id="club-dash-input" placeholder="Message the club…" style="flex:1;padding:10px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px"/>
-        <button id="club-dash-send" style="background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">➤</button>
+      <div class="chat-messages" id="club-dash-msgs" style="flex:1;overflow-y:auto;padding:14px 12px;min-height:0"></div>
+      ${viewOnly ? '' : `<div class="chat-input-bar" style="flex-shrink:0">
+        <input type="text" id="club-dash-input" placeholder="Message the club…"/>
+        <button id="club-dash-send" class="btn-send" title="Send"><i data-lucide="send"></i></button>
       </div>`}
     </div>`;
+  if (window.lucide) lucide.createIcons();
 
   if (clubChatListener) { clubChatListener.off(); clubChatListener = null; }
   const msgRef = rtdb.ref(`clubChats/${clubId}/messages`);
@@ -8180,6 +8993,178 @@ function renderClubChat(body, clubId, clubData, isMember, isPrivileged, isAppMod
   };
   document.getElementById('club-dash-send').addEventListener('click', doSend);
   document.getElementById('club-dash-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSend(); });
+}
+
+// ── Club Requests Tab (owner-only) — approve/reject pending applications ──
+function renderClubRequests(body, clubId, clubData, isOwner) {
+  if (!isOwner) {
+    body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">Only the club owner can review requests.</div>`;
+    return;
+  }
+  body.innerHTML = `<div style="padding:16px"><div id="club-requests-list"><div class="loading-spinner">Loading…</div></div></div>`;
+  loadClubRequests(clubId);
+}
+
+function loadClubRequests(clubId) {
+  const el = document.getElementById('club-requests-list');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  db.collection('clubs').doc(clubId).collection('applications')
+    .where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get()
+    .then(snap => {
+      if (snap.empty) {
+        el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:34px;margin-bottom:8px">🧾</div><p>No pending requests.</p></div>`;
+        return;
+      }
+      el.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const row = document.createElement('div');
+        row.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:13px;margin-bottom:10px';
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:${d.message ? '8px' : '10px'}">
+            ${renderAvatarHtml(null, d.profilePic, 34)}
+            <div style="min-width:0;flex:1">
+              <strong style="font-size:13.5px;display:block">${escHtml(d.name || 'Student')}</strong>
+              <small style="color:var(--muted);font-size:11.5px">@${escHtml(d.username || 'user')} · ${timeAgo(d.createdAt)}</small>
+            </div>
+          </div>
+          ${d.message ? `<div style="font-size:13px;background:var(--surface);border-radius:10px;padding:8px 10px;margin-bottom:10px">${escHtml(d.message)}</div>` : ''}
+          <div style="display:flex;gap:8px">
+            <button class="club-req-approve" style="flex:1;background:var(--accent);color:#fff;border:none;padding:7px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700">✅ Approve</button>
+            <button class="club-req-reject" style="flex:1;background:rgba(255,68,68,0.14);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:7px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700">✕ Reject</button>
+          </div>`;
+        row.querySelector('.club-req-approve').addEventListener('click', () => resolveClubApplication(clubId, doc.id, d, true, row));
+        row.querySelector('.club-req-reject').addEventListener('click', () => resolveClubApplication(clubId, doc.id, d, false, row));
+        el.appendChild(row);
+      });
+    }).catch(e => { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
+}
+
+async function resolveClubApplication(clubId, uid, appData, approve, rowEl) {
+  try {
+    await db.collection('clubs').doc(clubId).collection('applications').doc(uid).update({
+      status: approve ? 'approved' : 'rejected'
+    });
+    await db.collection('clubs').doc(clubId).update({
+      pendingApplicants: firebase.firestore.FieldValue.arrayRemove(uid)
+    });
+    if (approve) {
+      await db.collection('clubs').doc(clubId).update({
+        members: firebase.firestore.FieldValue.arrayUnion(uid)
+      });
+      await db.collection('users').doc(uid).update({
+        clubs: firebase.firestore.FieldValue.arrayUnion(clubId)
+      }).catch(() => {});
+    }
+    sendNotification(uid, 'club_application_result',
+      approve ? `approved your request to join a club 🎉` : `didn't approve your club request`, null);
+    toast(approve ? 'Member approved ✅' : 'Application rejected', 'success');
+    rowEl.remove();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ── Club Activity Tab — combined feed of announcements/events/polls/gallery ──
+function renderClubActivity(body, clubId, clubData, isMember) {
+  body.innerHTML = `<div style="padding:16px">
+    <div id="club-activity-list"><div class="loading-spinner">Loading…</div></div>
+  </div>`;
+  loadClubActivity(clubId);
+}
+
+async function loadClubActivity(clubId) {
+  const el = document.getElementById('club-activity-list');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-spinner">Loading…</div>';
+
+  try {
+    const base = db.collection('clubs').doc(clubId);
+    const [annSnap, evSnap, pollSnap, gallSnap] = await Promise.all([
+      base.collection('announcements').orderBy('createdAt', 'desc').limit(15).get().catch(() => ({ docs: [] })),
+      base.collection('events').orderBy('createdAt', 'desc').limit(15).get().catch(() => ({ docs: [] })),
+      base.collection('polls').orderBy('createdAt', 'desc').limit(15).get().catch(() => ({ docs: [] })),
+      base.collection('gallery').orderBy('createdAt', 'desc').limit(15).get().catch(() => ({ docs: [] })),
+    ]);
+
+    const items = [];
+    annSnap.docs.forEach(doc => {
+      const d = doc.data();
+      items.push({ kind: 'announcement', ts: d.createdAt?.toMillis?.() || 0, data: d });
+    });
+    evSnap.docs.forEach(doc => {
+      const d = doc.data();
+      items.push({ kind: 'event', ts: d.createdAt?.toMillis?.() || 0, data: d });
+    });
+    pollSnap.docs.forEach(doc => {
+      const d = doc.data();
+      items.push({ kind: 'poll', ts: d.createdAt?.toMillis?.() || 0, data: d });
+    });
+    gallSnap.docs.forEach(doc => {
+      const d = doc.data();
+      items.push({ kind: 'gallery', ts: d.createdAt?.toMillis?.() || 0, data: d });
+    });
+
+    items.sort((a, b) => b.ts - a.ts);
+
+    if (!items.length) {
+      el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
+        <div style="font-size:34px;margin-bottom:8px">🔥</div>
+        <p>Nothing's happened yet.</p>
+        <small>Announcements, events, polls, and photos will show up here.</small>
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = items.slice(0, 30).map(item => buildClubActivityCard(item)).join('');
+    if (window.lucide) lucide.createIcons();
+  } catch (e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message || 'Could not load activity')}</p>`;
+  }
+}
+
+function buildClubActivityCard(item) {
+  const { kind, data: d } = item;
+  const when = timeAgo(item.ts);
+
+  if (kind === 'announcement') {
+    return `<div class="club-activity-card">
+      <div class="club-activity-icon" style="background:linear-gradient(150deg,#6c63ff,#a24bff)">📢</div>
+      <div class="club-activity-body">
+        <div class="club-activity-meta"><strong>${escHtml(d.authorName || 'Admin')}</strong> posted an announcement <span class="club-activity-time">· ${when}</span></div>
+        <div class="club-activity-text">${escHtml(d.text || '')}</div>
+      </div>
+    </div>`;
+  }
+  if (kind === 'event') {
+    const dt = d.date ? new Date(d.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<div class="club-activity-card">
+      <div class="club-activity-icon" style="background:linear-gradient(150deg,#ff9f4e,#ff5f6d)">📅</div>
+      <div class="club-activity-body">
+        <div class="club-activity-meta">New event <span class="club-activity-time">· ${when}</span></div>
+        <div class="club-activity-text"><strong>${escHtml(d.title || '')}</strong>${dt ? ` — 🕐 ${escHtml(dt)}` : ''}${d.location ? ` · 📍 ${escHtml(d.location)}` : ''}</div>
+      </div>
+    </div>`;
+  }
+  if (kind === 'poll') {
+    const totalVotes = (d.options || []).reduce((s, o) => s + (o.votes || []).length, 0);
+    return `<div class="club-activity-card">
+      <div class="club-activity-icon" style="background:linear-gradient(150deg,#2ecc71,#1abc9c)">🗳️</div>
+      <div class="club-activity-body">
+        <div class="club-activity-meta"><strong>${escHtml(d.createdByName || 'Someone')}</strong> started a poll <span class="club-activity-time">· ${when}</span></div>
+        <div class="club-activity-text">${escHtml(d.question || '')} <small style="color:var(--muted)">(${totalVotes} vote${totalVotes === 1 ? '' : 's'})</small></div>
+      </div>
+    </div>`;
+  }
+  // gallery
+  return `<div class="club-activity-card">
+    <div class="club-activity-icon club-activity-icon-photo" style="background-image:url('${escHtml(d.url || '')}')"></div>
+    <div class="club-activity-body">
+      <div class="club-activity-meta"><strong>${escHtml(d.uploaderName || 'Someone')}</strong> added a photo <span class="club-activity-time">· ${when}</span></div>
+    </div>
+  </div>`;
 }
 
 // ── Club Announcements Tab ──
@@ -11349,6 +12334,9 @@ function getChatId(uid1, uid2) {
 function loadChatList() {
   const list = $('chat-list');
   list.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  // Detach presence listeners from the previous render so they don't pile up
+  _chatListPresenceListeners.forEach(({ ref, cb }) => ref.off('value', cb));
+  _chatListPresenceListeners = [];
   // Unsubscribe any previous listener first — otherwise re-entering the Chats
   // tab stacks up multiple onSnapshot listeners, and an older stale one can
   // fire after the newer one and overwrite the list, hiding a chat that was
@@ -11358,6 +12346,8 @@ function loadChatList() {
   chatListUnsub = db.collection('chats')
     .where('members', 'array-contains', currentUser.uid)
     .onSnapshot(snap => {
+      _chatListPresenceListeners.forEach(({ ref, cb }) => ref.off('value', cb));
+      _chatListPresenceListeners = [];
       list.innerHTML = '';
       if (snap.empty) {
         list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">No chats yet.<br/>Start a conversation with a friend! 💬</div>';
@@ -11371,16 +12361,35 @@ function loadChatList() {
       });
       chatDocs.forEach(doc => {
         const d = doc.data();
-        const other = d.members.find(m => m !== currentUser.uid);
-        if (isBlocked(other)) return; // hide chats with blocked/blocked-by users
-        const otherInfo = d.memberInfo?.[other] || { name: d.name || 'User', avatar: '' };
-        // Fix 4: Count unread messages for this chat
         const isLastSenderMe = d.lastSenderId === currentUser.uid;
         const unreadCount = (!isLastSenderMe && d.unreadCount && d.unreadCount[currentUser.uid]) || 0;
         const item = document.createElement('div');
         item.className = 'chat-list-item';
+
+        if (d.isGroup) {
+          // Group DM — not tied to any club, just a set of friends
+          const memberNames = (d.members || []).filter(m => m !== currentUser.uid)
+            .map(m => d.memberInfo?.[m]?.name || 'Friend');
+          item.innerHTML = `
+            <div class="chat-list-avatar" style="display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--accent,#6c63ff);border-radius:50%;width:40px;height:40px;color:#fff">👥</div>
+            <div class="chat-list-info">
+              <strong>${escHtml(d.groupName || 'Group')}</strong>
+              <small class="${unreadCount > 0 ? 'chat-unread-preview' : ''}">${escHtml(d.lastMessage || memberNames.join(', ') || 'Say hi!')}</small>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+              <span class="chat-time">${timeAgo(d.lastMessageAt)}</span>
+              ${unreadCount > 0 ? `<span class="chat-unread-badge">${unreadCount > 9 ? '9+' : unreadCount}</span>` : ''}
+            </div>`;
+          item.addEventListener('click', () => openGroupChat(doc.id, d));
+          list.appendChild(item);
+          return;
+        }
+
+        const other = d.members.find(m => m !== currentUser.uid);
+        if (isBlocked(other)) return; // hide chats with blocked/blocked-by users
+        const otherInfo = d.memberInfo?.[other] || { name: d.name || 'User', avatar: '' };
         item.innerHTML = `
-          <div class="chat-list-avatar">${renderAvatarHtml(null, otherInfo.profilePic, 40)}</div>
+          <div class="chat-list-avatar">${renderAvatarHtml(null, otherInfo.profilePic, 40)}<span class="presence-dot" title="Offline"></span></div>
           <div class="chat-list-info">
             <strong>${escHtml(otherInfo.name || 'User')}</strong>
             <small class="${unreadCount > 0 ? 'chat-unread-preview' : ''}">${escHtml(d.lastMessage || 'Say hi!')}</small>
@@ -11390,6 +12399,18 @@ function loadChatList() {
             ${unreadCount > 0 ? `<span class="chat-unread-badge">${unreadCount > 9 ? '9+' : unreadCount}</span>` : ''}
           </div>`;
         item.addEventListener('click', () => openChat(doc.id, other, otherInfo));
+        // Live online/offline dot, same pattern as the Friends tab
+        const cDot = item.querySelector('.presence-dot');
+        if (cDot && other) {
+          const cRef = rtdb.ref('presence/' + other);
+          const cCb = cRef.on('value', snap => {
+            const val = snap.val();
+            const isOnline = !!(val && val.online);
+            cDot.classList.toggle('online', isOnline);
+            cDot.title = isOnline ? 'Online' : 'Offline';
+          });
+          _chatListPresenceListeners.push({ ref: cRef, cb: cCb });
+        }
         list.appendChild(item);
       });
     }, err => {
@@ -11397,6 +12418,7 @@ function loadChatList() {
       list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">Could not load chats: ' + escHtml(err.message || 'permission error') + '</div>';
     });
 }
+let _chatListPresenceListeners = [];
 
 function startChat(uid, name, avatar, profilePic) {
   if (isBlocked(uid)) {
@@ -11518,6 +12540,7 @@ async function openChat(chatId, otherUid, otherInfo) {
       <button class="btn-send voice-send-btn" title="Send voice note"><i data-lucide="send"></i></button>
     </div>`;
   lucide.createIcons();
+  wireMentionAutocomplete($('desktop-chat-input'));
 
   // Voice/video call buttons — only meaningful for 1:1 chats (otherUid set),
   // not group/club chats, and not with someone you've blocked.
@@ -11601,6 +12624,7 @@ async function openChat(chatId, otherUid, otherInfo) {
     attachIncrementalChatRenderer(msgRef, $('modal-chat-messages'));
     wireChatActionBtn('modal', chatId);
     $('modal-chat-input').onkeydown = e => { if(e.key==='Enter') $('modal-chat-action-btn')?.click(); };
+    wireMentionAutocomplete($('modal-chat-input'));
     $('modal-chat-media').onchange = async e => {
       const file = e.target.files[0]; if (!file) return;
       try { const url = await uploadToCloudinary(file); await sendChatMessage(chatId,'',url,file.type.startsWith('video')); }
@@ -12450,6 +13474,8 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo, isAudio, audioDu
     read:     false
   };
   const msgRef = await rtdb.ref(`chats/${chatId}/messages`).push(msg);
+  // @mentions in chat — notify any mentioned friend
+  notifyMentions(text, { chatId, contextLabel: 'in a chat' }).catch(() => {});
   // Fix 4b: Track unread count for each member
   const chatMetaUpdate = {
     lastMessage: text || (isAudio ? '🎙️ Voice note' : (mediaUrl ? '📎 Media' : '')),
@@ -13031,7 +14057,7 @@ function buildMsgBubble(m) {
     return wrap;
   }
 
-  let content = m.text ? escHtml(m.text) : '';
+  let content = m.text ? highlightMentions(m.text) : '';
   let media = '';
   if (m.isAudio && m.mediaUrl) {
     media = `<div class="msg-media msg-voice-note">
@@ -13299,6 +14325,9 @@ function loadProfile() {
   $('stat-posts').textContent = currentUserData.posts || 0;
   $('stat-friends').textContent = currentUserData.friends || 0;
   $('stat-clubs').textContent = (currentUserData.clubs || []).length;
+  // Tap Friends / Clubs stat to open the new list modal (wired once — safe to re-set each load)
+  $('profile-stat-friends').onclick = () => openProfileFriendsList(currentUser.uid);
+  $('profile-stat-clubs').onclick = () => openProfileClubsList(currentUser.uid);
 
   // REAL-TIME: fetch fresh from Firestore to get accurate stats
   db.collection('users').doc(currentUser.uid).get().then(snap => {
@@ -13605,6 +14634,179 @@ function renderFriendRows(users) {
   applyFriendChatBadges();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// FEATURE: Profile "Friends" / "Clubs" list modal — tapping the Friends
+// or Clubs stat on a profile (own or someone else's) opens a scrollable,
+// searchable list. Friends rows reuse the same live presence-dot pattern
+// as the Friends tab; club rows open the real club dashboard on tap.
+// ══════════════════════════════════════════════════════════════════════
+let _plistPresenceListeners = [];
+function _plistDetachPresence() {
+  _plistPresenceListeners.forEach(({ ref, cb }) => ref.off('value', cb));
+  _plistPresenceListeners = [];
+}
+function closeProfileListModal() {
+  _plistDetachPresence();
+  closeModal('modal-profile-list');
+}
+
+async function openProfileFriendsList(uid) {
+  openModal('modal-profile-list');
+  $('plist-title-icon').textContent = '👥 Friends';
+  $('plist-search-wrap').style.display = '';
+  $('plist-search-input').value = '';
+  const body = $('plist-body');
+  body.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  _plistDetachPresence();
+
+  try {
+    const fSnap = await db.collection('friends').doc(uid).get();
+    const uids = fSnap.exists ? (fSnap.data().confirmed || []) : [];
+    $('plist-count').textContent = uids.length;
+    if (!uids.length) {
+      body.innerHTML = `<div class="plist-empty"><span>🧑‍🤝‍🧑</span><p>No friends yet.</p></div>`;
+      $('plist-search-wrap').style.display = 'none';
+      return;
+    }
+    const users = await fetchUsersByUids(uids).catch(() => []);
+    let _allPlistUsers = users;
+    const render = (list) => {
+      _plistDetachPresence();
+      if (!list.length) {
+        body.innerHTML = `<div class="plist-empty"><span>🔍</span><p>No matches.</p></div>`;
+        return;
+      }
+      body.innerHTML = list.map(u => `
+        <div class="plist-person-row" data-uid="${escHtml(u.uid)}">
+          <div class="plist-person-avatar">
+            <img src="${escHtml(u.profilePic || DEFAULT_AVATAR)}"/>
+            <span class="presence-dot" title="Offline"></span>
+          </div>
+          <div class="plist-person-info">
+            <strong>${escHtml(u.name || 'Student')}</strong>
+            <small>@${escHtml(u.username || 'user')}</small>
+          </div>
+        </div>`).join('');
+      body.querySelectorAll('.plist-person-row').forEach(row => {
+        const rUid = row.getAttribute('data-uid');
+        row.addEventListener('click', () => {
+          closeProfileListModal();
+          openUserProfile(rUid);
+        });
+        const dot = row.querySelector('.presence-dot');
+        const pRef = rtdb.ref('presence/' + rUid);
+        const cb = pRef.on('value', snap => {
+          const val = snap.val();
+          const isOnline = !!(val && val.online);
+          dot.classList.toggle('online', isOnline);
+          dot.title = isOnline ? 'Online' : 'Offline';
+        });
+        _plistPresenceListeners.push({ ref: pRef, cb });
+      });
+    };
+    render(_allPlistUsers);
+    $('plist-search-input').oninput = (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) return render(_allPlistUsers);
+      render(_allPlistUsers.filter(u =>
+        (u.name || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q)
+      ));
+    };
+  } catch (e) {
+    body.innerHTML = `<div class="plist-empty"><span>⚠️</span><p>Couldn't load friends.</p></div>`;
+  }
+}
+
+async function openProfileClubsList(uid) {
+  openModal('modal-profile-list');
+  $('plist-title-icon').textContent = '🏛️ Clubs';
+  $('plist-search-wrap').style.display = 'none';
+  const body = $('plist-body');
+  body.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  _plistDetachPresence();
+
+  try {
+    const clubSnap = await db.collection('clubs').where('members', 'array-contains', uid).get();
+    $('plist-count').textContent = clubSnap.size;
+    if (clubSnap.empty) {
+      body.innerHTML = `<div class="plist-empty"><span>🏛️</span><p>Not in any clubs yet.</p></div>`;
+      return;
+    }
+    body.innerHTML = clubSnap.docs.map(doc => {
+      const d = doc.data();
+      const memberCount = (d.members || []).length;
+      return `
+        <div class="plist-club-card" data-id="${doc.id}">
+          <div class="plist-club-emoji">${escHtml(d.emoji || '🏛️')}</div>
+          <div class="plist-club-info">
+            <strong>${escHtml(d.name || 'Club')}</strong>
+            <small><i data-lucide="users" style="width:12px;height:12px"></i> ${memberCount} member${memberCount === 1 ? '' : 's'}</small>
+          </div>
+          <i data-lucide="chevron-right" class="plist-club-arrow"></i>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+    body.querySelectorAll('.plist-club-card').forEach(card => {
+      const id = card.getAttribute('data-id');
+      card.addEventListener('click', async () => {
+        closeProfileListModal();
+        const freshSnap = await db.collection('clubs').doc(id).get();
+        if (freshSnap.exists) openClubDashboard(id, { ...freshSnap.data(), id });
+      });
+    });
+  } catch (e) {
+    body.innerHTML = `<div class="plist-empty"><span>⚠️</span><p>Couldn't load clubs.</p></div>`;
+  }
+}
+
+// Mutual-clubs variant of the list modal — same shell, but pre-filtered to
+// the club IDs both users share (computed client-side, no extra reads).
+async function openMutualClubsList(otherUid, mutualClubIds) {
+  openModal('modal-profile-list');
+  $('plist-title-icon').textContent = '🤝 Mutual Clubs';
+  $('plist-search-wrap').style.display = 'none';
+  const body = $('plist-body');
+  body.innerHTML = '<div class="loading-spinner">Loading…</div>';
+  _plistDetachPresence();
+
+  $('plist-count').textContent = mutualClubIds.length;
+  if (!mutualClubIds.length) {
+    body.innerHTML = `<div class="plist-empty"><span>🤝</span><p>No mutual clubs.</p></div>`;
+    return;
+  }
+  try {
+    const snaps = await Promise.all(mutualClubIds.map(id => db.collection('clubs').doc(id).get()));
+    const clubs = snaps.filter(s => s.exists).map(s => ({ id: s.id, ...s.data() }));
+    if (!clubs.length) {
+      body.innerHTML = `<div class="plist-empty"><span>🤝</span><p>No mutual clubs.</p></div>`;
+      return;
+    }
+    body.innerHTML = clubs.map(d => {
+      const memberCount = (d.members || []).length;
+      return `
+        <div class="plist-club-card" data-id="${d.id}">
+          <div class="plist-club-emoji">${escHtml(d.emoji || '🏛️')}</div>
+          <div class="plist-club-info">
+            <strong>${escHtml(d.name || 'Club')}</strong>
+            <small><i data-lucide="users" style="width:12px;height:12px"></i> ${memberCount} member${memberCount === 1 ? '' : 's'}</small>
+          </div>
+          <i data-lucide="chevron-right" class="plist-club-arrow"></i>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+    body.querySelectorAll('.plist-club-card').forEach(card => {
+      const id = card.getAttribute('data-id');
+      card.addEventListener('click', async () => {
+        closeProfileListModal();
+        const freshSnap = await db.collection('clubs').doc(id).get();
+        if (freshSnap.exists) openClubDashboard(id, { ...freshSnap.data(), id });
+      });
+    });
+  } catch (e) {
+    body.innerHTML = `<div class="plist-empty"><span>⚠️</span><p>Couldn't load clubs.</p></div>`;
+  }
+}
+
 let _friendsSearchWired = false;
 function setupFriendsSearch() {
   const input = document.getElementById('friends-search-input');
@@ -13792,9 +14994,9 @@ async function acceptFriendRequest(fromUid) {
 // "Scan" opens the device camera and decodes a friend's QR to send them
 // a friend request automatically.
 // ══════════════════════════════════════
-let _qrStream       = null;
-let _qrRafId        = null;
-let _qrScanning     = false;
+let _qrStream     = null;
+let _qrRafId      = null;
+let _qrScanning   = false;
 
 function openQrFriendModal() {
   if (!currentUser) return;
@@ -14173,28 +15375,83 @@ function renderCampusMapList(allLocations) {
         <p>No one's sharing yet</p>
         <small>Turn on sharing above to let friends know where you are</small>
       </div>`;
-    return;
+  } else {
+    // Group by spot
+    const bySpot = {};
+    entries.forEach(e => { (bySpot[e.spot] = bySpot[e.spot] || []).push(e); });
+
+    list.innerHTML = Object.entries(bySpot).map(([spot, people]) => `
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">${escHtml(spot)} <span style="color:var(--muted,#aaa);font-weight:500">· ${people.length}</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${people.map(p => `
+            <div style="display:flex;align-items:center;gap:10px">
+              <img src="${escHtml(p.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0"/>
+              <div style="min-width:0">
+                <strong style="font-size:13.5px;display:block">${escHtml(p.name || 'Student')}${p.uid === currentUser?.uid ? ' (you)' : ''}</strong>
+                <small style="color:var(--muted,#aaa);font-size:11.5px">${campusMapRelativeTime(p.updatedAt)}</small>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    `).join('');
   }
 
-  // Group by spot
-  const bySpot = {};
-  entries.forEach(e => { (bySpot[e.spot] = bySpot[e.spot] || []).push(e); });
+  renderCampusMapNearby(allLocations);
+}
 
-  list.innerHTML = Object.entries(bySpot).map(([spot, people]) => `
-    <div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:8px">${escHtml(spot)} <span style="color:var(--muted,#aaa);font-weight:500">· ${people.length}</span></div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${people.map(p => `
-          <div style="display:flex;align-items:center;gap:10px">
-            <img src="${escHtml(p.profilePic || DEFAULT_AVATAR)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0"/>
-            <div style="min-width:0">
-              <strong style="font-size:13.5px;display:block">${escHtml(p.name || 'Student')}${p.uid === currentUser?.uid ? ' (you)' : ''}</strong>
-              <small style="color:var(--muted,#aaa);font-size:11.5px">${campusMapRelativeTime(p.updatedAt)}</small>
-            </div>
-          </div>`).join('')}
+// ══════════════════════════════════════════════════════════════════════
+// FEATURE: NEARBY FRIEND SUGGESTIONS — reuses the same campusLocations
+// data used to render the friends map above. If the current user is
+// actively sharing a spot, show other (non-friend, non-blocked) students
+// sharing that same spot right now, with a one-tap add-friend button.
+// ══════════════════════════════════════════════════════════════════════
+function renderCampusMapNearby(allLocations) {
+  const wrap = document.getElementById('campus-map-nearby-wrap');
+  const listEl = document.getElementById('campus-map-nearby-list');
+  if (!wrap || !listEl || !currentUser) return;
+
+  const now = Date.now();
+  const mine = allLocations[currentUser.uid];
+  const iAmSharing = !!(mine && mine.spot && mine.expiresAt > now);
+  if (!iAmSharing) { wrap.style.display = 'none'; listEl.innerHTML = ''; return; }
+
+  const friendSet = new Set(friendsList);
+  const nearby = Object.entries(allLocations)
+    .filter(([uid, loc]) => uid !== currentUser.uid && loc && loc.spot === mine.spot && loc.expiresAt > now)
+    .filter(([uid]) => !friendSet.has(uid) && !isBlocked(uid))
+    .map(([uid, loc]) => ({ uid, ...loc }));
+
+  if (nearby.length === 0) { wrap.style.display = 'none'; listEl.innerHTML = ''; return; }
+
+  wrap.style.display = 'block';
+  listEl.innerHTML = nearby.map(p => `
+    <div class="campus-nearby-row" data-uid="${escHtml(p.uid)}">
+      <img src="${escHtml(p.profilePic || DEFAULT_AVATAR)}" class="campus-nearby-avatar"/>
+      <div class="campus-nearby-info">
+        <strong>${escHtml(p.name || 'Student')}</strong>
+        <small>${escHtml(mine.spot)} · ${campusMapRelativeTime(p.updatedAt)}</small>
       </div>
-    </div>
-  `).join('');
+      <button class="campus-nearby-add-btn" data-uid="${escHtml(p.uid)}" data-name="${escHtml(p.name||'')}" data-avatar="${escHtml(p.avatar||'')}">+ Add</button>
+    </div>`).join('');
+
+  listEl.querySelectorAll('.campus-nearby-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.campus-nearby-add-btn')) return;
+      openUserProfile(row.getAttribute('data-uid'));
+    });
+  });
+  listEl.querySelectorAll('.campus-nearby-add-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btn.disabled = true; btn.textContent = '✓ Sent';
+      try {
+        await sendFriendRequest(btn.dataset.uid, btn.dataset.name, btn.dataset.avatar);
+      } catch (err) {
+        btn.disabled = false; btn.textContent = '+ Add';
+      }
+    });
+  });
 }
 
 function campusMapRelativeTime(ts) {
@@ -14332,6 +15589,9 @@ async function openUserProfile(uid) {
     const friendCount = friendsSnap.exists ? (friendsSnap.data().confirmed || []).length : (u.friends || 0);
     const clubCount = (u.clubs || []).length;
     const blocked = isBlocked(uid);
+    // Mutual clubs — quick common-ground signal, computed client-side from
+    // both users' already-synced `clubs` arrays (no extra reads needed).
+    const mutualClubIds = (currentUserData?.clubs || []).filter(c => (u.clubs || []).includes(c));
 
     $('ig-profile-username-header').textContent = '@' + (u.username || 'user');
     applyProfileFrame($('ig-profile-modal-card'), null, u.profileFrame);
@@ -14361,10 +15621,11 @@ async function openUserProfile(uid) {
           <p class="ig-profile-username">@${escHtml(u.username || 'user')}</p>
           <p class="ig-profile-meta-line">🎓 ${escHtml(u.college || '')}</p>
           ${yearBranch ? `<p class="ig-profile-meta-line">${escHtml(yearBranch)}</p>` : ''}
+          ${mutualClubIds.length > 0 ? `<button class="mutual-clubs-chip" id="mutual-clubs-chip">🤝 ${mutualClubIds.length} mutual club${mutualClubIds.length === 1 ? '' : 's'}</button>` : ''}
           <div class="ig-profile-stats">
             <div><span>${posts.length}</span><small>Posts</small></div>
-            <div><span>${friendCount}</span><small>Friends</small></div>
-            <div><span>${clubCount}</span><small>Clubs</small></div>
+            <div id="ig-profile-stat-friends"><span>${friendCount}</span><small>Friends</small></div>
+            <div id="ig-profile-stat-clubs"><span>${clubCount}</span><small>Clubs</small></div>
           </div>
           <div class="ig-profile-actions" id="ig-profile-actions"></div>
         </div>
@@ -14380,6 +15641,12 @@ async function openUserProfile(uid) {
         ${blocked ? `<div class="ig-profile-empty" style="grid-column:1/-1"><span>🚫</span><p>You've blocked this user.</p></div>` : ''}
       </div>
     `;
+
+    // Tap Friends / Clubs stat to open the list modal (works whether or not
+    // the viewer is blocked — those are still public counts)
+    $('ig-profile-stat-friends').onclick = () => openProfileFriendsList(uid);
+    $('ig-profile-stat-clubs').onclick = () => openProfileClubsList(uid);
+    $('mutual-clubs-chip')?.addEventListener('click', () => openMutualClubsList(uid, mutualClubIds));
 
     // Action buttons: friend + message + block (+ app-wide ban for moderators)
     const actionsEl = $('ig-profile-actions');
@@ -14685,7 +15952,7 @@ function showNotifToast(d, docId) {
   const t = document.createElement('div');
   t.className = 'notif-toast';
   const avatarHtml = renderAvatarHtml(null, d.fromProfilePic, 32);
-  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',mention:'🏷️',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
   t.innerHTML = `
     <div class="notif-toast-avatar">${avatarHtml}</div>
     <div class="notif-toast-body">
@@ -14737,37 +16004,79 @@ function loadNotifPanel() {
       sorted.forEach(doc => { if(!doc.data().read){ batch.update(doc.ref,{read:true}); hasUnread=true; } });
       if (hasUnread) batch.commit().catch(()=>{});
       list.innerHTML = '';
-      const unread = sorted.filter(d=>!d.data().read);
-      const read   = sorted.filter(d=> d.data().read);
-      if (unread.length) { const lbl=document.createElement('div'); lbl.className='notif-section-label'; lbl.textContent='New'; list.appendChild(lbl); unread.forEach(doc=>list.appendChild(buildNotifItem(doc))); }
-      if (read.length)   { const lbl=document.createElement('div'); lbl.className='notif-section-label read-label'; lbl.textContent='Earlier'; list.appendChild(lbl); read.forEach(doc=>list.appendChild(buildNotifItem(doc))); }
+      const groups = groupNotifDocs(sorted);
+      const unreadGroups = groups.filter(g => g.docs.some(dc => !dc.data().read));
+      const readGroups   = groups.filter(g => !g.docs.some(dc => !dc.data().read));
+      if (unreadGroups.length) { const lbl=document.createElement('div'); lbl.className='notif-section-label'; lbl.textContent='New'; list.appendChild(lbl); unreadGroups.forEach(g=>list.appendChild(buildNotifItem(g))); }
+      if (readGroups.length)   { const lbl=document.createElement('div'); lbl.className='notif-section-label read-label'; lbl.textContent='Earlier'; list.appendChild(lbl); readGroups.forEach(g=>list.appendChild(buildNotifItem(g))); }
     }).catch(err => { list.innerHTML = `<div style="padding:16px;color:var(--muted)">${escHtml(err.message)}</div>`; });
 }
 
-function buildNotifItem(doc) {
-  const d = doc.data();
+// Groups notifications that represent the same reaction to the same thing
+// (e.g. 5 separate "liked your post" entries on the same post) into a single
+// entry, so the panel reads "3 people liked your post" instead of a flood
+// of near-identical rows. Only "cheap" reaction types are grouped — replies,
+// friend requests, and admin messages always stay as their own row since
+// each one carries content the person needs to see individually.
+const NOTIF_GROUPABLE_TYPES = new Set(['like', 'story_like']);
+function groupNotifDocs(sortedDocs) {
+  const groups = [];
+  const keyToGroup = new Map();
+  sortedDocs.forEach(doc => {
+    const d = doc.data();
+    const key = (NOTIF_GROUPABLE_TYPES.has(d.type) && d.postId) ? `${d.type}_${d.postId}` : null;
+    if (key && keyToGroup.has(key)) {
+      keyToGroup.get(key).docs.push(doc);
+    } else {
+      const group = { key, docs: [doc] };
+      groups.push(group);
+      if (key) keyToGroup.set(key, group);
+    }
+  });
+  return groups;
+}
+
+function buildNotifItem(group) {
+  const docs = group.docs;
+  const d = docs[0].data(); // most recent in the group — drives icon/nav/time
+  const allRead = docs.every(dc => dc.data().read);
   const item = document.createElement('div');
   const extraClass = d.type === 'admin_warning' ? ' admin-warning' : (d.type === 'admin_announcement' ? ' admin-announcement' : '');
-  item.className = 'notif-item' + (d.read ? '' : ' unread') + extraClass;
-  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
+  item.className = 'notif-item' + (allRead ? '' : ' unread') + extraClass;
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',mention:'🏷️',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
   const avatarHtml = renderAvatarHtml(null, d.fromProfilePic, 32);
+
+  let bodyText;
+  if (docs.length > 1) {
+    const verb = d.type === 'story_like' ? 'liked your story' : 'liked your post';
+    const names = docs.map(dc => dc.data().fromName || 'Someone');
+    const first = names[0];
+    const others = names.length - 1;
+    const who = others === 1 ? `<strong>${escHtml(first)}</strong> and 1 other` : `<strong>${escHtml(first)}</strong> and ${others} others`;
+    bodyText = `${who} ${escHtml(verb)}`;
+  } else {
+    bodyText = `<strong>${d.type==='admin_warning' ? 'Warning from admin' : (d.type==='admin_announcement' ? 'Message from admin' : escHtml(d.fromName||'Someone'))}</strong> ${escHtml(d.text||'interacted with you')}`;
+  }
+
   item.innerHTML = `
     <div class="notif-item-avatar-wrap">
       <div class="notif-item-avatar">${avatarHtml}</div>
-      <span class="notif-type-badge">${icon}</span>
+      <span class="notif-type-badge">${docs.length > 1 ? docs.length : icon}</span>
     </div>
     <div class="notif-item-body">
-      <div class="notif-item-text"><strong>${d.type==='admin_warning' ? 'Warning from admin' : (d.type==='admin_announcement' ? 'Message from admin' : escHtml(d.fromName||'Someone'))}</strong> ${escHtml(d.text||'interacted with you')}</div>
+      <div class="notif-item-text">${bodyText}</div>
       <div class="notif-item-time">${timeAgo(d.ts)}</div>
       ${d.type==='friend_request' ? `<div class="notif-friend-actions">
         <button class="friend-btn accept small" onclick="acceptFriendRequest('${d.fromUid}');this.closest('.notif-item').remove()">Accept</button>
         <button class="friend-btn reject small" onclick="rejectFriendRequest('${d.fromUid}');this.closest('.notif-item').remove()">Decline</button>
       </div>` : ''}
     </div>
-    ${!d.read ? '<div class="notif-unread-dot"></div>' : ''}`;
+    ${!allRead ? '<div class="notif-unread-dot"></div>' : ''}`;
   item.addEventListener('click', e => {
     if (e.target.closest('.notif-friend-actions')) return;
-    doc.ref.update({ read: true }).catch(()=>{});
+    const batch = db.batch();
+    docs.forEach(doc => batch.update(doc.ref, { read: true }));
+    batch.commit().catch(()=>{});
     item.classList.remove('unread');
     item.querySelector('.notif-unread-dot')?.remove();
     document.getElementById('notif-panel')?.classList.remove('open');
@@ -15073,6 +16382,282 @@ function buildNoteCard(note) {
   return card;
 }
 
+
+// ══════════════════════════════════════════════════════════════════════
+// FEATURE: @MENTIONS — in posts, comments, and chat
+// Typing "@username" (only your confirmed friends are matchable, so it
+// can't be used to probe the whole user base) shows an autocomplete
+// dropdown, and mentioned friends get a notification once the post/
+// comment/message is actually sent.
+// ══════════════════════════════════════════════════════════════════════
+let _mentionUsersCache = null;
+let _mentionUsersCacheAt = 0;
+async function ensureMentionUsers() {
+  // Cache for a minute at a time — cheap, and friend lists rarely change mid-typing.
+  if (_mentionUsersCache && (Date.now() - _mentionUsersCacheAt) < 60000) return _mentionUsersCache;
+  if (!currentUser || !friendsList || friendsList.length === 0) { _mentionUsersCache = []; _mentionUsersCacheAt = Date.now(); return _mentionUsersCache; }
+  const users = await fetchUsersByUids(friendsList);
+  _mentionUsersCache = users
+    .filter(u => u.username)
+    .map(u => ({ uid: u.uid, username: String(u.username).toLowerCase(), name: u.name || 'Student', profilePic: u.profilePic || '' }));
+  _mentionUsersCacheAt = Date.now();
+  return _mentionUsersCache;
+}
+
+function extractMentionTokens(text) {
+  if (!text) return [];
+  const matches = text.match(/@([a-zA-Z0-9_.]{2,30})/g) || [];
+  return [...new Set(matches.map(m => m.slice(1).toLowerCase()))];
+}
+
+// Notifies any mentioned friend. `opts.contextLabel` is a short phrase like
+// "in a post" / "in a comment" / "in a chat" used in the notification text.
+async function notifyMentions(text, opts) {
+  opts = opts || {};
+  const tokens = extractMentionTokens(text);
+  if (tokens.length === 0) return;
+  const users = await ensureMentionUsers();
+  const matched = users.filter(u => tokens.includes(u.username));
+  matched.forEach(u => {
+    if (!currentUser || u.uid === currentUser.uid) return;
+    sendNotification(
+      u.uid,
+      'mention',
+      `mentioned you ${opts.contextLabel || ''}: "${(text || '').slice(0, 60)}"`.trim(),
+      opts.chatId || null,
+      opts.postId || null
+    );
+  });
+}
+
+// Live "@" autocomplete dropdown wired onto a <textarea> or <input>. Safe to
+// call more than once on the same element (e.g. a chat input re-rendered on
+// every openChat()) — it re-wires cleanly each time.
+function wireMentionAutocomplete(inputEl) {
+  if (!inputEl) return;
+  if (inputEl._mentionCloseFn) inputEl._mentionCloseFn();
+
+  let dropdown = null;
+  const closeDropdown = () => { if (dropdown) { dropdown.remove(); dropdown = null; } };
+  inputEl._mentionCloseFn = closeDropdown;
+
+  const onInput = async () => {
+    const val = inputEl.value;
+    const pos = inputEl.selectionStart ?? val.length;
+    const upToCursor = val.slice(0, pos);
+    const m = upToCursor.match(/@([a-zA-Z0-9_.]{0,30})$/);
+    if (!m) { closeDropdown(); return; }
+    const partial = m[1].toLowerCase();
+    const users = await ensureMentionUsers();
+    const matches = users.filter(u => u.username.startsWith(partial)).slice(0, 6);
+    closeDropdown();
+    if (matches.length === 0) return;
+
+    dropdown = document.createElement('div');
+    dropdown.className = 'mention-dropdown';
+    dropdown.style.cssText = 'position:fixed;z-index:9999;background:var(--surface,#1a1a24);border:1px solid var(--border,#333);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.45);max-width:240px;';
+    matches.forEach(u => {
+      const opt = document.createElement('div');
+      opt.style.cssText = 'padding:8px 12px;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px;';
+      opt.innerHTML = `${renderAvatarHtml(null, u.profilePic, 22)}<span>@${escHtml(u.username)} <span style="opacity:0.6">· ${escHtml(u.name)}</span></span>`;
+      opt.addEventListener('mouseenter', () => opt.style.background = 'rgba(255,255,255,0.08)');
+      opt.addEventListener('mouseleave', () => opt.style.background = '');
+      opt.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const before = val.slice(0, pos - m[1].length - 1);
+        const after = val.slice(pos);
+        inputEl.value = before + '@' + u.username + ' ' + after;
+        inputEl.focus();
+        closeDropdown();
+      });
+      dropdown.appendChild(opt);
+    });
+    const rect = inputEl.getBoundingClientRect();
+    dropdown.style.left = Math.max(4, rect.left) + 'px';
+    // Prefer showing above the field (most of these inputs sit near the
+    // bottom of the screen, e.g. chat composer / comment box).
+    const estHeight = matches.length * 38 + 8;
+    if (rect.top - estHeight > 8) dropdown.style.top = (rect.top - estHeight) + 'px';
+    else dropdown.style.top = (rect.bottom + 4) + 'px';
+    document.body.appendChild(dropdown);
+  };
+
+  inputEl.addEventListener('input', onInput);
+  inputEl.addEventListener('blur', () => setTimeout(closeDropdown, 150));
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// FEATURE: OFFLINE DRAFT SAVING — posts & confessions
+// If the connection drops mid-compose (or the submit itself fails while
+// offline), the text is kept in localStorage so nothing is lost. Also
+// autosaves quietly in the background as the person types, and clears
+// once the post/confession actually goes through.
+// ══════════════════════════════════════════════════════════════════════
+function draftKey(name) { return `cv_${name}_${(currentUser && currentUser.uid) || 'anon'}`; }
+function saveDraft(name, text) {
+  try {
+    if (text && text.trim()) localStorage.setItem(draftKey(name), text);
+    else localStorage.removeItem(draftKey(name));
+  } catch (e) {}
+}
+function loadDraft(name) {
+  try { return localStorage.getItem(draftKey(name)) || ''; } catch (e) { return ''; }
+}
+function clearDraft(name) {
+  try { localStorage.removeItem(draftKey(name)); } catch (e) {}
+}
+function wireDraftAutosave(inputEl, name) {
+  if (!inputEl) return;
+  let t = null;
+  inputEl.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => saveDraft(name, inputEl.value), 500);
+  });
+}
+
+// Warn (once per drop) if the connection goes offline while composing, so
+// people know their draft is safe rather than wondering if it vanished.
+window.addEventListener('offline', () => {
+  saveDraft('draft-post', document.getElementById('post-text')?.value || '');
+  saveDraft('draft-confession', document.getElementById('confession-text')?.value || '');
+  toast('You\'re offline — any unsent post/confession is saved as a draft.', 'info');
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// FEATURE: GROUP DMs — plain friend groups, not tied to any club.
+// Reuses the same chats/{chatId}/messages structure as 1:1 chat (and the
+// same sendChatMessage/buildMsgBubble/renderer functions), just with more
+// than 2 members and an isGroup flag.
+// ══════════════════════════════════════════════════════════════════════
+let _selectedGroupFriendUids = new Set();
+
+document.getElementById('new-group-chat-btn')?.addEventListener('click', async () => {
+  _selectedGroupFriendUids = new Set();
+  document.getElementById('new-group-name-input').value = '';
+  const wrap = document.getElementById('new-group-friends-list');
+  wrap.innerHTML = '<div class="loading-spinner">Loading friends…</div>';
+  openModal('modal-new-group');
+  if (!friendsList || friendsList.length === 0) {
+    wrap.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Add some friends first — group DMs are friends-only.</div>';
+    return;
+  }
+  const users = await fetchUsersByUids(friendsList).catch(() => []);
+  wrap.innerHTML = '';
+  users.forEach(u => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;';
+    row.innerHTML = `
+      <input type="checkbox" class="group-friend-checkbox" data-uid="${escHtml(u.uid)}" style="width:18px;height:18px;flex-shrink:0"/>
+      ${renderAvatarHtml(null, u.profilePic, 34)}
+      <div style="display:flex;flex-direction:column;line-height:1.2">
+        <strong style="font-size:13.5px">${escHtml(u.name || 'Student')}</strong>
+        <small style="color:var(--muted)">@${escHtml(u.username || 'user')}</small>
+      </div>`;
+    const checkbox = row.querySelector('.group-friend-checkbox');
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) _selectedGroupFriendUids.add(u.uid);
+      else _selectedGroupFriendUids.delete(u.uid);
+    });
+    wrap.appendChild(row);
+  });
+});
+
+document.getElementById('submit-new-group-btn')?.addEventListener('click', async () => {
+  const name = document.getElementById('new-group-name-input').value.trim();
+  if (_selectedGroupFriendUids.size < 2) return toast('Pick at least 2 friends for a group.', 'error');
+  if (!name) return toast('Give your group a name.', 'error');
+  const btn = document.getElementById('submit-new-group-btn');
+  btn.disabled = true;
+  try {
+    const memberUids = [currentUser.uid, ..._selectedGroupFriendUids];
+    const memberInfo = { [currentUser.uid]: {
+      name: currentUserData.name || currentUser.displayName || 'Student',
+      avatar: currentUserData.avatar || '',
+      profilePic: currentUserData.profilePic || null
+    }};
+    const users = await fetchUsersByUids([..._selectedGroupFriendUids]);
+    users.forEach(u => { memberInfo[u.uid] = { name: u.name || 'Student', avatar: u.avatar || '', profilePic: u.profilePic || null }; });
+
+    const chatRef = await db.collection('chats').add({
+      isGroup: true,
+      groupName: name,
+      members: memberUids,
+      memberInfo,
+      createdBy: currentUser.uid,
+      lastMessage: '',
+      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    memberUids.filter(u => u !== currentUser.uid).forEach(uid => {
+      sendNotification(uid, 'message', `added you to the group "${name}" 👥`, chatRef.id, null);
+    });
+
+    closeModal('modal-new-group');
+    toast('Group created! 🎉', 'success');
+    switchView('chats');
+    setTimeout(() => { db.collection('chats').doc(chatRef.id).get().then(snap => openGroupChat(chatRef.id, snap.data())); }, 300);
+  } catch (e) {
+    toast(e.message || 'Could not create group', 'error');
+  }
+  btn.disabled = false;
+});
+
+function openGroupChat(chatId, chatData) {
+  currentChatId = chatId;
+  currentChatUid = null; // not a 1:1 chat — no single "other" user
+  markChatRead(chatId);
+  clearChatBadgesLocally(chatId, null);
+
+  const memberNames = (chatData.members || [])
+    .filter(m => m !== currentUser.uid)
+    .map(m => chatData.memberInfo?.[m]?.name || 'Friend');
+  const subtitle = memberNames.length ? `${memberNames.length + 1} members · ${memberNames.join(', ')}` : 'Just you';
+
+  const isMobile = window.innerWidth < 768;
+  const winId = isMobile ? null : 'chat-window';
+
+  const headerHtml = `
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--accent,#6c63ff);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;flex-shrink:0">👥</div>
+      <div style="display:flex;flex-direction:column;line-height:1.25;flex:1;min-width:0;">
+        <strong>${escHtml(chatData.groupName || 'Group')}</strong>
+        <span style="font-size:11.5px;color:var(--muted,#9aa0a6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(subtitle)}</span>
+      </div>
+    </div>`;
+
+  const msgRef = rtdb.ref(`chats/${chatId}/messages`).limitToLast(50);
+
+  if (!isMobile) {
+    const win = document.getElementById('chat-window');
+    win.innerHTML = headerHtml + `
+      <div class="chat-messages" id="desktop-chat-msgs"></div>
+      <div class="chat-input-bar" id="desktop-chat-input-bar">
+        <input type="text" id="desktop-chat-input" placeholder="Message the group…"/>
+        <button class="btn-send" id="desktop-chat-action-btn" title="Send"><i data-lucide="send"></i></button>
+      </div>`;
+    lucide.createIcons();
+    wireMentionAutocomplete($('desktop-chat-input'));
+    attachIncrementalChatRenderer(msgRef, document.getElementById('desktop-chat-msgs'));
+    wireChatActionBtn('desktop', chatId);
+  } else {
+    document.querySelectorAll('.modal-overlay.open').forEach(ov => { if (ov.id !== 'modal-chat-window') ov.classList.remove('open'); });
+    const titleEl = document.getElementById('chat-window-title');
+    if (titleEl) titleEl.textContent = chatData.groupName || 'Group';
+    const avatarEl = document.getElementById('chat-window-avatar');
+    if (avatarEl) avatarEl.innerHTML = '👥';
+    openModal('modal-chat-window');
+    attachIncrementalChatRenderer(msgRef, document.getElementById('modal-chat-messages'));
+    wireChatActionBtn('modal', chatId);
+    wireMentionAutocomplete(document.getElementById('modal-chat-input'));
+    const mediaInput = document.getElementById('modal-chat-media');
+    if (mediaInput) mediaInput.onchange = async e => {
+      const file = e.target.files[0]; if (!file) return;
+      try { const url = await uploadToCloudinary(file); await sendChatMessage(chatId, '', url, file.type.startsWith('video')); }
+      catch (err) { toast(err.message, 'error'); }
+      e.target.value = '';
+    };
+  }
+}
 
 </script>
 <script src="app.js"></script>
