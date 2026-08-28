@@ -4095,7 +4095,7 @@ opacity: .4;
       <div class="view-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <h2>💬 Chats</h2>
         <div style="display:flex;gap:8px">
-          <button class="btn-sm" id="chats-qr-btn" title="Add a friend by QR code">𖣯 QR</button>
+          <button class="btn-sm" id="chats-qr-btn" title="Add a friend by QR code">📷 QR</button>
           <button class="btn-sm" id="new-group-chat-btn" title="Start a group DM with friends">👥 New Group</button>
         </div>
       </div>
@@ -4461,7 +4461,7 @@ opacity: .4;
 <div class="modal-overlay" id="modal-qr-friend">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
-      <h3>𖣯 Add by QR Code</h3>
+      <h3>📷 Add by QR Code</h3>
       <button class="modal-close" data-modal="modal-qr-friend">✕</button>
     </div>
 
@@ -4601,6 +4601,11 @@ opacity: .4;
         <i data-lucide="eye-off"></i><span>Hidden Posts</span><i data-lucide="chevron-right" class="settings-row-chevron"></i>
       </button>
       <div id="hidden-posts-list" style="display:none;margin:2px 0 10px;padding:0 4px 4px;"></div>
+
+      <button class="settings-row mod-only-row" id="settings-banned-toggle" style="display:none">
+        <i data-lucide="shield-ban"></i><span>Banned Users</span><i data-lucide="chevron-right" class="settings-row-chevron"></i>
+      </button>
+      <div id="banned-users-list" style="display:none;margin:2px 0 10px;padding:0 4px 4px;"></div>
 
       <div class="settings-section-label">Notifications</div>
       <div class="settings-row settings-row-toggle">
@@ -5144,6 +5149,15 @@ function refreshModUi() {
   document.querySelectorAll('.post-ban-btn').forEach(btn => {
     btn.style.display = show ? '' : 'none';
   });
+  // The "Banned Users" row in Settings is moderator-only — hide it
+  // immediately (no reload needed) the moment mod status is revoked.
+  document.querySelectorAll('.mod-only-row').forEach(row => {
+    row.style.display = show ? '' : 'none';
+  });
+  if (!show) {
+    const list = $('banned-users-list');
+    if (list) { list.style.display = 'none'; list.innerHTML = ''; }
+  }
 }
 
 // ── DEFAULT AVATAR IMAGE (used whenever a user has no profile photo) ──
@@ -5447,9 +5461,13 @@ function attachLongPress(el, onLongPress, ms = 3000) {
 }
 
 function deleteChatConversation(chatId) {
-  showConfirmDialog('Delete this chat? This cannot be undone.', async () => {
+  showConfirmDialog('Delete this chat? It will be removed from your list only — the other person will still have it.', async () => {
     try {
-      await db.collection('chats').doc(chatId).delete();
+      // "Delete for me" — mark this user in deletedFor instead of removing
+      // the shared chat document, so the other member's copy is untouched.
+      await db.collection('chats').doc(chatId).update({
+        deletedFor: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
       toast('Chat deleted', 'success');
     } catch (err) {
       console.error('Failed to delete chat:', err);
@@ -6765,6 +6783,17 @@ function setupSettings() {
     if (!showing) renderHiddenPostsList();
   });
 
+  // Banned Users — moderator-only (row itself is hidden for everyone else
+  // via refreshModUi/.mod-only-row). Lets a moderator see who's currently
+  // banned app-wide and unban them without needing admin.html.
+  $('settings-banned-toggle')?.addEventListener('click', () => {
+    if (!isCurrentUserAppMod()) return;
+    const listEl = $('banned-users-list');
+    const showing = listEl.style.display !== 'none';
+    listEl.style.display = showing ? 'none' : 'block';
+    if (!showing) renderBannedUsersList();
+  });
+
   // Edit Profile — close settings, open the existing edit-profile flow
   $('settings-edit-profile-row')?.addEventListener('click', () => {
     closeModal('modal-settings');
@@ -6847,6 +6876,8 @@ function openSettingsModal() {
   $('blocked-users-list').style.display = 'none';
   $('muted-users-list').style.display = 'none';
   $('hidden-posts-list').style.display = 'none';
+  $('banned-users-list').style.display = 'none';
+  refreshModUi();
   openModal('modal-settings');
   lucide.createIcons();
 }
@@ -6922,6 +6953,52 @@ async function unhidePost(postId) {
     toast('Post unhidden — it may reappear in your feed', 'success');
     renderHiddenPostsList();
     loadFeed();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// Moderator-only: lists every currently app-banned user, with an Unban
+// button. Lives in Settings so moderators don't need admin.html for this.
+async function renderBannedUsersList() {
+  const container = $('banned-users-list');
+  if (!container || !isCurrentUserAppMod()) return;
+  container.innerHTML = `<div class="loading-spinner">Loading…</div>`;
+  try {
+    const snap = await db.collection('users').where('banned', '==', true).get();
+    if (snap.empty) {
+      container.innerHTML = `<p style="color:var(--muted,#aaa);font-size:13px;margin:6px 0 0">No banned users right now.</p>`;
+      return;
+    }
+    container.innerHTML = snap.docs.map(doc => {
+      const u = doc.data();
+      const reason = u.banReason ? escHtml(u.banReason) : '';
+      return `
+      <div class="blocked-user-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border,rgba(255,255,255,0.08))">
+        <span style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${renderAvatarHtml(u.avatar, u.profilePic, 28)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;color:var(--text,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(u.name || 'Student')}</div>
+          ${reason ? `<div style="font-size:11px;color:var(--muted,#888)">${reason}</div>` : ''}
+        </div>
+        <button class="btn-sm unban-user-btn" data-uid="${doc.id}" data-name="${escHtml(u.name || 'Student')}" style="background:var(--surface2,rgba(255,255,255,0.08));border:1px solid var(--border,rgba(255,255,255,0.12));color:var(--text,#fff);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;flex-shrink:0">Unban</button>
+      </div>`;
+    }).join('');
+    container.querySelectorAll('.unban-user-btn').forEach(btn => {
+      btn.addEventListener('click', () => unbanUserFromApp(btn.dataset.uid, btn.dataset.name));
+    });
+  } catch (e) {
+    container.innerHTML = `<p style="color:var(--danger,#ff6b6b);font-size:13px;margin:6px 0 0">Couldn't load banned users: ${escHtml(e.message)}</p>`;
+  }
+}
+
+async function unbanUserFromApp(uid, name) {
+  if (!isCurrentUserAppMod()) { toast('You no longer have moderator access.', 'error'); return; }
+  try {
+    await db.collection('users').doc(uid).update({
+      banned: false,
+      banReason: firebase.firestore.FieldValue.delete(),
+      bannedAt: firebase.firestore.FieldValue.delete()
+    });
+    toast(`${name || 'User'} unbanned`, 'success');
+    renderBannedUsersList();
   } catch (e) { toast('Failed: ' + e.message, 'error'); }
 }
 
@@ -7705,8 +7782,14 @@ function setupSearch() {
     });
   }
 
-  // Feed search button
-  $('feed-search-btn')?.addEventListener('click', () => switchView('search'));
+  // Feed search button — always opens to a clean slate. Without this, a
+  // previous search (e.g. "pratik") stayed in the input/results the next
+  // time you opened search from elsewhere in the app, since switchView()
+  // doesn't reset per-view state on its own.
+  $('feed-search-btn')?.addEventListener('click', () => {
+    switchView('search');
+    resetSearchView();
+  });
 
   // Filter tabs
   document.querySelectorAll('.search-tab').forEach(tab => {
@@ -7728,6 +7811,21 @@ function debouncedSearch(q) {
   }
   $('search-results').innerHTML = `<div class="loading-spinner">Searching…</div>`;
   searchDebounce = setTimeout(() => performSearch(q), 350);
+}
+
+// Clears the leftover query text, results, and filter tab from whatever was
+// last searched, so opening Search fresh (e.g. via the feed search button)
+// always starts blank instead of showing a stale previous search.
+function resetSearchView() {
+  clearTimeout(searchDebounce);
+  const mobileInput = $('mobile-search-input');
+  const sidebarInput = $('sidebar-search-input');
+  if (mobileInput) mobileInput.value = '';
+  if (sidebarInput) sidebarInput.value = '';
+  document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.search-tab[data-filter="all"]')?.classList.add('active');
+  currentSearchFilter = 'all';
+  $('search-results').innerHTML = `<div class="search-empty-state"><span style="font-size:48px">🔍</span><p>Search for users, clubs, posts, or hashtags</p></div>`;
 }
 
 async function performSearch(q) {
@@ -14433,12 +14531,20 @@ function loadChatList() {
         list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">No chats yet.<br/>Start a conversation with a friend! 💬</div>';
         return;
       }
-      // Sort by lastMessageAt client-side (desc)
-      const chatDocs = snap.docs.sort((a, b) => {
-        const aT = a.data().lastMessageAt?.toMillis?.() || 0;
-        const bT = b.data().lastMessageAt?.toMillis?.() || 0;
-        return bT - aT;
-      });
+      // Sort by lastMessageAt client-side (desc), skipping chats this user
+      // has "deleted for me" — the chat doc itself still exists for the
+      // other person(s), we're just hiding it from this user's own list.
+      const chatDocs = snap.docs
+        .filter(doc => !(doc.data().deletedFor || []).includes(currentUser.uid))
+        .sort((a, b) => {
+          const aT = a.data().lastMessageAt?.toMillis?.() || 0;
+          const bT = b.data().lastMessageAt?.toMillis?.() || 0;
+          return bT - aT;
+        });
+      if (!chatDocs.length) {
+        list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">No chats yet.<br/>Start a conversation with a friend! 💬</div>';
+        return;
+      }
       chatDocs.forEach(doc => {
         const d = doc.data();
         const isLastSenderMe = d.lastSenderId === currentUser.uid;
@@ -14616,6 +14722,13 @@ async function openChat(chatId, otherUid, otherInfo) {
   // Chat doc is now guaranteed to exist (found above or just created) —
   // safe to reset unread counts / mark notifications read.
   markChatRead(chatId);
+
+  // If this user had "deleted" this chat for themselves earlier, actively
+  // opening it again (e.g. via search → Message) should bring it back into
+  // their own chat list too — same as WhatsApp/Instagram.
+  if (snap.exists && (snap.data().deletedFor || []).includes(currentUser.uid)) {
+    chatRef.update({ deletedFor: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) }).catch(() => {});
+  }
 
   // The avatar/name passed in via otherInfo comes from the cached
   // `memberInfo` snapshot stored on the chat doc, which only gets written
@@ -15626,12 +15739,15 @@ async function sendChatMessage(chatId, text, mediaUrl, isVideo, isAudio, audioDu
     lastSenderId: currentUser.uid
   };
   // Increment unread count for recipients
+  // If a recipient had "deleted" this chat for themselves, sending a new
+  // message brings it back into their list — same behavior as WhatsApp/etc.
   try {
     const chatSnap2 = await db.collection('chats').doc(chatId).get();
     const members2 = chatSnap2.exists ? (chatSnap2.data().members || []) : [];
     members2.filter(m => m && m !== currentUser.uid).forEach(uid => {
       chatMetaUpdate[`unreadCount.${uid}`] = firebase.firestore.FieldValue.increment(1);
     });
+    if (members2.length) chatMetaUpdate.deletedFor = firebase.firestore.FieldValue.arrayRemove(...members2);
   } catch(e) {}
   // NOTE: dot-notation nested field paths (e.g. "unreadCount.<uid>") only work
   // with update() — set(..., {merge:true}) treats a dotted key as a single
