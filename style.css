@@ -278,7 +278,8 @@ select { appearance: none; }
   transition: all 0.15s;
   position: relative;
 }
-.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item:hover { background: rgba(124,58,237,0.08); color: var(--text); }
+.nav-item:active { background: rgba(124,58,237,0.14); }
 .nav-item.active { background: rgba(124,58,237,0.15); color: var(--text); border-left: 3px solid var(--accent); padding-left: 9px; }
 .nav-item i { width: 18px; height: 18px; flex-shrink: 0; }
 .nav-item .badge {
@@ -326,7 +327,8 @@ select { appearance: none; }
   transition: color 0.15s;
 }
 .mnav-item i { width: 20px; height: 20px; }
-.mnav-item.active { color: var(--accent3); }
+.mnav-item.active { color: var(--accent); }
+.mnav-item:active { color: var(--accent); }
 .mobile-nav::-webkit-scrollbar { display: none; }
 
 /* ── VIEWS ── */

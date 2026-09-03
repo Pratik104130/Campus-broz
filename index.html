@@ -4608,6 +4608,11 @@ opacity: .4;
       <div id="banned-users-list" style="display:none;margin:2px 0 10px;padding:0 4px 4px;"></div>
 
       <div class="settings-section-label">Notifications</div>
+      <button class="settings-row" id="settings-browser-notif-row" style="width:100%;text-align:left">
+        <i data-lucide="monitor-smartphone"></i><span>Browser Notifications</span>
+        <span id="settings-browser-notif-status" style="margin-left:auto;flex:0 0 auto;font-size:11.5px;color:var(--muted,#aaa)">Tap to enable</span>
+      </button>
+      <div style="font-size:11.5px;color:var(--muted,#aaa);padding:0 2px 6px">Get an alert for new messages and replies even when this tab isn't focused — only while the app is open somewhere, not after you fully close it.</div>
       <div class="settings-row settings-row-toggle">
         <i data-lucide="bell"></i><span>Push Notifications</span>
         <label class="settings-switch"><input type="checkbox" id="settings-notif-push"><span class="settings-switch-track"></span></label>
@@ -6794,6 +6799,16 @@ function setupSettings() {
     if (!showing) renderBannedUsersList();
   });
 
+  $('settings-browser-notif-row')?.addEventListener('click', async () => {
+    const perm = browserNotifPermission();
+    if (perm === 'granted' || perm === 'denied' || perm === 'unsupported') {
+      refreshBrowserNotifSettingsUi();
+      if (perm === 'denied') toast('Notifications are blocked — enable them in your browser\'s site settings', 'error');
+      return;
+    }
+    await requestBrowserNotifPermission();
+  });
+
   // Edit Profile — close settings, open the existing edit-profile flow
   $('settings-edit-profile-row')?.addEventListener('click', () => {
     closeModal('modal-settings');
@@ -6878,6 +6893,7 @@ function openSettingsModal() {
   $('hidden-posts-list').style.display = 'none';
   $('banned-users-list').style.display = 'none';
   refreshModUi();
+  refreshBrowserNotifSettingsUi();
   openModal('modal-settings');
   lucide.createIcons();
 }
@@ -11199,7 +11215,7 @@ function renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod) {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       document.getElementById('ann-text').value = '';
-      loadAnnouncements(clubId);
+      loadAnnouncements(clubId, canPost);
       toast('Announcement posted 📢', 'success');
 
       // Notify club members (each recipient's own "Club Activity" toggle
@@ -11221,26 +11237,61 @@ function renderClubAnnouncements(body, clubId, clubData, isOwner, isAppMod) {
       });
     });
   }
-  loadAnnouncements(clubId);
+  loadAnnouncements(clubId, canPost);
 }
 
-function loadAnnouncements(clubId) {
+function loadAnnouncements(clubId, canManage) {
   const el = document.getElementById('ann-list'); if (!el) return;
   el.innerHTML = '<div class="loading-spinner">Loading…</div>';
   db.collection('clubs').doc(clubId).collection('announcements')
     .orderBy('createdAt','desc').limit(20).get().then(snap => {
       if (snap.empty) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No announcements yet 📢</div>'; return; }
       el.innerHTML = '';
-      snap.forEach(doc => {
+      // Pinned announcement (if any) always shows first, regardless of date —
+      // the rest stay newest-first below it.
+      const docs = snap.docs.slice().sort((a, b) => {
+        const ap = a.data().pinned ? 1 : 0, bp = b.data().pinned ? 1 : 0;
+        if (ap !== bp) return bp - ap;
+        return 0; // preserve existing createdAt-desc order from the query within each group
+      });
+      docs.forEach(doc => {
         const d = doc.data();
+        const isPinned = !!d.pinned;
         const div = document.createElement('div');
-        div.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:10px';
-        div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          ${renderAvatarHtml(null, d.authorProfilePic, 26)}
-          <div><strong style="font-size:13px">${escHtml(d.authorName||'Admin')}</strong><div style="font-size:11px;color:var(--muted)">${timeAgo(d.createdAt)}</div></div>
-        </div><div style="font-size:14px">${escHtml(d.text)}</div>`;
+        div.style.cssText = `background:var(--surface2);border:1px solid var(--border);border-left:4px solid ${isPinned ? '#f1c40f' : 'var(--accent)'};border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative`;
+        div.innerHTML = `
+          ${isPinned ? `<div style="font-size:11px;font-weight:700;color:#f1c40f;margin-bottom:6px;display:flex;align-items:center;gap:4px">📌 PINNED</div>` : ''}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            ${renderAvatarHtml(null, d.authorProfilePic, 26)}
+            <div style="flex:1"><strong style="font-size:13px">${escHtml(d.authorName||'Admin')}</strong><div style="font-size:11px;color:var(--muted)">${timeAgo(d.createdAt)}</div></div>
+            ${canManage ? `<button class="ann-pin-btn" data-id="${doc.id}" data-pinned="${isPinned ? '1' : '0'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${isPinned ? '1' : '.5'};flex-shrink:0">📌</button>` : ''}
+          </div>
+          <div style="font-size:14px">${escHtml(d.text)}</div>`;
         el.appendChild(div);
       });
+      if (canManage) {
+        el.querySelectorAll('.ann-pin-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const wasPinned = btn.dataset.pinned === '1';
+            try {
+              if (!wasPinned) {
+                // Only one pinned announcement at a time — unpin any other
+                // pinned item in this club first so they don't stack up.
+                const existing = await db.collection('clubs').doc(clubId).collection('announcements')
+                  .where('pinned', '==', true).get();
+                const batch = db.batch();
+                existing.forEach(d => batch.update(d.ref, { pinned: false }));
+                batch.update(db.collection('clubs').doc(clubId).collection('announcements').doc(id), { pinned: true });
+                await batch.commit();
+              } else {
+                await db.collection('clubs').doc(clubId).collection('announcements').doc(id).update({ pinned: false });
+              }
+              loadAnnouncements(clubId, canManage);
+            } catch (e) { toast('Failed: ' + e.message, 'error'); }
+          });
+        });
+      }
     }).catch(e => { el.innerHTML = `<p style="color:var(--danger);padding:16px">${escHtml(e.message)}</p>`; });
 }
 
@@ -18899,9 +18950,11 @@ function setupNotifications() {
             // Admin alerts always get through, regardless of notification prefs.
             showAdminAlertToast(d, change.doc.id);
             if (_prevNotifCount === 0) playNotifSound();
+            showBrowserNotification(d, change.doc.id);
           } else if (shouldShowPushToast(d.type)) {
             showNotifToast(d, change.doc.id);
             if (_prevNotifCount === 0) playNotifSound();
+            showBrowserNotification(d, change.doc.id);
           }
         }
       });
@@ -19013,6 +19066,75 @@ function markAllNotifsRead() {
       document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
       toast('All read ✓', 'success');
     }).catch(() => {});
+}
+
+// ══════════════════════════════════════
+// BROWSER NOTIFICATIONS — OS-level notifications via the native
+// Notification API. Free, no backend, no domain needed — but only fires
+// while this tab/app is open somewhere (foreground or background), not
+// after the browser is fully closed. That's a real limitation of this
+// approach vs. true push (FCM), which needs a server trigger.
+// ══════════════════════════════════════
+function browserNotifPermission() {
+  if (!('Notification' in window)) return 'unsupported';
+  return Notification.permission; // 'granted' | 'denied' | 'default'
+}
+
+async function requestBrowserNotifPermission() {
+  if (!('Notification' in window)) {
+    toast('Your browser doesn\'t support notifications', 'error');
+    return 'unsupported';
+  }
+  const result = await Notification.requestPermission();
+  refreshBrowserNotifSettingsUi();
+  if (result === 'granted') toast('Notifications enabled 🔔', 'success');
+  else if (result === 'denied') toast('Notifications blocked — you can re-enable them in your browser settings', 'error');
+  return result;
+}
+
+// Only show a real OS notification when the tab isn't the thing the user is
+// actively looking at — if the app is focused, the in-app toast (already
+// shown alongside this) is enough and a second OS popup would be noisy.
+function showBrowserNotification(d, docId) {
+  if (browserNotifPermission() !== 'granted') return;
+  if (document.visibilityState === 'visible' && document.hasFocus()) return;
+  const icon = {like:'🔥',comment:'💬',friend_request:'👋',friend_accept:'🎉',message:'📩',mention:'🏷️',match:'💖',club_join:'🏛️',club_announcement:'📢',story_like:'❤️',admin_announcement:'📢',admin_warning:'⚠️',call:'📞'}[d.type]||'🔔';
+  try {
+    const n = new Notification(`${icon} ${d.fromName || 'CampusVibes'}`, {
+      body: d.text || 'sent a notification',
+      icon: d.fromProfilePic || '/favicon.ico',
+      tag: docId, // replaces any existing notification with the same id instead of stacking
+      renotify: false
+    });
+    n.onclick = () => {
+      window.focus();
+      if (d.chatId) { switchView('chats'); setTimeout(() => { db.collection('chats').doc(d.chatId).get().then(snap => { if(!snap.exists)return; const cd=snap.data(); const other=(cd.members||[]).find(m=>m!==currentUser.uid); openChat(d.chatId,other,cd.memberInfo?.[other]||{name:'User',avatar:''}); }); }, 200); }
+      else if (d.type==='friend_request'||d.type==='friend_accept') switchView('friends');
+      else if ((d.type==='like'||d.type==='comment') && d.postId) switchView('feed');
+      else if (d.type==='club_join') switchView('clubs');
+      else if (d.type==='club_announcement') { switchView('clubs'); if (d.clubId) openClubByIdBestEffort(d.clubId); }
+      db.collection('notifications').doc(docId).update({ read: true }).catch(()=>{});
+      n.close();
+    };
+    setTimeout(() => n.close(), 8000);
+  } catch (e) { /* some browsers throw if called outside a user gesture in certain contexts */ }
+}
+
+function refreshBrowserNotifSettingsUi() {
+  const row = $('settings-browser-notif-row');
+  const statusEl = $('settings-browser-notif-status');
+  if (!row || !statusEl) return;
+  const perm = browserNotifPermission();
+  if (perm === 'unsupported') {
+    statusEl.textContent = 'Not supported on this browser';
+    row.querySelector('.settings-switch')?.remove();
+  } else if (perm === 'granted') {
+    statusEl.textContent = 'Enabled';
+  } else if (perm === 'denied') {
+    statusEl.textContent = 'Blocked — enable in browser settings';
+  } else {
+    statusEl.textContent = 'Tap to enable';
+  }
 }
 
 function showNotifToast(d, docId) {
